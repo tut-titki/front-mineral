@@ -1,4 +1,4 @@
-# mineral
+# naryad-ai-frontend
 
 Приложение «Костанайские минералы».
 
