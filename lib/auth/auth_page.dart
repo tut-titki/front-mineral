@@ -134,9 +134,8 @@ class AuthPage extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      ).stepLabel(step!),
+                                      AppLocalizations.of(context)
+                                          .stepLabel(step!),
                                       style: const TextStyle(
                                         color: Color(0xFF687385),
                                         fontSize: 14,
