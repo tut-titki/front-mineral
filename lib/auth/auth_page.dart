@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mineral/l10n/app_locale.dart';
+import 'package:mineral/l10n/app_localizations.dart';
 
 class AuthPage extends StatelessWidget {
   const AuthPage({
@@ -126,7 +127,8 @@ class AuthPage extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      'Шаг $step из 2',
+                                      AppLocalizations.of(context)
+                                          .stepLabel(step!),
                                       style: const TextStyle(
                                         color: Color(0xFF687385),
                                         fontSize: 14,
