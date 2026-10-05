@@ -11,6 +11,7 @@ import 'package:mineral/core/theme/app_theme.dart';
 import 'package:mineral/l10n/app_locale.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 import 'package:mineral/l10n/ui_localization.dart';
+import 'package:mineral/features/executor/screens/executor_screen.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -48,7 +49,10 @@ class _MainAppState extends State<MainApp> {
         onGenerateTitle: (context) =>
             'Mineral · ${strings(context).masterRole}',
         theme: buildAppTheme(),
-        routes: {'/master': (_) => MasterShell(store: store)},
+        routes: {
+          '/master': (_) => MasterShell(store: store),
+          '/executor': (_) => ExecutorScreen(store: store, employeeId: 1),
+        },
         home: const SplashScreen(nextScreen: LoginScreen()),
       ),
     );

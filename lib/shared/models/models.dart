@@ -142,6 +142,35 @@ class WorkOrder {
 
   final List<OrderEvent> history;
 
+  Duration workDuration(DateTime now) {
+    final events = [...history]..sort((a, b) => a.time.compareTo(b.time));
+    var total = Duration.zero;
+    DateTime? started;
+    for (final event in events) {
+      if (event.time.isAfter(now)) continue;
+      final status =
+          event.status ??
+          OrderStatus.values
+              .where(
+                (s) =>
+                    event.title == s.label ||
+                    event.title.startsWith('${s.label}:'),
+              )
+              .firstOrNull;
+      if (status == null) continue;
+      if (status == OrderStatus.working) {
+        started ??= event.time;
+      } else if (started != null) {
+        total += event.time.difference(started);
+        started = null;
+      }
+    }
+    if (started != null && status == OrderStatus.working) {
+      total += now.difference(started);
+    }
+    return total;
+  }
+
   bool get emergency => priority == 'Аварийный';
 
   bool get overdue {

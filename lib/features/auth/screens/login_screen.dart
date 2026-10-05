@@ -31,7 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Временный переход для визуального прототипа, без авторизации API.
     FocusScope.of(context).unfocus();
-    Navigator.of(context).pushNamedAndRemoveUntil('/master', (_) => false);
+    //Navigator.of(context).pushNamedAndRemoveUntil('/master', (_) => false);
+    Navigator.of(context).pushNamedAndRemoveUntil('/executor', (_) => false);
   }
 
   @override

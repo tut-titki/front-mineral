@@ -402,7 +402,12 @@ class DemoStore extends ChangeNotifier {
     return order;
   }
 
-  void changeStatus(WorkOrder order, OrderStatus status, {String reason = ''}) {
+  void changeStatus(
+    WorkOrder order,
+    OrderStatus status, {
+    String reason = '',
+    String author = 'Мастер · С. Омаров',
+  }) {
     if (order.status == status) return;
     order.status = status;
 
@@ -412,8 +417,8 @@ class DemoStore extends ChangeNotifier {
         kind: OrderEventKind.status,
         status: status,
         reason: reason,
-        author: 'Мастер · С. Омаров',
-        time: DateTime.now(),
+        author: author,
+        time: now,
       ),
     );
 
