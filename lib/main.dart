@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mineral/auth/login_screen.dart';
+import 'package:mineral/splash_screen.dart';
 
 void main() {
   runApp(const MainApp());
@@ -9,8 +11,23 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(body: Center(child: Text('Hello World!'))),
+    const logoBlue = Color(0xFF01408B);
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: logoBlue),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: logoBlue,
+            foregroundColor: Colors.white,
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(foregroundColor: logoBlue),
+        ),
+      ),
+      home: const SplashScreen(nextScreen: LoginScreen()),
     );
   }
 }
