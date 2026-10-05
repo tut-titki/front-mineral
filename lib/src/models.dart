@@ -1,0 +1,168 @@
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import '../theme.dart';
+
+enum OrderStatus {
+  issued('Выдан', AppColors.primary),
+  accepted('Принят', Color(0xFF0284C7)),
+  working('В работе', Color(0xFFD97706)),
+  queued('В очереди', Color(0xFF2563EB)),
+  paused('Приостановлен', Color(0xFF64748B)),
+  review('На проверке', AppColors.info),
+  rework('На доработке', Color(0xFFEA580C)),
+  closed('Закрыт', Color(0xFF059669)),
+  rejected('Отклонён', Color(0xFFDC2626)),
+  cancelled('Отменён', Color(0xFF94A3B8));
+
+  const OrderStatus(this.label, this.color);
+
+  final String label;
+  final Color color;
+}
+
+class Employee {
+  const Employee({
+    required this.id,
+    required this.name,
+    required this.specialty,
+    required this.grade,
+    required this.brigade,
+    required this.rating,
+    this.onShift = true,
+  });
+
+  final int id;
+  final String name;
+  final String specialty;
+  final int grade;
+  final String brigade;
+  final double rating;
+  final bool onShift;
+
+  String get initials {
+    return name.split(' ').take(2).map((part) => part[0]).join();
+  }
+}
+
+enum OrderEventKind { issued, status, reassigned, priority, score, deadline }
+
+class OrderEvent {
+  const OrderEvent({
+    required this.title,
+    required this.author,
+    required this.time,
+    this.kind,
+    this.value,
+    this.status,
+    this.reason = '',
+  });
+
+  final String title;
+  final String author;
+  final DateTime time;
+  final OrderEventKind? kind;
+  final String? value;
+  final OrderStatus? status;
+  final String reason;
+}
+
+class OrderPhoto {
+  const OrderPhoto({required this.name, required this.bytes});
+
+  final String name;
+  final Uint8List bytes;
+}
+
+class WorkOrder {
+  WorkOrder({
+    required this.number,
+    required this.title,
+    required this.description,
+    required this.area,
+    required this.equipment,
+    required this.employeeId,
+    required this.priority,
+    required this.deadline,
+    required this.createdAt,
+    this.planned = false,
+    this.status = OrderStatus.issued,
+    this.comment = '',
+    this.beforePhotos = 0,
+    this.afterPhotos = 0,
+    this.completedWork = '',
+    this.faultCode = '',
+    this.materials = '',
+    this.aiScore = 4.8,
+    this.masterScore,
+    this.aiVerdict = 'Нет заключения',
+    this.aiExplanation = 'ИИ пока не подключён.',
+    this.downtimeMinutes = 0,
+    this.brigade,
+    this.normHours,
+    this.equipmentStopped = false,
+    List<OrderPhoto>? beforeImages,
+    List<OrderPhoto>? afterImages,
+    List<OrderEvent>? history,
+  }) : beforeImages = List.of(beforeImages ?? []),
+       afterImages = List.of(afterImages ?? []),
+       history = history ?? [];
+
+  final int number;
+  final DateTime createdAt;
+
+  String title;
+  String description;
+  String area;
+  String equipment;
+  int employeeId;
+  String priority;
+  DateTime deadline;
+  bool planned;
+  OrderStatus status;
+  String comment;
+  int beforePhotos;
+  int afterPhotos;
+  final List<OrderPhoto> beforeImages;
+  final List<OrderPhoto> afterImages;
+
+  String completedWork;
+  String faultCode;
+  String materials;
+  double aiScore;
+  double? masterScore;
+  String aiVerdict;
+  String aiExplanation;
+  int downtimeMinutes;
+  String? brigade;
+  double? normHours;
+  bool equipmentStopped;
+
+  double get finalScore => masterScore ?? aiScore;
+
+  final List<OrderEvent> history;
+
+  bool get emergency => priority == 'Аварийный';
+
+  bool get overdue {
+    const finished = {
+      OrderStatus.review,
+      OrderStatus.closed,
+      OrderStatus.cancelled,
+      OrderStatus.rejected,
+    };
+
+    return !finished.contains(status) && deadline.isBefore(DateTime.now());
+  }
+}
+
+String timeLabel(DateTime date) {
+  return '${date.hour.toString().padLeft(2, '0')}:'
+      '${date.minute.toString().padLeft(2, '0')}';
+}
+
+String dateLabel(DateTime date) {
+  return '${date.day.toString().padLeft(2, '0')}.'
+      '${date.month.toString().padLeft(2, '0')}.'
+      '${date.year}';
+}

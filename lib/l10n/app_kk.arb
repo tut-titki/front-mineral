@@ -1,5 +1,28 @@
 {
   "@@locale": "kk",
+  "exportReport": "Экспорт",
+  "reportPeriodHint": "Таңдалған кезеңде берілген нарядтар",
+  "todayPeriod": "Бүгін",
+  "weekPeriod": "7 күн",
+  "monthPeriod": "30 күн",
+  "allTimePeriod": "Барлық уақыт",
+  "noPeriodEmployees": "Бұл кезеңде наряды бар орындаушылар жоқ",
+  "editOrder": "Нарядты өңдеу",
+  "changeDeadline": "Орындау мерзімін өзгерту",
+  "brigadeMembers": "Бригада құрамы",
+  "brigades": "Бригадалар",
+  "teamBrigadeSearch": "Бригада, аты немесе мамандығы",
+  "eventDeadline": "Мерзім өзгертілді: {value}",
+  "@eventDeadline": {"placeholders": {"value": {"type": "String"}}},
+  "filters": "Сүзгілер",
+  "applyFilters": "Қолдану",
+  "resetFilters": "Қалпына келтіру",
+  "closeFilters": "Сүзгілерді жабу",
+  "statusFilter": "Күйі",
+  "onlyOverdue": "Тек мерзімі өткендер",
+  "clearSearch": "Іздеуді тазарту",
+  "attachPhoto": "Фото тіркеу",
+  "choosePhotoSource": "Фото көзін таңдаңыз",
   "loginTitle": "Кіру",
   "loginSubtitle": "Телефон нөміріңіз бен құпиясөзіңізді енгізіңіз.",
   "registrationTitle": "Тіркелу",
@@ -31,6 +54,405 @@
     "placeholders": {
       "step": {
         "type": "int"
+      }
+    }
+  },
+  "dashboard": "Ауысымға шолу",
+  "greeting": "Сәлеметсіз бе, Серик. Учаскедегі ағымдағы жағдай.",
+  "createOrder": "Наряд жасау",
+  "issuedOrders": "Берілген нарядтар",
+  "completed": "Орындалды",
+  "overdue": "Мерзімі өтті",
+  "awaitingAcceptance": "Қабылдауда",
+  "equipmentStopped": "Жабдық тоқтап тұр",
+  "needsAttention": "Назар аудару қажет",
+  "noAttention": "Назар аударуды қажет ететін нарядтар жоқ",
+  "shiftTeam": "Ауысымдағы команда",
+  "allTeam": "Барлық команда →",
+  "allAreas": "Барлық учаскелер",
+  "allEquipment": "Барлық жабдық",
+  "allPriorities": "Барлық басымдықтар",
+  "all": "Барлығы",
+  "overduePlural": "Мерзімі өткен",
+  "issuedPlural": "Берілген",
+  "acceptedPlural": "Қабылданған",
+  "working": "Орындалуда",
+  "queued": "Кезекте",
+  "completedPlural": "Орындалған",
+  "pausedPlural": "Уақытша тоқтатылған",
+  "rework": "Қайта өңдеуде",
+  "rejectedPlural": "Қабылданбаған",
+  "cancelledPlural": "Күші жойылған",
+  "orders": "Нарядтар",
+  "ordersSubtitle": "Тапсырмалар, мерзімдер және жұмыстардың ағымдағы күйлері",
+  "newOrder": "Жаңа наряд",
+  "listView": "Тізім",
+  "kanban": "Канбан",
+  "orderSearch": "Нөмір, жұмыс немесе жабдық",
+  "area": "Учаске",
+  "equipment": "Жабдық",
+  "employee": "Орындаушы",
+  "allEmployees": "Барлық орындаушылар",
+  "priority": "Басымдық",
+  "noFilteredOrders": "Таңдалған сүзгілер бойынша нарядтар жоқ",
+  "overdueOrders": "Мерзімі өткен нарядтар",
+  "demoRating": "Демо-рейтинг",
+  "available": "Бос",
+  "team": "Команда",
+  "teamSubtitle": "Орындаушылардың жүктемесі, мамандықтары және қолжетімділігі",
+  "employeeSearch": "Аты немесе мамандығы",
+  "onlyAvailable": "Тек бос орындаушылар",
+  "noEmployees": "Орындаушылар табылмады",
+  "aiControl": "ЖИ бақылауы",
+  "aiSubtitle": "Цифрлық бақылаушының ұсыныстары. Соңғы шешімді шебер қабылдайды.",
+  "deadlineControl": "Мерзімдерді бақылау",
+  "deadlineHelp": "Мерзімге 30 минут қалғанда еске салу. Қалыпты наряд 10 минутта, апаттық наряд 3 минутта қабылданбаса, шеберге хабарлау.",
+  "completionCheck": "Орындалуын тексеру",
+  "noReviewOrders": "Тексерілетін нарядтар жоқ",
+  "photoAnalysis": "Дейінгі және кейінгі фотоларды талдау",
+  "photoAnalysisHelp": "Фотолардың бар-жоғын және өзектілігін тексеру, жабдық пен көрінетін ақауларды салыстыру. Сенімділік төмен болса, шебердің тексеруі қажет.",
+  "orderReport": "Наряд бойынша есеп",
+  "orderReportHelp": "Жұмыстар, материалдар, оқиғалар реті, мерзімнің сақталуы және баға түсіндірмесі наряд карточкасында жиналған.",
+  "equipmentAnomalies": "Жабдық ауытқулары",
+  "employeeRating": "Орындаушылар рейтингі",
+  "ratingHelp": "Баға сапаға, уақытында орындалуға, қайта өңдеуге, жұмыс күрделілігіне және бас тартудың негізділігіне байланысты қалыптасады.",
+  "masterAssistant": "Шебер көмекшісі",
+  "chatHelp": "Чат үлгісі. Жауаптар демонстрациялық.",
+  "chatHint": "Мысалы: қазір кім бос?",
+  "showDemoAnswer": "Демо-жауапты көрсету",
+  "reportsRating": "Есептер мен рейтинг",
+  "reportsSubtitle": "Ағымдағы демонстрациялық ауысымның қорытындысы",
+  "pdfNotReady": "PDF экспортын сервермен бірге қосамыз",
+  "exportPdf": "PDF экспорты",
+  "excelNotReady": "Excel экспортын сервермен бірге қосамыз",
+  "exportExcel": "Excel экспорты",
+  "periodNotReady": "Кез келген кезең бойынша есептерді серверге тарих қосылғаннан кейін қосамыз",
+  "selectPeriod": "Кезеңді таңдау",
+  "totalOrders": "Барлық нарядтар",
+  "closed": "Жабылды",
+  "rejected": "Қабылданбады",
+  "equipmentDowntime": "Жабдықтың тоқтап тұруы",
+  "downtimeReportHelp": "Есеп үлгісі: жабдықтың тоқтау уақыты, себептері және жоспарлы / жоспардан тыс жұмыстардың үлесі.",
+  "usedMaterials": "Есептен шығарылған материалдар",
+  "materialsReportHelp": "Есеп үлгісі: материалдар, учаскелер және орындаушылар бойынша шығын, нормативтермен салыстыру.",
+  "notificationCenter": "Хабарландырулар орталығы",
+  "notificationsSubtitle": "Прототиптің жергілікті хабарландырулары. Push қосылмаған.",
+  "noNotifications": "Жаңа хабарландырулар жоқ",
+  "awaitingReview": "Жұмыс қабылдауды күтуде",
+  "emergencyAwaiting": "Апаттық наряд жауап күтуде",
+  "normalPriority": "Қалыпты",
+  "permissionDenied": "Қолданба баптауларында камераға немесе фотоларға қолжетімділік беріңіз.",
+  "pickerFailed": "Камераны немесе галереяны ашу мүмкін болмады. Қайта көріңіз.",
+  "photoLoadFailed": "Фотоны жүктеу мүмкін болмады. Басқа суретті таңдаңыз.",
+  "deadline": "Орындау мерзімі",
+  "cancel": "Бас тарту",
+  "select": "Таңдау",
+  "executionTime": "Орындау уақыты",
+  "futureDeadline": "Болашақтағы мерзімді таңдаңыз.",
+  "createOrderTitle": "Наряд жасау",
+  "workDescription": "Жұмыс сипаттамасы",
+  "unplanned": "Жоспардан тыс",
+  "planned": "Жоспарлы",
+  "optionalWorkTitle": "Жұмыс атауы (міндетті емес)",
+  "problemWorks": "Мәселе және қажетті жұмыстар",
+  "voiceInput": "Дауыспен енгізу",
+  "voiceNotReady": "Дауыспен енгізуді кейін қосамыз.",
+  "describeProblem": "Мәселені сипаттаңыз",
+  "locationAssignee": "Орын және орындаушы",
+  "brigade": "Бригада",
+  "selectEmployee": "Орындаушыны таңдаңыз",
+  "selectBrigade": "Бригаданы таңдаңыз",
+  "deadlinePriority": "Мерзім және басымдық",
+  "emergencyPriority": "Апаттық",
+  "highPriority": "Жоғары",
+  "normHoursShort": "Норматив, сағ",
+  "dateTime": "Күн мен уақыт",
+  "normHours": "Сағатпен берілген норматив",
+  "normRange": "1 минуттан 8760 сағатқа дейін көрсетіңіз",
+  "optionalFaultCode": "Ақау коды (міндетті емес)",
+  "notSpecified": "Көрсетілмеген",
+  "comment": "Түсініктеме",
+  "faultPhotos": "Ақау фотолары · 5-ке дейін",
+  "issueOrder": "Наряд беру",
+  "reason": "Себеп",
+  "specifyReason": "Себебін көрсетіңіз",
+  "confirm": "Растау",
+  "employeeOrBrigade": "Орындаушы немесе бригада",
+  "orderPriority": "Наряд басымдығы",
+  "masterScore": "Шебер бағасы",
+  "overdueSingular": "Мерзімі өткен",
+  "orderInformation": "Наряд туралы ақпарат",
+  "workType": "Жұмыс түрі",
+  "description": "Сипаттама",
+  "issueDate": "Берілген күні",
+  "norm": "Норматив",
+  "faultCode": "Ақау коды",
+  "master": "Шебер",
+  "orderDowntime": "Жабдықтың тоқтап тұруы",
+  "stopped": "Жабдық тоқтатылған",
+  "noDowntime": "Жабдық тоқтап тұрған жоқ",
+  "beforeWork": "Орындалғанға дейін",
+  "afterWork": "Орындалғаннан кейін",
+  "reassign": "Қайта тағайындау",
+  "changePriority": "Басымдықты өзгерту",
+  "cancelOrderTitle": "Нарядтан бас тарту",
+  "cancelOrder": "Нарядтың күшін жою",
+  "workerReport": "Орындаушы есебі",
+  "completedWorks": "Орындалған жұмыстар",
+  "materials": "Материалдар",
+  "notSpecifiedPlural": "Көрсетілмеген",
+  "changeScore": "Бағаны өзгерту",
+  "acceptedByMaster": "Жұмыстарды шебер қабылдады",
+  "acceptClose": "Қабылдау және жабу",
+  "returnRework": "Қайта өңдеуге қайтару",
+  "toRework": "Қайта өңдеуге",
+  "actionHistory": "Әрекеттер тарихы",
+  "reports": "Есептер",
+  "notifications": "Хабарландырулар",
+  "shift": "Ауысым",
+  "shiftManagement": "АУЫСЫМДЫ БАСҚАРУ",
+  "masterRole": "Ауысым шебері",
+  "offShift": "Ауысымда емес",
+  "aiDemoLabel": "Демонстрациялық деректер · ЖИ қосылмаған",
+  "photoOpenFailed": "Фотоны ашу мүмкін болмады",
+  "noPhotos": "Фотолар тіркелмеген",
+  "camera": "Камера",
+  "gallery": "Галерея",
+  "statusIssued": "Берілді",
+  "statusAccepted": "Қабылданды",
+  "statusPaused": "Уақытша тоқтатылды",
+  "statusReview": "Тексерілуде",
+  "statusClosed": "Жабылды",
+  "statusRejected": "Қабылданбады",
+  "statusCancelled": "Күші жойылды",
+  "emergencyFull": "Апаттық — шұғыл орындау",
+  "normalFull": "Қалыпты — кезек тәртібімен",
+  "noAiVerdict": "Қорытынды жоқ",
+  "aiUnavailable": "ЖИ әлі қосылмаған.",
+  "positiveNorm": "Норматив нөлден үлкен болуы керек",
+  "onShiftAssignee": "Ауысымдағы орындаушыны немесе бригаданы таңдаңыз",
+  "futureDeadlineError": "Мерзім болашақта болуы керек",
+  "fivePhotos": "5 фотодан артық емес",
+  "employeeOffShift": "Қызметкер ауысымда емес",
+  "brigadeOffShift": "Бригада ауысымда емес",
+  "language": "Тіл",
+  "complex": "Минералдық кешен",
+  "orderNumber": "Наряд №{number}",
+  "@orderNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "orderNumberUpper": "НАРЯД №{number}",
+  "@orderNumberUpper": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "issuePreview": "Берілетін уақыт: {date}",
+  "@issuePreview": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "issuedAt": "Берілді: {date}",
+  "@issuedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dueAt": "Мерзімі: {date}",
+  "@dueAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursValue": "{hours} сағ",
+  "@hoursValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "scoreValue": "5-тен {score}",
+  "@scoreValue": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "employeeGrade": "{specialty} · {grade} разряд",
+  "@employeeGrade": {
+    "placeholders": {
+      "specialty": {
+        "type": "String"
+      },
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
+  "workingOrder": "Орындалуда · №{number}",
+  "@workingOrder": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "workingQueue": "Орындалуда · №{number} · кезекте {count}",
+  "@workingQueue": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "queuedCount": "Кезекте · {count}",
+  "@queuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "assignedOrder": "Бос емес · №{number} тағайындалған",
+  "@assignedOrder": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "brigadeAvailability": "Ауысымда: {total} · бос: {free} · бос емес: {busy}",
+  "@brigadeAvailability": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "free": {
+        "type": "String"
+      },
+      "busy": {
+        "type": "String"
+      }
+    }
+  },
+  "overdueMinutes": "Кешігу · {minutes} мин.",
+  "@overdueMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "removePhoto": "{number}-фотоны жою",
+  "@removePhoto": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "boardCount": "{label} · {count}",
+  "@boardCount": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "shiftTime": "Ауысым №{number} · {time}",
+  "@shiftTime": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "aiVerdict": "ЖИ қорытындысы: {verdict}",
+  "@aiVerdict": {
+    "placeholders": {
+      "verdict": {
+        "type": "String"
+      }
+    }
+  },
+  "aiSummary": "{explanation}\nЖИ бағасы: {aiScore} / 5.\nҚорытынды баға: {score} / 5.\nСоңғы шешімді шебер қабылдайды.",
+  "@aiSummary": {
+    "placeholders": {
+      "explanation": {
+        "type": "String"
+      },
+      "aiScore": {
+        "type": "String"
+      },
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "eventIssued": "Наряд берілді: {assignee}",
+  "@eventIssued": {
+    "placeholders": {
+      "assignee": {
+        "type": "String"
+      }
+    }
+  },
+  "eventReassigned": "Қайта тағайындалды: {assignee}",
+  "@eventReassigned": {
+    "placeholders": {
+      "assignee": {
+        "type": "String"
+      }
+    }
+  },
+  "eventPriority": "Басымдық өзгертілді: {priority}",
+  "@eventPriority": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "eventScore": "Шебер бағасы: {score} / 5",
+  "@eventScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "eventReason": "{status}: {reason}",
+  "@eventReason": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
       }
     }
   }
