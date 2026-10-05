@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'app_localizations.dart';
-import 'app_localizations_ru.dart';
-import '../src/models.dart';
+import 'package:mineral/l10n/app_localizations.dart';
+import 'package:mineral/l10n/app_localizations_ru.dart';
+import 'package:mineral/shared/models/models.dart';
 
 AppLocalizations strings(BuildContext context) =>
     Localizations.of<AppLocalizations>(context, AppLocalizations) ??

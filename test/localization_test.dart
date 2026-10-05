@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mineral/auth/login_screen.dart';
-import 'package:mineral/auth/auth_page.dart';
+import 'package:mineral/features/auth/screens/login_screen.dart';
+import 'package:mineral/features/auth/widgets/auth_page.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 
 void main() {

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
-import 'models.dart';
+import 'package:mineral/shared/models/models.dart';
 
 class NotificationSound {
   AudioPlayer? _player;

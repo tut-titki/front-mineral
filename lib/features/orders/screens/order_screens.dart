@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../l10n/ui_localization.dart';
+import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/services.dart';
 
-import 'models.dart';
-import 'demo_store.dart';
-import 'ui.dart';
-import 'photo_attachments.dart';
-import 'photo_picker_service.dart';
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/widgets/ui.dart';
+import 'package:mineral/features/orders/widgets/photo_attachments.dart';
+import 'package:mineral/core/services/photo_picker_service.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   const CreateOrderScreen({super.key, required this.store, this.photoPicker});

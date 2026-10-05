@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'demo_store.dart';
-import 'models.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/models/models.dart';
 
 class ReportSnapshot {
   ReportSnapshot(DemoStore store, DateTimeRange? period) {

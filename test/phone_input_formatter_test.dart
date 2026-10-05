@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mineral/auth/phone_input_formatter.dart';
+import 'package:mineral/features/auth/formatters/phone_input_formatter.dart';
 
 TextEditingValue editing(String text, [int? caret]) => TextEditingValue(
   text: text,

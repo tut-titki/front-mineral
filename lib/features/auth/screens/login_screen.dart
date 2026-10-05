@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 
-import 'phone_input_formatter.dart';
-import 'auth_page.dart';
+import 'package:mineral/features/auth/formatters/phone_input_formatter.dart';
+import 'package:mineral/features/auth/widgets/auth_page.dart';
 
-import 'package:mineral/auth/register_screen.dart';
+import 'package:mineral/features/auth/screens/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

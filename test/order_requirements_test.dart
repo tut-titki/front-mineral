@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mineral/src/demo_store.dart';
-import 'package:mineral/src/models.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/models/models.dart';
 
 void main() {
   test('issuance stamps actual time, derives deadline and records history', () {

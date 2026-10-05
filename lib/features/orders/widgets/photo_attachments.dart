@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../l10n/ui_localization.dart';
-import 'models.dart';
-import 'ui.dart';
+import 'package:mineral/l10n/ui_localization.dart';
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/shared/widgets/ui.dart';
 
 enum _PhotoSource { camera, gallery }
 

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../l10n/ui_localization.dart';
-import 'demo_store.dart';
-import 'models.dart';
-import 'report_metrics.dart';
-import 'report_snapshot.dart';
-import 'ui.dart';
+import 'package:mineral/l10n/ui_localization.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/features/reports/widgets/report_metrics.dart';
+import 'package:mineral/features/reports/models/report_snapshot.dart';
+import 'package:mineral/shared/widgets/ui.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key, required this.store});
@@ -194,7 +194,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          ReportMetrics(store: widget.store),
+          ReportMetrics(store: widget.store, orders: snapshot.orders),
           const SizedBox(height: 24),
           Panel(
             child: Column(

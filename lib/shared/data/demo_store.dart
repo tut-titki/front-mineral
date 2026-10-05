@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'models.dart';
+import 'package:mineral/shared/models/models.dart';
 
 class DemoStore extends ChangeNotifier {
   DemoStore({DateTime Function()? clock, this.onOrderChanged})

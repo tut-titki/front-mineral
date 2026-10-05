@@ -1,33 +1,37 @@
 import 'package:flutter/material.dart';
 
-import '../l10n/ui_localization.dart';
-import 'demo_store.dart';
-import 'models.dart';
-import 'ui.dart';
+import 'package:mineral/l10n/ui_localization.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/shared/widgets/ui.dart';
 
 class ReportMetrics extends StatelessWidget {
-  const ReportMetrics({super.key, required this.store});
+  const ReportMetrics({super.key, required this.store, this.orders});
   final DemoStore store;
+  final List<WorkOrder>? orders;
 
   @override
   Widget build(BuildContext context) {
+    final selectedOrders = orders ?? store.orders;
+    int count(OrderStatus status) =>
+        selectedOrders.where((order) => order.status == status).length;
     final metrics = [
-      ('Всего нарядов', store.orders.length, Icons.assignment_outlined, brand),
+      ('Всего нарядов', selectedOrders.length, Icons.assignment_outlined, brand),
       (
         'Закрыто',
-        store.count(OrderStatus.closed),
+        count(OrderStatus.closed),
         Icons.task_alt,
         const Color(0xFF059669),
       ),
       (
         'Отклонено',
-        store.count(OrderStatus.rejected),
+        count(OrderStatus.rejected),
         Icons.cancel_outlined,
         const Color(0xFFDC2626),
       ),
       (
         'На доработке',
-        store.count(OrderStatus.rework),
+        count(OrderStatus.rework),
         Icons.replay,
         const Color(0xFFD97706),
       ),

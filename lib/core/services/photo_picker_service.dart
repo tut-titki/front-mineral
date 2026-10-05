@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'models.dart';
+import 'package:mineral/shared/models/models.dart';
 
 class PhotoPickerService {
   static final instance = PhotoPickerService();

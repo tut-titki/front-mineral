@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mineral/main.dart';
-import 'package:mineral/theme.dart';
+import 'package:mineral/core/theme/app_theme.dart';
 
 Future<void> openLogin(WidgetTester tester) async {
   addTearDown(() async => tester.pumpWidget(const SizedBox.shrink()));

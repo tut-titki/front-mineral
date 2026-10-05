@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mineral/l10n/app_localizations.dart';
-import 'package:mineral/src/demo_store.dart';
-import 'package:mineral/src/models.dart';
-import 'package:mineral/src/report_metrics.dart';
-import 'package:mineral/src/report_snapshot.dart';
-import 'package:mineral/src/reports_screen.dart';
-import 'package:mineral/theme.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/features/reports/models/report_snapshot.dart';
+import 'package:mineral/features/reports/screens/reports_screen.dart';
+import 'package:mineral/core/theme/app_theme.dart';
 
 void main() {
   final now = DateTime(2026, 10, 5, 12);
@@ -86,7 +85,12 @@ void main() {
       final context = tester.element(find.byType(ReportsScreen));
       final s = AppLocalizations.of(context);
       Finder count(String text) => find.descendant(
-        of: find.byType(ReportMetrics),
+        of: find
+            .ancestor(
+              of: find.text(s.totalOrders),
+              matching: find.byType(Column),
+            )
+            .first,
         matching: find.text(text),
       );
       expect(count('1'), findsOneWidget);

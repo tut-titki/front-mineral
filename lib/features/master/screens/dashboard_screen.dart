@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'order_filters.dart';
-import 'kanban_column.dart';
-export 'reports_screen.dart';
-import 'brigade_screen.dart';
-import '../l10n/ui_localization.dart';
+import 'package:mineral/features/orders/widgets/order_filters.dart';
+import 'package:mineral/features/orders/widgets/kanban_column.dart';
+export 'package:mineral/features/reports/screens/reports_screen.dart';
+import 'package:mineral/features/team/screens/brigade_screen.dart';
+import 'package:mineral/l10n/ui_localization.dart';
 
-import 'demo_store.dart';
-import 'models.dart';
-import 'ui.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/shared/widgets/ui.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({

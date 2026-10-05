@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import '../theme.dart';
+import 'package:mineral/core/theme/app_theme.dart';
 
 enum OrderStatus {
   issued('Выдан', AppColors.primary),

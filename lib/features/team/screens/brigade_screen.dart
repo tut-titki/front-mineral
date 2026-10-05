@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../l10n/ui_localization.dart';
-import 'demo_store.dart';
-import 'ui.dart';
+import 'package:mineral/l10n/ui_localization.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/widgets/ui.dart';
 
 class BrigadeMembersScreen extends StatelessWidget {
   const BrigadeMembersScreen({

@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../l10n/ui_localization.dart';
-import '../l10n/language_switcher.dart';
-import 'package:mineral/src/dashboard_screen.dart';
+import 'package:mineral/l10n/ui_localization.dart';
+import 'package:mineral/l10n/language_switcher.dart';
+import 'package:mineral/features/master/screens/dashboard_screen.dart';
 
-import 'demo_store.dart';
-import 'models.dart';
-import 'order_screens.dart';
-import 'ui.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/features/orders/screens/order_screens.dart';
+import 'package:mineral/shared/widgets/ui.dart';
 
 class MasterShell extends StatefulWidget {
   const MasterShell({super.key, required this.store});
@@ -172,67 +172,70 @@ class _MasterShellState extends State<MasterShell> {
                     color: Colors.white,
                     border: Border(right: BorderSide(color: border)),
                   ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(24, 32, 24, 8),
-                        child: Image.asset(
-                          'assets/logo_blue.png',
-                          width: 192,
-                          height: 96,
-                          fit: BoxFit.contain,
-                          semanticLabel: 'Костанайские минералы',
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 32),
-                        child: Text(
-                          uiText(context, 'УПРАВЛЕНИЕ СМЕНОЙ'),
-                          style: TextStyle(
-                            color: muted,
-                            fontSize: 10,
-                            letterSpacing: 1.6,
-                          ),
-                        ),
-                      ),
-                      for (var index = 0; index < labels.length; index++)
+                  child: Material(
+                    color: Colors.white,
+                    child: Column(
+                      children: [
                         Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 4,
-                          ),
-                          child: ListTile(
-                            selected: page == index,
-                            selectedColor: brand,
-                            selectedTileColor: lightBlue,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            leading: Icon(icons[index]),
-                            title: Text(
-                              uiText(context, labels[index]),
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            onTap: () => setState(() => page = index),
+                          padding: EdgeInsets.fromLTRB(24, 32, 24, 8),
+                          child: Image.asset(
+                            'assets/logo_blue.png',
+                            width: 192,
+                            height: 96,
+                            fit: BoxFit.contain,
+                            semanticLabel: 'Костанайские минералы',
                           ),
                         ),
-                      Spacer(),
-                      ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: background,
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 32),
                           child: Text(
-                            uiText(context, 'СО'),
-                            style: TextStyle(color: brand),
+                            uiText(context, 'УПРАВЛЕНИЕ СМЕНОЙ'),
+                            style: TextStyle(
+                              color: muted,
+                              fontSize: 10,
+                              letterSpacing: 1.6,
+                            ),
                           ),
                         ),
-                        title: Text(uiText(context, 'Серик Омаров')),
-                        subtitle: Text(uiText(context, 'Мастер смены')),
-                      ),
-                      SizedBox(height: 20),
-                    ],
+                        for (var index = 0; index < labels.length; index++)
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 4,
+                            ),
+                            child: ListTile(
+                              selected: page == index,
+                              selectedColor: brand,
+                              selectedTileColor: lightBlue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              leading: Icon(icons[index]),
+                              title: Text(
+                                uiText(context, labels[index]),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              onTap: () => setState(() => page = index),
+                            ),
+                          ),
+                        Spacer(),
+                        ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: background,
+                            child: Text(
+                              uiText(context, 'СО'),
+                              style: TextStyle(color: brand),
+                            ),
+                          ),
+                          title: Text(uiText(context, 'Серик Омаров')),
+                          subtitle: Text(uiText(context, 'Мастер смены')),
+                        ),
+                        SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
               Expanded(

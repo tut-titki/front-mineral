@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mineral/src/demo_store.dart';
-import 'package:mineral/src/models.dart';
-import 'package:mineral/src/order_screens.dart';
-import 'package:mineral/src/photo_attachments.dart';
-import 'package:mineral/src/photo_picker_service.dart';
-import 'package:mineral/theme.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/features/orders/screens/order_screens.dart';
+import 'package:mineral/features/orders/widgets/photo_attachments.dart';
+import 'package:mineral/core/services/photo_picker_service.dart';
+import 'package:mineral/core/theme/app_theme.dart';
 
 class FakePhotoPicker extends PhotoPickerService {
   FakePhotoPicker(this.photo);

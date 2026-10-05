@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 import 'package:mineral/l10n/ui_localization.dart';
-import 'package:mineral/src/dashboard_screen.dart';
-import 'package:mineral/src/demo_store.dart';
-import 'package:mineral/src/order_filters.dart';
-import 'package:mineral/src/models.dart';
-import 'package:mineral/src/ui.dart';
-import 'package:mineral/theme.dart';
+import 'package:mineral/features/master/screens/dashboard_screen.dart';
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/features/orders/widgets/order_filters.dart';
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/shared/widgets/ui.dart';
+import 'package:mineral/core/theme/app_theme.dart';
 
 void main() {
   test('filter drafts are independent and criteria combine', () {
