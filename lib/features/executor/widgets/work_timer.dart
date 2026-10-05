@@ -1,12 +1,13 @@
+import 'package:mineral/l10n/ui_localization.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/features/executor/data/executor_repository.dart';
 import 'package:mineral/shared/models/models.dart';
 
 class WorkTimer extends StatefulWidget {
   const WorkTimer({super.key, required this.order, required this.store});
   final WorkOrder order;
-  final DemoStore store;
+  final ExecutorRepository store;
   @override
   State<WorkTimer> createState() => _WorkTimerState();
 }
@@ -36,7 +37,7 @@ class _WorkTimerState extends State<WorkTimer> {
     final time =
         '${digits(duration.inHours)}:${digits(duration.inMinutes.remainder(60))}:${digits(duration.inSeconds.remainder(60))}';
     return Semantics(
-      label: 'Время в работе: $time',
+      label: strings(context).workTimeValue(time),
       child: Text(
         time,
         style: const TextStyle(

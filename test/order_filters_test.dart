@@ -19,7 +19,7 @@ void main() {
     );
     expect(
       store.orders.where((o) => filters.matches(o, store)).map((o) => o.number),
-      [147, 149, 143],
+      [147, 149, 141, 139, 143],
     );
     final draft = filters.copy();
     draft.areas.clear();
@@ -66,7 +66,7 @@ void main() {
       await tester.pumpAndSettle();
       final context = tester.element(find.byType(OrdersScreen));
       final s = AppLocalizations.of(context);
-      expect(find.byType(OrderCard), findsNWidgets(6));
+      expect(find.byType(OrderCard), findsNWidgets(store.orders.length));
       expect(find.byType(FilterChip), findsNothing);
 
       Future<void> tap(Finder finder) async {
@@ -80,7 +80,7 @@ void main() {
       expect(find.byType(BottomSheet), findsOneWidget);
       expect(find.text(s.equipment), findsNothing);
       expect(find.text(s.priority), findsNothing);
-      await tap(find.widgetWithText(FilterChip, 'Дробление'));
+      await tap(find.widgetWithText(FilterChip, uiText(context, 'Дробление')));
       await tap(find.widgetWithText(FilterChip, uiText(context, 'В работе')));
       await tap(find.widgetWithText(FilterChip, uiText(context, 'Принят')));
       await tap(find.widgetWithText(FilledButton, s.applyFilters));
@@ -103,7 +103,7 @@ void main() {
       await tap(find.byTooltip(s.clearSearch));
       expect(find.byType(OrderCard), findsNWidgets(2));
       await tap(find.widgetWithText(TextButton, s.resetFilters));
-      expect(find.byType(OrderCard), findsNWidgets(6));
+      expect(find.byType(OrderCard), findsNWidgets(store.orders.length));
       await tester.enterText(find.byType(TextField), 'Данияр');
       await tester.pumpAndSettle();
       expect(find.byType(OrderCard), findsOneWidget);

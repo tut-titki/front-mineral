@@ -12,6 +12,7 @@ import 'package:mineral/l10n/app_locale.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:mineral/features/executor/screens/executor_screen.dart';
+import 'package:mineral/features/executor/data/execution_draft_storage.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -22,7 +23,10 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> {
   final notificationSound = NotificationSound();
-  late final store = DemoStore(onOrderChanged: notificationSound.play);
+  late final store = DemoStore(
+    onOrderChanged: notificationSound.play,
+    draftStorage: createExecutionDraftStorage(),
+  );
 
   @override
   void initState() {
@@ -51,7 +55,10 @@ class _MainAppState extends State<MainApp> {
         theme: buildAppTheme(),
         routes: {
           '/master': (_) => MasterShell(store: store),
-          '/executor': (_) => ExecutorScreen(store: store, employeeId: 1),
+          '/executor': (context) => ExecutorScreen(
+            store: store,
+            employeeId: ModalRoute.of(context)?.settings.arguments as int? ?? 1,
+          ),
         },
         home: const SplashScreen(nextScreen: LoginScreen()),
       ),

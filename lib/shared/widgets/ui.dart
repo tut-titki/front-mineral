@@ -42,7 +42,7 @@ class EmployeeChoice extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
               Text(
-                employee.specialty,
+                uiText(context, employee.specialty),
                 style: TextStyle(fontSize: 11, color: muted),
               ),
               Text(
@@ -77,7 +77,10 @@ class BrigadeChoice extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(brigade, style: TextStyle(fontWeight: FontWeight.w600)),
+        Text(
+          uiText(context, brigade),
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         Text(
           uiText(
             context,
@@ -335,7 +338,7 @@ class OrderCard extends StatelessWidget {
                 ),
                 SizedBox(height: 14),
                 Text(
-                  order.title,
+                  uiText(context, order.title),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,

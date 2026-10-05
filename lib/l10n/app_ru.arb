@@ -13,7 +13,13 @@
   "brigades": "Бригады",
   "teamBrigadeSearch": "Бригада, имя или специальность",
   "eventDeadline": "Срок изменён: {value}",
-  "@eventDeadline": {"placeholders": {"value": {"type": "String"}}},
+  "@eventDeadline": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "filters": "Фильтры",
   "applyFilters": "Применить",
   "resetFilters": "Сбросить",
@@ -455,5 +461,300 @@
         "type": "String"
       }
     }
-  }
+  },
+  "myOrders": "Мои наряды",
+  "orderHistory": "История нарядов",
+  "profile": "Профиль",
+  "history": "История",
+  "retry": "Повторить",
+  "archivedOrdersHint": "Завершённые, отменённые и отклонённые наряды",
+  "executorSearch": "Поиск по номеру или оборудованию",
+  "noSearchResults": "По вашему запросу ничего не найдено",
+  "emptyHistory": "История пока пуста",
+  "noActiveOrders": "Нет активных нарядов",
+  "refreshFailed": "Не удалось обновить данные. Потяните список вниз, чтобы повторить.",
+  "goodMorning": "Доброе утро",
+  "goodAfternoon": "Добрый день",
+  "goodEvening": "Добрый вечер",
+  "goodNight": "Доброй ночи",
+  "activeOrders": "Активных",
+  "onShift": "На смене",
+  "grade": "Разряд",
+  "myRating": "Мой рейтинг",
+  "noRatingYet": "Пока нет оценки",
+  "executorRatingHint": "После проверки выполненных нарядов здесь появятся рейтинг и его объяснение.",
+  "quality": "Качество",
+  "onTime": "В срок",
+  "reworks": "Доработки",
+  "closedOrders": "Закрыто нарядов",
+  "logout": "Выйти",
+  "ratingPending": "Оценка ожидается",
+  "aiShort": "ИИ",
+  "emergencyResponse": "Аварийный наряд — требуется ответ",
+  "newOrderAssigned": "Вам назначен новый наряд",
+  "returnedForRework": "Наряд возвращён на доработку",
+  "masterClosedOrder": "Мастер закрыл наряд",
+  "deadlineExpired": "Срок выполнения истёк",
+  "noExecutorNotifications": "Уведомлений пока нет",
+  "rejectReason": "Причина отказа",
+  "pauseReason": "Причина приостановки",
+  "orderReassignedWarning": "Наряд переназначен другому исполнителю.",
+  "acceptWork": "Принять в работу",
+  "queueOrder": "Поставить в очередь",
+  "rejectOrder": "Отклонить",
+  "resumeWork": "Возобновить работу",
+  "startExecution": "Начать исполнение",
+  "pauseWork": "Приостановить",
+  "workDone": "Исполнено",
+  "executionDeadline": "Срок выполнения",
+  "faultDescription": "Описание неисправности",
+  "photosBeforeWork": "Фото до начала работ",
+  "masterNoPhotos": "Мастер не добавил фотографии",
+  "masterScorePending": "Оценка мастера пока не выставлена",
+  "assessmentPending": "Заключение по выполнению пока не получено.",
+  "reportAwaitingMaster": "Отчёт отправлен. Ожидает проверки мастером.",
+  "askMasterRemarks": "Уточните замечания у мастера",
+  "yourReport": "Ваш отчёт",
+  "workNotSpecified": "Работы не указаны",
+  "photosAfter": "Фото после",
+  "goToRework": "Перейти к доработке",
+  "openOrder": "Открыть наряд",
+  "addPhotoFailed": "Не удалось добавить фото. Проверьте разрешения.",
+  "unplannedPhotoRequired": "Для внепланового наряда нужно фото после",
+  "commitSelectedMaterial": "Добавьте выбранный материал в список",
+  "material": "Материал",
+  "selectMaterial": "Выберите материал",
+  "quantity": "Количество",
+  "positiveQuantity": "Введите количество больше нуля",
+  "addMaterial": "Добавить материал",
+  "sending": "Отправка…",
+  "submitForReview": "Отправить на проверку",
+  "materialsAndCode": "Материалы и код",
+  "photosAndComment": "Фото и комментарий",
+  "whatWasDone": "Что было сделано?",
+  "describeCompletedWork": "Опишите выполненные работы",
+  "faultCodeLabel": "Код неисправности",
+  "selectCode": "Выберите код",
+  "selectFaultCode": "Выберите шифр",
+  "usedExecutorMaterials": "Использованные материалы",
+  "noMaterialsUsed": "Материалы не использовались",
+  "decrease": "Уменьшить",
+  "increase": "Увеличить",
+  "photosAfterWork": "Фото после выполнения работ",
+  "removePhotoLabel": "Удалить фото",
+  "takeAfterPhoto": "Сделать фото после",
+  "chooseFromGallery": "Выбрать из галереи",
+  "photoLimitReached": "Добавлено 5 из 5 фото. Удалите фото, чтобы добавить новое.",
+  "optionalComment": "Комментарий (необязательно)",
+  "additionalInformation": "Дополнительная информация",
+  "changeStatusFailed": "Не удалось изменить статус. Повторите попытку.",
+  "submitReportFailed": "Не удалось отправить отчёт. Повторите попытку.",
+  "orderIssuedLabel": "Наряд выдан",
+  "mechanicSpecialty": "Слесарь",
+  "electricianSpecialty": "Электрик",
+  "welderSpecialty": "Сварщик",
+  "crushingArea": "Дробление",
+  "beneficiationArea": "Обогащение",
+  "repairArea": "Ремонтный цех",
+  "transportArea": "Транспортный участок",
+  "bearingMaterial": "Подшипник · шт",
+  "sealMaterial": "Уплотнение · шт",
+  "cableMaterial": "Кабель · м",
+  "oilMaterial": "Масло · л",
+  "greaseMaterial": "Смазка · кг",
+  "anomalyExample": "Пример вывода: конвейер К-3 часто останавливается из-за подшипников. Рекомендация: проверить соосность привода и скорректировать план ППР.",
+  "closeOrderNumber": "Закрытие наряда №{number}",
+  "@closeOrderNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "resultOrderNumber": "Результат · №{number}",
+  "@resultOrderNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "deadlineMinutesLeft": "До срока осталось {minutes} мин",
+  "@deadlineMinutesLeft": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "workTimeValue": "Время в работе: {time}",
+  "@workTimeValue": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "workMinutesValue": "Время в работе: {minutes} мин",
+  "@workMinutesValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "historyWorkMinutes": "{minutes} мин в работе",
+  "@historyWorkMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "priorityValue": "Приоритет: {priority}",
+  "@priorityValue": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "assessmentVerdict": "Проверка: {verdict}",
+  "@assessmentVerdict": {
+    "placeholders": {
+      "verdict": {
+        "type": "String"
+      }
+    }
+  },
+  "assessmentScore": "Оценка: {score} / 5",
+  "@assessmentScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "assessmentStrengths": "Что сделано хорошо: {text}",
+  "@assessmentStrengths": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "assessmentImprovements": "Что улучшить: {text}",
+  "@assessmentImprovements": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "normHoursValue": "Норматив: {hours} ч",
+  "@normHoursValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "reworkReasonValue": "Доработка: {reason}",
+  "@reworkReasonValue": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "faultCodeValue": "Шифр: {code}",
+  "@faultCodeValue": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "previousMaterialsValue": "Ранее указанные материалы:\n{materials}",
+  "@previousMaterialsValue": {
+    "placeholders": {
+      "materials": {
+        "type": "String"
+      }
+    }
+  },
+  "brigadeNumber": "Бригада №{number}",
+  "@brigadeNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "faultBearing": "М-02 · Подшипник",
+  "faultOilLeak": "Г-01 · Течь масла",
+  "faultCableBreak": "Э-03 · Обрыв кабеля",
+  "faultGreaseLack": "С-01 · Недостаток смазки",
+  "faultAirLeak": "П-02 · Утечка воздуха",
+  "crusherEquipment": "Дробилка КМД-1750",
+  "conveyorEquipment": "Конвейер К-3",
+  "screenEquipment": "Грохот ГИС-52",
+  "pumpEquipment": "Насос Н-12",
+  "millEquipment": "Мельница МШР-3",
+  "separatorEquipment": "Сепаратор С-4",
+  "machineEquipment": "Станок Т-16",
+  "craneEquipment": "Кран-балка КБ-2",
+  "loaderEquipment": "Погрузчик П-7",
+  "compressorEquipment": "Компрессор ВК-22",
+  "demoBearingWork": "Замена подшипника привода",
+  "demoOilLeakWork": "Устранение течи масла",
+  "demoPowerWork": "Проверка питания двигателя",
+  "demoLubricationWork": "Плановая смазка узлов",
+  "demoSealWork": "Замена уплотнения вала",
+  "demoGuardWork": "Восстановление защитного кожуха",
+  "demoLubricationCheckWork": "Плановая смазка и проверка узлов",
+  "demoOrderDescription": "Проверить состояние оборудования, устранить неисправность и выполнить контрольный запуск.",
+  "demoSealReport": "Заменено уплотнение. Соединения проверены. При контрольном запуске течь отсутствует.",
+  "demoBearingReport": "Подшипник заменён. Проверены крепления и выполнен контрольный запуск. Посторонний шум устранён.",
+  "demoLubricationReport": "Выполнена смазка узлов. Проверены крепления и работа оборудования под нагрузкой.",
+  "demoWaitingBearing": "Ждём подшипник со склада",
+  "demoSealMaterial": "Уплотнение 40×60 — 1 шт.",
+  "demoOilMaterial": "Масло И-40 — 0,5 л",
+  "demoBearingMaterial": "Подшипник — 1 шт.",
+  "demoGreaseSmall": "Смазка — 0,2 кг",
+  "demoGreaseHalf": "Смазка — 0,5 кг",
+  "awaitingCheck": "Ожидает проверки",
+  "reportAiPending": "Отчёт отправлен. Проверка ИИ ещё не выполнена.",
+  "masterDemoAnswer": "Демо-ответ: здесь появятся рекомендации по запросу «{query}». Для анализа необходимо подключить backend и ИИ.",
+  "@masterDemoAnswer": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "queuePosition": "В очереди · позиция {position}",
+  "@queuePosition": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "finishCurrentFirst": "Сначала приостановите или завершите текущий наряд",
+  "wholePieceQuantity": "Для штучного материала укажите целое количество",
+  "removeMaterial": "Удалить материал",
+  "removeMaterialQuestion": "Удалить материал из отчёта?",
+  "draftSaved": "Черновик сохранён",
+  "draftLoadFailed": "Не удалось восстановить черновик. Повторите попытку — сохранённые данные не изменены.",
+  "draftSaveFailed": "Черновик не сохранён. Нажмите, чтобы повторить.",
+  "overdueByMinutes": "Просрочен на {minutes} мин",
+  "@overdueByMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "executionResult": "Результат проверки"
 }

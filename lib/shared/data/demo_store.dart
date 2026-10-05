@@ -1,12 +1,174 @@
 import 'package:flutter/material.dart';
+import 'package:mineral/features/executor/data/executor_repository.dart';
+import 'package:mineral/features/executor/data/execution_draft_storage.dart';
+import 'package:mineral/features/executor/models/execution_assessment.dart';
 
 import 'package:mineral/shared/models/models.dart';
 
-class DemoStore extends ChangeNotifier {
-  DemoStore({DateTime Function()? clock, this.onOrderChanged})
-    : _clock = clock ?? DateTime.now;
+class DemoStore extends ChangeNotifier implements ExecutorRepository {
+  @override
+  ExecutorRating? executorRating(int employeeId) => null;
+  @override
+  bool get isLoading => false;
+  @override
+  String? get loadError => null;
+  @override
+  List<String> get executorFaultCodes => faultCodes;
+  @override
+  List<String> get executorMaterials => const [
+    'Подшипник · шт',
+    'Уплотнение · шт',
+    'Кабель · м',
+    'Масло · л',
+    'Смазка · кг',
+  ];
+  final _executionDrafts = <(int, int), ExecutionDraft>{};
+  @override
+  ExecutionDraft? executionDraft(int employeeId, int number) =>
+      _executionDrafts[(employeeId, number)];
+  @override
+  Future<ExecutionDraft?> restoreExecutionDraft(
+    int employeeId,
+    int number,
+  ) async {
+    final cached = executionDraft(employeeId, number);
+    if (cached != null) return cached;
+    final draft = await draftStorage?.load(employeeId, number);
+    if (draft != null) _executionDrafts[(employeeId, number)] = draft;
+    return draft;
+  }
+
+  @override
+  Future<void> saveExecutionDraft(
+    int employeeId,
+    int number,
+    ExecutionDraft draft,
+  ) async {
+    _executionDrafts[(employeeId, number)] = draft;
+    await draftStorage?.save(employeeId, number, draft);
+  }
+
+  @override
+  Future<void> clearExecutionDraft(int employeeId, int number) async {
+    await draftStorage?.remove(employeeId, number);
+    _executionDrafts.remove((employeeId, number));
+  }
+
+  @override
+  Future<void> refreshExecutor(int employeeId) async {
+    employee(employeeId);
+    notifyListeners();
+  }
+
+  void _checkExecutor(int employeeId, WorkOrder order) {
+    if (!assignedTo(employeeId).contains(order)) {
+      throw StateError('Наряд переназначен другому исполнителю');
+    }
+  }
+
+  @override
+  Future<void> executorAction(
+    int employeeId,
+    WorkOrder order,
+    OrderStatus status, {
+    String reason = '',
+  }) async {
+    _checkExecutor(employeeId, order);
+    final allowed = switch (order.status) {
+      OrderStatus.issued => {
+        OrderStatus.accepted,
+        OrderStatus.queued,
+        OrderStatus.rejected,
+      },
+      OrderStatus.accepted ||
+      OrderStatus.queued ||
+      OrderStatus.paused ||
+      OrderStatus.rework => {OrderStatus.working},
+      OrderStatus.working => {OrderStatus.paused},
+      _ => <OrderStatus>{},
+    };
+    if (!allowed.contains(status)) {
+      throw StateError('Статус наряда изменился. Обновите данные');
+    }
+    if (status == OrderStatus.working &&
+        assignedTo(employeeId).any(
+          (other) => other != order && other.status == OrderStatus.working,
+        )) {
+      throw StateError('Сначала приостановите или завершите текущий наряд');
+    }
+    if ({OrderStatus.paused, OrderStatus.rejected}.contains(status) &&
+        reason.trim().isEmpty) {
+      throw ArgumentError('Укажите причину');
+    }
+    changeStatus(
+      order,
+      status,
+      reason: reason.trim(),
+      author: employee(employeeId).name,
+    );
+  }
+
+  @override
+  Future<void> submitExecution(
+    int employeeId,
+    WorkOrder order,
+    ExecutionDraft report,
+  ) async {
+    _checkExecutor(employeeId, order);
+    if (order.status != OrderStatus.working) {
+      throw StateError('Наряд уже не в работе');
+    }
+    if (report.work.trim().isEmpty || !faultCodes.contains(report.faultCode)) {
+      throw ArgumentError('Заполните работы и шифр неисправности');
+    }
+    if (!order.planned && report.photos.isEmpty) {
+      throw ArgumentError('Для внепланового наряда нужно фото после');
+    }
+    if (report.photos.length > 5 ||
+        report.materials.entries.any(
+          (e) =>
+              !executorMaterials.contains(e.key) ||
+              !e.value.isFinite ||
+              e.value <= 0,
+        )) {
+      throw ArgumentError('Проверьте материалы и фотографии');
+    }
+    await clearExecutionDraft(employeeId, order.number);
+    // The status could change while awaiting local IO or a future API adapter.
+    _checkExecutor(employeeId, order);
+    if (order.status != OrderStatus.working) {
+      throw StateError('Наряд уже не в работе');
+    }
+    order.completedWork = report.work.trim();
+    order.faultCode = report.faultCode;
+    order.materials = [
+      report.legacyMaterials,
+      ...report.materials.entries.map((e) => '${e.key}: ${e.value}'),
+    ].where((s) => s.isNotEmpty).join('\n');
+    if (order.materials.isEmpty) {
+      order.materials = 'Материалы не использовались';
+    }
+    if (report.comment.trim().isNotEmpty) {
+      order.comment = '${order.comment}\n${report.comment.trim()}'.trim();
+    }
+    order.afterImages
+      ..clear()
+      ..addAll(report.photos);
+    order.afterPhotos = report.photos.length;
+    order.aiVerdict = 'Ожидает проверки';
+    order.assessment = null;
+    order.aiExplanation = 'Отчёт отправлен. Проверка ИИ ещё не выполнена.';
+    changeStatus(order, OrderStatus.review, author: employee(employeeId).name);
+  }
+
+  DemoStore({
+    DateTime Function()? clock,
+    this.onOrderChanged,
+    this.draftStorage,
+  }) : _clock = clock ?? DateTime.now;
 
   final void Function(OrderEventKind kind)? onOrderChanged;
+  final ExecutionDraftStorage? draftStorage;
 
   void _orderChanged(OrderEventKind kind) {
     notifyListeners();
@@ -14,6 +176,7 @@ class DemoStore extends ChangeNotifier {
   }
 
   final DateTime Function() _clock;
+  @override
   DateTime get now => _clock();
 
   static const masterName = 'Серик Омаров';
@@ -187,6 +350,71 @@ class DemoStore extends ChangeNotifier {
       );
     }
 
+    WorkOrder completedOrder({
+      required int number,
+      required String title,
+      required String equipment,
+      required String area,
+      required int daysAgo,
+      required int minutes,
+      required double score,
+      required String work,
+      required String materials,
+    }) {
+      final finished = now.subtract(Duration(days: daysAgo));
+      final started = finished.subtract(Duration(minutes: minutes));
+      final created = started.subtract(const Duration(minutes: 15));
+      return WorkOrder(
+        number: number,
+        title: title,
+        description: title,
+        equipment: equipment,
+        area: area,
+        employeeId: 1,
+        priority: 'Плановый',
+        planned: true,
+        status: OrderStatus.closed,
+        createdAt: created,
+        deadline: finished.add(const Duration(minutes: 30)),
+        completedWork: work,
+        materials: materials,
+        faultCode: faultCodes.first,
+        masterScore: score,
+        history: [
+          OrderEvent(
+            title: 'Наряд выдан',
+            author: masterName,
+            time: created,
+            status: OrderStatus.issued,
+          ),
+          OrderEvent(
+            title: 'Принят',
+            author: employee(1).name,
+            time: created.add(const Duration(minutes: 5)),
+            status: OrderStatus.accepted,
+          ),
+          OrderEvent(
+            title: 'В работе',
+            author: employee(1).name,
+            time: started,
+            status: OrderStatus.working,
+          ),
+          OrderEvent(
+            title: 'На проверке',
+            author: employee(1).name,
+            time: finished,
+            status: OrderStatus.review,
+          ),
+          OrderEvent(
+            title: 'Закрыт',
+            author: masterName,
+            time: finished.add(const Duration(minutes: 10)),
+            status: OrderStatus.closed,
+          ),
+        ],
+      );
+    }
+
     return [
       order(
         number: 147,
@@ -239,6 +467,30 @@ class DemoStore extends ChangeNotifier {
         status: OrderStatus.review,
         deadlineMinutes: 60,
       ),
+      completedOrder(
+        number: 141,
+        title: 'Замена подшипника привода',
+        equipment: 'Дробилка КМД-1750',
+        area: 'Дробление',
+        daysAgo: 1,
+        minutes: 38,
+        score: 4.8,
+        work:
+            'Подшипник заменён. Проверены крепления и выполнен контрольный запуск. Посторонний шум устранён.',
+        materials: 'Подшипник — 1 шт.\nСмазка — 0,2 кг',
+      ),
+      completedOrder(
+        number: 139,
+        title: 'Плановая смазка и проверка узлов',
+        equipment: 'Грохот ГИС-52',
+        area: 'Дробление',
+        daysAgo: 3,
+        minutes: 24,
+        score: 4.6,
+        work:
+            'Выполнена смазка узлов. Проверены крепления и работа оборудования под нагрузкой.',
+        materials: 'Смазка — 0,5 кг',
+      ),
       order(
         number: 143,
         title: 'Восстановление защитного кожуха',
@@ -252,6 +504,7 @@ class DemoStore extends ChangeNotifier {
     ];
   }
 
+  @override
   Employee employee(int id) {
     return employees.firstWhere((item) => item.id == id);
   }
@@ -268,6 +521,7 @@ class DemoStore extends ChangeNotifier {
     return orders.where((order) => order.status == status).length;
   }
 
+  @override
   List<WorkOrder> assignedTo(int employeeId) {
     final member = employee(employeeId);
     return orders

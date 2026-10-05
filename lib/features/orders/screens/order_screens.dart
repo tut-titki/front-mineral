@@ -1016,7 +1016,7 @@ class OrderDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  order.title,
+                  uiText(context, order.title),
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,

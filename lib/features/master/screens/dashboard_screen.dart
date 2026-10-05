@@ -156,7 +156,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return widget.store.orders.where((order) {
       final text =
           '${order.number} ${order.title} ${order.description} '
-          '${order.area} ${order.equipment} ${widget.store.assignmentLabel(order)}';
+          '${order.area} ${order.equipment} ${widget.store.assignmentLabel(order)} '
+          '${uiText(context, order.title)} ${uiText(context, order.description)} '
+          '${uiText(context, order.area)} ${uiText(context, order.equipment)} ${uiText(context, widget.store.assignmentLabel(order))}';
       return text.toLowerCase().contains(query) &&
           filters.matches(order, widget.store);
     }).toList();
@@ -247,7 +249,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             children: [
               for (final value in filters.areas)
                 InputChip(
-                  label: Text(value),
+                  label: Text(uiText(context, value)),
                   onDeleted: () => setState(() => filters.areas.remove(value)),
                 ),
               for (final id in filters.employees)
@@ -401,7 +403,7 @@ class _TeamScreenState extends State<TeamScreen> {
   @override
   Widget build(BuildContext context) {
     final employees = widget.store.employees.where((employee) {
-      return '${employee.brigade} ${employee.name} ${employee.specialty}'
+      return '${employee.brigade} ${employee.name} ${employee.specialty} ${uiText(context, employee.brigade)} ${uiText(context, employee.specialty)}'
               .toLowerCase()
               .contains(search.toLowerCase()) &&
           (!onlyFree || widget.store.employeeStatus(employee) == 'Свободен');

@@ -1615,6 +1615,978 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'{status}: {reason}'**
   String eventReason(String status, String reason);
+
+  /// No description provided for @myOrders.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мои наряды'**
+  String get myOrders;
+
+  /// No description provided for @orderHistory.
+  ///
+  /// In ru, this message translates to:
+  /// **'История нарядов'**
+  String get orderHistory;
+
+  /// No description provided for @profile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Профиль'**
+  String get profile;
+
+  /// No description provided for @history.
+  ///
+  /// In ru, this message translates to:
+  /// **'История'**
+  String get history;
+
+  /// No description provided for @retry.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторить'**
+  String get retry;
+
+  /// No description provided for @archivedOrdersHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завершённые, отменённые и отклонённые наряды'**
+  String get archivedOrdersHint;
+
+  /// No description provided for @executorSearch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск по номеру или оборудованию'**
+  String get executorSearch;
+
+  /// No description provided for @noSearchResults.
+  ///
+  /// In ru, this message translates to:
+  /// **'По вашему запросу ничего не найдено'**
+  String get noSearchResults;
+
+  /// No description provided for @emptyHistory.
+  ///
+  /// In ru, this message translates to:
+  /// **'История пока пуста'**
+  String get emptyHistory;
+
+  /// No description provided for @noActiveOrders.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет активных нарядов'**
+  String get noActiveOrders;
+
+  /// No description provided for @refreshFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось обновить данные. Потяните список вниз, чтобы повторить.'**
+  String get refreshFailed;
+
+  /// No description provided for @goodMorning.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доброе утро'**
+  String get goodMorning;
+
+  /// No description provided for @goodAfternoon.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добрый день'**
+  String get goodAfternoon;
+
+  /// No description provided for @goodEvening.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добрый вечер'**
+  String get goodEvening;
+
+  /// No description provided for @goodNight.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доброй ночи'**
+  String get goodNight;
+
+  /// No description provided for @activeOrders.
+  ///
+  /// In ru, this message translates to:
+  /// **'Активных'**
+  String get activeOrders;
+
+  /// No description provided for @onShift.
+  ///
+  /// In ru, this message translates to:
+  /// **'На смене'**
+  String get onShift;
+
+  /// No description provided for @grade.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разряд'**
+  String get grade;
+
+  /// No description provided for @myRating.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мой рейтинг'**
+  String get myRating;
+
+  /// No description provided for @noRatingYet.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пока нет оценки'**
+  String get noRatingYet;
+
+  /// No description provided for @executorRatingHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'После проверки выполненных нарядов здесь появятся рейтинг и его объяснение.'**
+  String get executorRatingHint;
+
+  /// No description provided for @quality.
+  ///
+  /// In ru, this message translates to:
+  /// **'Качество'**
+  String get quality;
+
+  /// No description provided for @onTime.
+  ///
+  /// In ru, this message translates to:
+  /// **'В срок'**
+  String get onTime;
+
+  /// No description provided for @reworks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доработки'**
+  String get reworks;
+
+  /// No description provided for @closedOrders.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыто нарядов'**
+  String get closedOrders;
+
+  /// No description provided for @logout.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выйти'**
+  String get logout;
+
+  /// No description provided for @ratingPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оценка ожидается'**
+  String get ratingPending;
+
+  /// No description provided for @aiShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'ИИ'**
+  String get aiShort;
+
+  /// No description provided for @emergencyResponse.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аварийный наряд — требуется ответ'**
+  String get emergencyResponse;
+
+  /// No description provided for @newOrderAssigned.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вам назначен новый наряд'**
+  String get newOrderAssigned;
+
+  /// No description provided for @returnedForRework.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд возвращён на доработку'**
+  String get returnedForRework;
+
+  /// No description provided for @masterClosedOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мастер закрыл наряд'**
+  String get masterClosedOrder;
+
+  /// No description provided for @deadlineExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Срок выполнения истёк'**
+  String get deadlineExpired;
+
+  /// No description provided for @noExecutorNotifications.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уведомлений пока нет'**
+  String get noExecutorNotifications;
+
+  /// No description provided for @rejectReason.
+  ///
+  /// In ru, this message translates to:
+  /// **'Причина отказа'**
+  String get rejectReason;
+
+  /// No description provided for @pauseReason.
+  ///
+  /// In ru, this message translates to:
+  /// **'Причина приостановки'**
+  String get pauseReason;
+
+  /// No description provided for @orderReassignedWarning.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд переназначен другому исполнителю.'**
+  String get orderReassignedWarning;
+
+  /// No description provided for @acceptWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Принять в работу'**
+  String get acceptWork;
+
+  /// No description provided for @queueOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поставить в очередь'**
+  String get queueOrder;
+
+  /// No description provided for @rejectOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклонить'**
+  String get rejectOrder;
+
+  /// No description provided for @resumeWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Возобновить работу'**
+  String get resumeWork;
+
+  /// No description provided for @startExecution.
+  ///
+  /// In ru, this message translates to:
+  /// **'Начать исполнение'**
+  String get startExecution;
+
+  /// No description provided for @pauseWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приостановить'**
+  String get pauseWork;
+
+  /// No description provided for @workDone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Исполнено'**
+  String get workDone;
+
+  /// No description provided for @executionDeadline.
+  ///
+  /// In ru, this message translates to:
+  /// **'Срок выполнения'**
+  String get executionDeadline;
+
+  /// No description provided for @faultDescription.
+  ///
+  /// In ru, this message translates to:
+  /// **'Описание неисправности'**
+  String get faultDescription;
+
+  /// No description provided for @photosBeforeWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото до начала работ'**
+  String get photosBeforeWork;
+
+  /// No description provided for @masterNoPhotos.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мастер не добавил фотографии'**
+  String get masterNoPhotos;
+
+  /// No description provided for @masterScorePending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оценка мастера пока не выставлена'**
+  String get masterScorePending;
+
+  /// No description provided for @assessmentPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заключение по выполнению пока не получено.'**
+  String get assessmentPending;
+
+  /// No description provided for @reportAwaitingMaster.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчёт отправлен. Ожидает проверки мастером.'**
+  String get reportAwaitingMaster;
+
+  /// No description provided for @askMasterRemarks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уточните замечания у мастера'**
+  String get askMasterRemarks;
+
+  /// No description provided for @yourReport.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ваш отчёт'**
+  String get yourReport;
+
+  /// No description provided for @workNotSpecified.
+  ///
+  /// In ru, this message translates to:
+  /// **'Работы не указаны'**
+  String get workNotSpecified;
+
+  /// No description provided for @photosAfter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото после'**
+  String get photosAfter;
+
+  /// No description provided for @goToRework.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перейти к доработке'**
+  String get goToRework;
+
+  /// No description provided for @openOrder.
+  ///
+  /// In ru, this message translates to:
+  /// **'Открыть наряд'**
+  String get openOrder;
+
+  /// No description provided for @addPhotoFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось добавить фото. Проверьте разрешения.'**
+  String get addPhotoFailed;
+
+  /// No description provided for @unplannedPhotoRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для внепланового наряда нужно фото после'**
+  String get unplannedPhotoRequired;
+
+  /// No description provided for @commitSelectedMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавьте выбранный материал в список'**
+  String get commitSelectedMaterial;
+
+  /// No description provided for @material.
+  ///
+  /// In ru, this message translates to:
+  /// **'Материал'**
+  String get material;
+
+  /// No description provided for @selectMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите материал'**
+  String get selectMaterial;
+
+  /// No description provided for @quantity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Количество'**
+  String get quantity;
+
+  /// No description provided for @positiveQuantity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите количество больше нуля'**
+  String get positiveQuantity;
+
+  /// No description provided for @addMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить материал'**
+  String get addMaterial;
+
+  /// No description provided for @sending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отправка…'**
+  String get sending;
+
+  /// No description provided for @submitForReview.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отправить на проверку'**
+  String get submitForReview;
+
+  /// No description provided for @materialsAndCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Материалы и код'**
+  String get materialsAndCode;
+
+  /// No description provided for @photosAndComment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото и комментарий'**
+  String get photosAndComment;
+
+  /// No description provided for @whatWasDone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что было сделано?'**
+  String get whatWasDone;
+
+  /// No description provided for @describeCompletedWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Опишите выполненные работы'**
+  String get describeCompletedWork;
+
+  /// No description provided for @faultCodeLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Код неисправности'**
+  String get faultCodeLabel;
+
+  /// No description provided for @selectCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите код'**
+  String get selectCode;
+
+  /// No description provided for @selectFaultCode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите шифр'**
+  String get selectFaultCode;
+
+  /// No description provided for @usedExecutorMaterials.
+  ///
+  /// In ru, this message translates to:
+  /// **'Использованные материалы'**
+  String get usedExecutorMaterials;
+
+  /// No description provided for @noMaterialsUsed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Материалы не использовались'**
+  String get noMaterialsUsed;
+
+  /// No description provided for @decrease.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уменьшить'**
+  String get decrease;
+
+  /// No description provided for @increase.
+  ///
+  /// In ru, this message translates to:
+  /// **'Увеличить'**
+  String get increase;
+
+  /// No description provided for @photosAfterWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото после выполнения работ'**
+  String get photosAfterWork;
+
+  /// No description provided for @removePhotoLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить фото'**
+  String get removePhotoLabel;
+
+  /// No description provided for @takeAfterPhoto.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сделать фото после'**
+  String get takeAfterPhoto;
+
+  /// No description provided for @chooseFromGallery.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать из галереи'**
+  String get chooseFromGallery;
+
+  /// No description provided for @photoLimitReached.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавлено 5 из 5 фото. Удалите фото, чтобы добавить новое.'**
+  String get photoLimitReached;
+
+  /// No description provided for @optionalComment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий (необязательно)'**
+  String get optionalComment;
+
+  /// No description provided for @additionalInformation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дополнительная информация'**
+  String get additionalInformation;
+
+  /// No description provided for @changeStatusFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось изменить статус. Повторите попытку.'**
+  String get changeStatusFailed;
+
+  /// No description provided for @submitReportFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось отправить отчёт. Повторите попытку.'**
+  String get submitReportFailed;
+
+  /// No description provided for @orderIssuedLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд выдан'**
+  String get orderIssuedLabel;
+
+  /// No description provided for @mechanicSpecialty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слесарь'**
+  String get mechanicSpecialty;
+
+  /// No description provided for @electricianSpecialty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Электрик'**
+  String get electricianSpecialty;
+
+  /// No description provided for @welderSpecialty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сварщик'**
+  String get welderSpecialty;
+
+  /// No description provided for @crushingArea.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дробление'**
+  String get crushingArea;
+
+  /// No description provided for @beneficiationArea.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обогащение'**
+  String get beneficiationArea;
+
+  /// No description provided for @repairArea.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ремонтный цех'**
+  String get repairArea;
+
+  /// No description provided for @transportArea.
+  ///
+  /// In ru, this message translates to:
+  /// **'Транспортный участок'**
+  String get transportArea;
+
+  /// No description provided for @bearingMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подшипник · шт'**
+  String get bearingMaterial;
+
+  /// No description provided for @sealMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уплотнение · шт'**
+  String get sealMaterial;
+
+  /// No description provided for @cableMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кабель · м'**
+  String get cableMaterial;
+
+  /// No description provided for @oilMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Масло · л'**
+  String get oilMaterial;
+
+  /// No description provided for @greaseMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Смазка · кг'**
+  String get greaseMaterial;
+
+  /// No description provided for @anomalyExample.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пример вывода: конвейер К-3 часто останавливается из-за подшипников. Рекомендация: проверить соосность привода и скорректировать план ППР.'**
+  String get anomalyExample;
+
+  /// No description provided for @closeOrderNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрытие наряда №{number}'**
+  String closeOrderNumber(String number);
+
+  /// No description provided for @resultOrderNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'Результат · №{number}'**
+  String resultOrderNumber(String number);
+
+  /// No description provided for @deadlineMinutesLeft.
+  ///
+  /// In ru, this message translates to:
+  /// **'До срока осталось {minutes} мин'**
+  String deadlineMinutesLeft(String minutes);
+
+  /// No description provided for @workTimeValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Время в работе: {time}'**
+  String workTimeValue(String time);
+
+  /// No description provided for @workMinutesValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Время в работе: {minutes} мин'**
+  String workMinutesValue(String minutes);
+
+  /// No description provided for @historyWorkMinutes.
+  ///
+  /// In ru, this message translates to:
+  /// **'{minutes} мин в работе'**
+  String historyWorkMinutes(String minutes);
+
+  /// No description provided for @priorityValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приоритет: {priority}'**
+  String priorityValue(String priority);
+
+  /// No description provided for @assessmentVerdict.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверка: {verdict}'**
+  String assessmentVerdict(String verdict);
+
+  /// No description provided for @assessmentScore.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оценка: {score} / 5'**
+  String assessmentScore(String score);
+
+  /// No description provided for @assessmentStrengths.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что сделано хорошо: {text}'**
+  String assessmentStrengths(String text);
+
+  /// No description provided for @assessmentImprovements.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что улучшить: {text}'**
+  String assessmentImprovements(String text);
+
+  /// No description provided for @normHoursValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Норматив: {hours} ч'**
+  String normHoursValue(String hours);
+
+  /// No description provided for @reworkReasonValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доработка: {reason}'**
+  String reworkReasonValue(String reason);
+
+  /// No description provided for @faultCodeValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Шифр: {code}'**
+  String faultCodeValue(String code);
+
+  /// No description provided for @previousMaterialsValue.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ранее указанные материалы:\n{materials}'**
+  String previousMaterialsValue(String materials);
+
+  /// No description provided for @brigadeNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'Бригада №{number}'**
+  String brigadeNumber(String number);
+
+  /// No description provided for @faultBearing.
+  ///
+  /// In ru, this message translates to:
+  /// **'М-02 · Подшипник'**
+  String get faultBearing;
+
+  /// No description provided for @faultOilLeak.
+  ///
+  /// In ru, this message translates to:
+  /// **'Г-01 · Течь масла'**
+  String get faultOilLeak;
+
+  /// No description provided for @faultCableBreak.
+  ///
+  /// In ru, this message translates to:
+  /// **'Э-03 · Обрыв кабеля'**
+  String get faultCableBreak;
+
+  /// No description provided for @faultGreaseLack.
+  ///
+  /// In ru, this message translates to:
+  /// **'С-01 · Недостаток смазки'**
+  String get faultGreaseLack;
+
+  /// No description provided for @faultAirLeak.
+  ///
+  /// In ru, this message translates to:
+  /// **'П-02 · Утечка воздуха'**
+  String get faultAirLeak;
+
+  /// No description provided for @crusherEquipment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дробилка КМД-1750'**
+  String get crusherEquipment;
+
+  /// No description provided for @conveyorEquipment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Конвейер К-3'**
+  String get conveyorEquipment;
+
+  /// No description provided for @screenEquipment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Грохот ГИС-52'**
+  String get screenEquipment;
+
+  /// No description provided for @pumpEquipment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Насос Н-12'**
+  String get pumpEquipment;
+
+  /// No description provided for @millEquipment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Мельница МШР-3'**
+  String get millEquipment;
+
+  /// No description provided for @separatorEquipment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сепаратор С-4'**
+  String get separatorEquipment;
+
+  /// No description provided for @machineEquipment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Станок Т-16'**
+  String get machineEquipment;
+
+  /// No description provided for @craneEquipment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кран-балка КБ-2'**
+  String get craneEquipment;
+
+  /// No description provided for @loaderEquipment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Погрузчик П-7'**
+  String get loaderEquipment;
+
+  /// No description provided for @compressorEquipment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Компрессор ВК-22'**
+  String get compressorEquipment;
+
+  /// No description provided for @demoBearingWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Замена подшипника привода'**
+  String get demoBearingWork;
+
+  /// No description provided for @demoOilLeakWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Устранение течи масла'**
+  String get demoOilLeakWork;
+
+  /// No description provided for @demoPowerWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверка питания двигателя'**
+  String get demoPowerWork;
+
+  /// No description provided for @demoLubricationWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Плановая смазка узлов'**
+  String get demoLubricationWork;
+
+  /// No description provided for @demoSealWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Замена уплотнения вала'**
+  String get demoSealWork;
+
+  /// No description provided for @demoGuardWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Восстановление защитного кожуха'**
+  String get demoGuardWork;
+
+  /// No description provided for @demoLubricationCheckWork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Плановая смазка и проверка узлов'**
+  String get demoLubricationCheckWork;
+
+  /// No description provided for @demoOrderDescription.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверить состояние оборудования, устранить неисправность и выполнить контрольный запуск.'**
+  String get demoOrderDescription;
+
+  /// No description provided for @demoSealReport.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заменено уплотнение. Соединения проверены. При контрольном запуске течь отсутствует.'**
+  String get demoSealReport;
+
+  /// No description provided for @demoBearingReport.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подшипник заменён. Проверены крепления и выполнен контрольный запуск. Посторонний шум устранён.'**
+  String get demoBearingReport;
+
+  /// No description provided for @demoLubricationReport.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выполнена смазка узлов. Проверены крепления и работа оборудования под нагрузкой.'**
+  String get demoLubricationReport;
+
+  /// No description provided for @demoWaitingBearing.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ждём подшипник со склада'**
+  String get demoWaitingBearing;
+
+  /// No description provided for @demoSealMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уплотнение 40×60 — 1 шт.'**
+  String get demoSealMaterial;
+
+  /// No description provided for @demoOilMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Масло И-40 — 0,5 л'**
+  String get demoOilMaterial;
+
+  /// No description provided for @demoBearingMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подшипник — 1 шт.'**
+  String get demoBearingMaterial;
+
+  /// No description provided for @demoGreaseSmall.
+  ///
+  /// In ru, this message translates to:
+  /// **'Смазка — 0,2 кг'**
+  String get demoGreaseSmall;
+
+  /// No description provided for @demoGreaseHalf.
+  ///
+  /// In ru, this message translates to:
+  /// **'Смазка — 0,5 кг'**
+  String get demoGreaseHalf;
+
+  /// No description provided for @awaitingCheck.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ожидает проверки'**
+  String get awaitingCheck;
+
+  /// No description provided for @reportAiPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчёт отправлен. Проверка ИИ ещё не выполнена.'**
+  String get reportAiPending;
+
+  /// No description provided for @masterDemoAnswer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Демо-ответ: здесь появятся рекомендации по запросу «{query}». Для анализа необходимо подключить backend и ИИ.'**
+  String masterDemoAnswer(String query);
+
+  /// No description provided for @queuePosition.
+  ///
+  /// In ru, this message translates to:
+  /// **'В очереди · позиция {position}'**
+  String queuePosition(String position);
+
+  /// No description provided for @finishCurrentFirst.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала приостановите или завершите текущий наряд'**
+  String get finishCurrentFirst;
+
+  /// No description provided for @wholePieceQuantity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для штучного материала укажите целое количество'**
+  String get wholePieceQuantity;
+
+  /// No description provided for @removeMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить материал'**
+  String get removeMaterial;
+
+  /// No description provided for @removeMaterialQuestion.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить материал из отчёта?'**
+  String get removeMaterialQuestion;
+
+  /// No description provided for @draftSaved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Черновик сохранён'**
+  String get draftSaved;
+
+  /// No description provided for @draftLoadFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось восстановить черновик. Повторите попытку — сохранённые данные не изменены.'**
+  String get draftLoadFailed;
+
+  /// No description provided for @draftSaveFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Черновик не сохранён. Нажмите, чтобы повторить.'**
+  String get draftSaveFailed;
+
+  /// No description provided for @overdueByMinutes.
+  ///
+  /// In ru, this message translates to:
+  /// **'Просрочен на {minutes} мин'**
+  String overdueByMinutes(String minutes);
+
+  /// No description provided for @executionResult.
+  ///
+  /// In ru, this message translates to:
+  /// **'Результат проверки'**
+  String get executionResult;
 }
 
 class _AppLocalizationsDelegate

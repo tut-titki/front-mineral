@@ -231,7 +231,7 @@ class AppLocalizationsKk extends AppLocalizations {
   String get pausedPlural => 'Уақытша тоқтатылған';
 
   @override
-  String get rework => 'Қайта өңдеуде';
+  String get rework => 'Қайта орындауда';
 
   @override
   String get rejectedPlural => 'Қабылданбаған';
@@ -343,7 +343,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get ratingHelp =>
-      'Баға сапаға, уақытында орындалуға, қайта өңдеуге, жұмыс күрделілігіне және бас тартудың негізділігіне байланысты қалыптасады.';
+      'Баға жұмыс сапасына, мерзімінде орындалуына, қайта орындау қажеттілігіне, жұмыстың күрделілігіне және бас тарту себептерінің негізділігіне байланысты қалыптасады.';
 
   @override
   String get masterAssistant => 'Шебер көмекшісі';
@@ -618,10 +618,10 @@ class AppLocalizationsKk extends AppLocalizations {
   String get acceptClose => 'Қабылдау және жабу';
 
   @override
-  String get returnRework => 'Қайта өңдеуге қайтару';
+  String get returnRework => 'Қайта орындауға қайтару';
 
   @override
-  String get toRework => 'Қайта өңдеуге';
+  String get toRework => 'Қайта орындауға';
 
   @override
   String get actionHistory => 'Әрекеттер тарихы';
@@ -836,4 +836,547 @@ class AppLocalizationsKk extends AppLocalizations {
   String eventReason(String status, String reason) {
     return '$status: $reason';
   }
+
+  @override
+  String get myOrders => 'Менің нарядтарым';
+
+  @override
+  String get orderHistory => 'Нарядтар тарихы';
+
+  @override
+  String get profile => 'Профиль';
+
+  @override
+  String get history => 'Тарих';
+
+  @override
+  String get retry => 'Қайталау';
+
+  @override
+  String get archivedOrdersHint =>
+      'Аяқталған, күші жойылған және қабылданбаған нарядтар';
+
+  @override
+  String get executorSearch => 'Нөмірі немесе жабдық бойынша іздеу';
+
+  @override
+  String get noSearchResults => 'Сұрауыңыз бойынша ештеңе табылмады';
+
+  @override
+  String get emptyHistory => 'Тарих әзірге бос';
+
+  @override
+  String get noActiveOrders => 'Белсенді нарядтар жоқ';
+
+  @override
+  String get refreshFailed =>
+      'Деректерді жаңарту мүмкін болмады. Қайталау үшін тізімді төмен тартыңыз.';
+
+  @override
+  String get goodMorning => 'Қайырлы таң';
+
+  @override
+  String get goodAfternoon => 'Қайырлы күн';
+
+  @override
+  String get goodEvening => 'Қайырлы кеш';
+
+  @override
+  String get goodNight => 'Қайырлы түн';
+
+  @override
+  String get activeOrders => 'Белсенді';
+
+  @override
+  String get onShift => 'Ауысымда';
+
+  @override
+  String get grade => 'Разряд';
+
+  @override
+  String get myRating => 'Менің рейтингім';
+
+  @override
+  String get noRatingYet => 'Әзірге баға жоқ';
+
+  @override
+  String get executorRatingHint =>
+      'Орындалған нарядтар тексерілгеннен кейін мұнда рейтинг пен оның түсіндірмесі пайда болады.';
+
+  @override
+  String get quality => 'Сапа';
+
+  @override
+  String get onTime => 'Мерзімінде';
+
+  @override
+  String get reworks => 'Қайта орындаулар';
+
+  @override
+  String get closedOrders => 'Жабылған нарядтар';
+
+  @override
+  String get logout => 'Шығу';
+
+  @override
+  String get ratingPending => 'Баға күтілуде';
+
+  @override
+  String get aiShort => 'ЖИ';
+
+  @override
+  String get emergencyResponse => 'Апаттық наряд — жауап беру қажет';
+
+  @override
+  String get newOrderAssigned => 'Сізге жаңа наряд тағайындалды';
+
+  @override
+  String get returnedForRework => 'Наряд қайта орындауға қайтарылды';
+
+  @override
+  String get masterClosedOrder => 'Шебер нарядты жапты';
+
+  @override
+  String get deadlineExpired => 'Орындау мерзімі өтті';
+
+  @override
+  String get noExecutorNotifications => 'Әзірге хабарландырулар жоқ';
+
+  @override
+  String get rejectReason => 'Бас тарту себебі';
+
+  @override
+  String get pauseReason => 'Уақытша тоқтату себебі';
+
+  @override
+  String get orderReassignedWarning =>
+      'Наряд басқа орындаушыға қайта тағайындалды.';
+
+  @override
+  String get acceptWork => 'Жұмысқа қабылдау';
+
+  @override
+  String get queueOrder => 'Кезекке қою';
+
+  @override
+  String get rejectOrder => 'Қабылдамау';
+
+  @override
+  String get resumeWork => 'Жұмысты жалғастыру';
+
+  @override
+  String get startExecution => 'Орындауды бастау';
+
+  @override
+  String get pauseWork => 'Уақытша тоқтату';
+
+  @override
+  String get workDone => 'Орындалды';
+
+  @override
+  String get executionDeadline => 'Орындау мерзімі';
+
+  @override
+  String get faultDescription => 'Ақау сипаттамасы';
+
+  @override
+  String get photosBeforeWork => 'Жұмыс басталғанға дейінгі фотолар';
+
+  @override
+  String get masterNoPhotos => 'Шебер фотоларды тіркемеген';
+
+  @override
+  String get masterScorePending => 'Шебердің бағасы әлі қойылмаған';
+
+  @override
+  String get assessmentPending => 'Орындалу туралы қорытынды әлі алынбаған.';
+
+  @override
+  String get reportAwaitingMaster =>
+      'Есеп жіберілді. Шебердің тексеруін күтуде.';
+
+  @override
+  String get askMasterRemarks => 'Ескертулерді шеберден нақтылаңыз';
+
+  @override
+  String get yourReport => 'Сіздің есебіңіз';
+
+  @override
+  String get workNotSpecified => 'Жұмыстар көрсетілмеген';
+
+  @override
+  String get photosAfter => 'Жұмыстан кейінгі фотолар';
+
+  @override
+  String get goToRework => 'Қайта орындауға өту';
+
+  @override
+  String get openOrder => 'Нарядты ашу';
+
+  @override
+  String get addPhotoFailed =>
+      'Фото қосу мүмкін болмады. Рұқсаттарды тексеріңіз.';
+
+  @override
+  String get unplannedPhotoRequired =>
+      'Жоспардан тыс наряд үшін жұмыстан кейінгі фото қажет';
+
+  @override
+  String get commitSelectedMaterial => 'Таңдалған материалды тізімге қосыңыз';
+
+  @override
+  String get material => 'Материал';
+
+  @override
+  String get selectMaterial => 'Материалды таңдаңыз';
+
+  @override
+  String get quantity => 'Саны';
+
+  @override
+  String get positiveQuantity => 'Нөлден үлкен сан енгізіңіз';
+
+  @override
+  String get addMaterial => 'Материал қосу';
+
+  @override
+  String get sending => 'Жіберілуде…';
+
+  @override
+  String get submitForReview => 'Тексеруге жіберу';
+
+  @override
+  String get materialsAndCode => 'Материалдар мен код';
+
+  @override
+  String get photosAndComment => 'Фото мен түсініктеме';
+
+  @override
+  String get whatWasDone => 'Не істелді?';
+
+  @override
+  String get describeCompletedWork => 'Орындалған жұмыстарды сипаттаңыз';
+
+  @override
+  String get faultCodeLabel => 'Ақау коды';
+
+  @override
+  String get selectCode => 'Кодты таңдаңыз';
+
+  @override
+  String get selectFaultCode => 'Ақау кодын таңдаңыз';
+
+  @override
+  String get usedExecutorMaterials => 'Пайдаланылған материалдар';
+
+  @override
+  String get noMaterialsUsed => 'Материалдар пайдаланылмады';
+
+  @override
+  String get decrease => 'Азайту';
+
+  @override
+  String get increase => 'Көбейту';
+
+  @override
+  String get photosAfterWork => 'Жұмыстар орындалғаннан кейінгі фотолар';
+
+  @override
+  String get removePhotoLabel => 'Фотоны жою';
+
+  @override
+  String get takeAfterPhoto => 'Жұмыстан кейін фото түсіру';
+
+  @override
+  String get chooseFromGallery => 'Галереядан таңдау';
+
+  @override
+  String get photoLimitReached =>
+      '5 фотодан 5 фото қосылды. Жаңасын қосу үшін бір фотоны жойыңыз.';
+
+  @override
+  String get optionalComment => 'Түсініктеме (міндетті емес)';
+
+  @override
+  String get additionalInformation => 'Қосымша ақпарат';
+
+  @override
+  String get changeStatusFailed =>
+      'Күйді өзгерту мүмкін болмады. Қайта көріңіз.';
+
+  @override
+  String get submitReportFailed =>
+      'Есепті жіберу мүмкін болмады. Қайта көріңіз.';
+
+  @override
+  String get orderIssuedLabel => 'Наряд берілді';
+
+  @override
+  String get mechanicSpecialty => 'Слесарь';
+
+  @override
+  String get electricianSpecialty => 'Электрик';
+
+  @override
+  String get welderSpecialty => 'Дәнекерлеуші';
+
+  @override
+  String get crushingArea => 'Ұсақтау';
+
+  @override
+  String get beneficiationArea => 'Байыту';
+
+  @override
+  String get repairArea => 'Жөндеу цехы';
+
+  @override
+  String get transportArea => 'Көлік учаскесі';
+
+  @override
+  String get bearingMaterial => 'Мойынтірек · дана';
+
+  @override
+  String get sealMaterial => 'Тығыздағыш · дана';
+
+  @override
+  String get cableMaterial => 'Кабель · м';
+
+  @override
+  String get oilMaterial => 'Май · л';
+
+  @override
+  String get greaseMaterial => 'Майлағыш · кг';
+
+  @override
+  String get anomalyExample =>
+      'Қорытынды мысалы: К-3 конвейері мойынтіректерге байланысты жиі тоқтайды. Ұсыныс: жетектің осьтестігін тексеріп, жоспарлы алдын алу жөндеу жоспарын түзету.';
+
+  @override
+  String closeOrderNumber(String number) {
+    return '№$number нарядты жабу';
+  }
+
+  @override
+  String resultOrderNumber(String number) {
+    return 'Нәтиже · №$number';
+  }
+
+  @override
+  String deadlineMinutesLeft(String minutes) {
+    return 'Мерзімге $minutes мин қалды';
+  }
+
+  @override
+  String workTimeValue(String time) {
+    return 'Жұмыс уақыты: $time';
+  }
+
+  @override
+  String workMinutesValue(String minutes) {
+    return 'Жұмыс уақыты: $minutes мин';
+  }
+
+  @override
+  String historyWorkMinutes(String minutes) {
+    return '$minutes мин жұмыс істеді';
+  }
+
+  @override
+  String priorityValue(String priority) {
+    return 'Басымдық: $priority';
+  }
+
+  @override
+  String assessmentVerdict(String verdict) {
+    return 'Тексеру: $verdict';
+  }
+
+  @override
+  String assessmentScore(String score) {
+    return 'Баға: $score / 5';
+  }
+
+  @override
+  String assessmentStrengths(String text) {
+    return 'Жақсы орындалғаны: $text';
+  }
+
+  @override
+  String assessmentImprovements(String text) {
+    return 'Жақсартуға болатын тұстары: $text';
+  }
+
+  @override
+  String normHoursValue(String hours) {
+    return 'Норматив: $hours сағ';
+  }
+
+  @override
+  String reworkReasonValue(String reason) {
+    return 'Қайта орындау: $reason';
+  }
+
+  @override
+  String faultCodeValue(String code) {
+    return 'Код: $code';
+  }
+
+  @override
+  String previousMaterialsValue(String materials) {
+    return 'Бұрын көрсетілген материалдар:\n$materials';
+  }
+
+  @override
+  String brigadeNumber(String number) {
+    return '№$number бригада';
+  }
+
+  @override
+  String get faultBearing => 'М-02 · Мойынтірек';
+
+  @override
+  String get faultOilLeak => 'Г-01 · Майдың ағуы';
+
+  @override
+  String get faultCableBreak => 'Э-03 · Кабельдің үзілуі';
+
+  @override
+  String get faultGreaseLack => 'С-01 · Майлағыштың жеткіліксіздігі';
+
+  @override
+  String get faultAirLeak => 'П-02 · Ауаның ағуы';
+
+  @override
+  String get crusherEquipment => 'КМД-1750 ұсақтағышы';
+
+  @override
+  String get conveyorEquipment => 'К-3 конвейері';
+
+  @override
+  String get screenEquipment => 'ГИС-52 елегі';
+
+  @override
+  String get pumpEquipment => 'Н-12 сорғысы';
+
+  @override
+  String get millEquipment => 'МШР-3 диірмені';
+
+  @override
+  String get separatorEquipment => 'С-4 сепараторы';
+
+  @override
+  String get machineEquipment => 'Т-16 станогы';
+
+  @override
+  String get craneEquipment => 'КБ-2 кран-балкасы';
+
+  @override
+  String get loaderEquipment => 'П-7 тиегіші';
+
+  @override
+  String get compressorEquipment => 'ВК-22 компрессоры';
+
+  @override
+  String get demoBearingWork => 'Жетек мойынтірегін ауыстыру';
+
+  @override
+  String get demoOilLeakWork => 'Майдың ағуын жою';
+
+  @override
+  String get demoPowerWork => 'Қозғалтқыштың қоректенуін тексеру';
+
+  @override
+  String get demoLubricationWork => 'Тораптарды жоспарлы майлау';
+
+  @override
+  String get demoSealWork => 'Білік тығыздағышын ауыстыру';
+
+  @override
+  String get demoGuardWork => 'Қорғаныш қаптамасын қалпына келтіру';
+
+  @override
+  String get demoLubricationCheckWork =>
+      'Тораптарды жоспарлы майлау және тексеру';
+
+  @override
+  String get demoOrderDescription =>
+      'Жабдықтың күйін тексеріп, ақауды жою және бақылау іске қосуын орындау.';
+
+  @override
+  String get demoSealReport =>
+      'Тығыздағыш ауыстырылды. Қосылыстар тексерілді. Бақылау іске қосуы кезінде ағу байқалмады.';
+
+  @override
+  String get demoBearingReport =>
+      'Мойынтірек ауыстырылды. Бекітпелер тексеріліп, бақылау іске қосуы орындалды. Бөгде шу жойылды.';
+
+  @override
+  String get demoLubricationReport =>
+      'Тораптар майланды. Бекітпелер мен жабдықтың жүктеме кезіндегі жұмысы тексерілді.';
+
+  @override
+  String get demoWaitingBearing => 'Қоймадан мойынтіректі күтіп отырмыз';
+
+  @override
+  String get demoSealMaterial => '40×60 тығыздағышы — 1 дана';
+
+  @override
+  String get demoOilMaterial => 'И-40 майы — 0,5 л';
+
+  @override
+  String get demoBearingMaterial => 'Мойынтірек — 1 дана';
+
+  @override
+  String get demoGreaseSmall => 'Майлағыш — 0,2 кг';
+
+  @override
+  String get demoGreaseHalf => 'Майлағыш — 0,5 кг';
+
+  @override
+  String get awaitingCheck => 'Тексеруді күтуде';
+
+  @override
+  String get reportAiPending => 'Есеп жіберілді. ЖИ тексеруі әлі орындалмаған.';
+
+  @override
+  String masterDemoAnswer(String query) {
+    return 'Демо-жауап: мұнда «$query» сұрауы бойынша ұсыныстар пайда болады. Талдау үшін сервер мен ЖИ қосылуы қажет.';
+  }
+
+  @override
+  String queuePosition(String position) {
+    return 'Кезекте · $position-орын';
+  }
+
+  @override
+  String get finishCurrentFirst =>
+      'Алдымен ағымдағы нарядты уақытша тоқтатыңыз немесе аяқтаңыз';
+
+  @override
+  String get wholePieceQuantity =>
+      'Данамен есептелетін материал үшін бүтін сан енгізіңіз';
+
+  @override
+  String get removeMaterial => 'Материалды жою';
+
+  @override
+  String get removeMaterialQuestion => 'Материалды есептен жою керек пе?';
+
+  @override
+  String get draftSaved => 'Қаралама сақталды';
+
+  @override
+  String get draftLoadFailed =>
+      'Қараламаны қалпына келтіру мүмкін болмады. Қайта көріңіз — сақталған деректер өзгерген жоқ.';
+
+  @override
+  String get draftSaveFailed => 'Қаралама сақталмады. Қайталау үшін басыңыз.';
+
+  @override
+  String overdueByMinutes(String minutes) {
+    return 'Мерзімі $minutes мин өтті';
+  }
+
+  @override
+  String get executionResult => 'Тексеру нәтижесі';
 }

@@ -16,7 +16,7 @@ class BrigadeMembersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Colors.white,
-    appBar: AppBar(title: Text(brigade)),
+    appBar: AppBar(title: Text(uiText(context, brigade))),
     body: ListenableBuilder(
       listenable: store,
       builder: (context, _) => ListView(

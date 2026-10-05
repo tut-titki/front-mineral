@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:mineral/features/executor/models/execution_assessment.dart';
 
 import 'package:flutter/material.dart';
 import 'package:mineral/core/theme/app_theme.dart';
@@ -95,6 +96,7 @@ class WorkOrder {
     this.materials = '',
     this.aiScore = 4.8,
     this.masterScore,
+    this.assessment,
     this.aiVerdict = 'Нет заключения',
     this.aiExplanation = 'ИИ пока не подключён.',
     this.downtimeMinutes = 0,
@@ -131,6 +133,7 @@ class WorkOrder {
   String materials;
   double aiScore;
   double? masterScore;
+  ExecutionAssessment? assessment;
   String aiVerdict;
   String aiExplanation;
   int downtimeMinutes;

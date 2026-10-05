@@ -1,3 +1,4 @@
+import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/material.dart';
 
 class OrderSection extends StatelessWidget {
@@ -20,7 +21,7 @@ class OrderSection extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              title,
+              uiText(context, title),
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),

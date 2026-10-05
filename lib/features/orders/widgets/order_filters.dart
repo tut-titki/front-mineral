@@ -126,7 +126,7 @@ class _OrderFilterPanelState extends State<OrderFilterPanel> {
                     'Участок',
                     DemoStore.areas.keys,
                     draft.areas,
-                    (value) => value,
+                    (value) => uiText(context, value),
                   ),
                   group(
                     'Исполнитель',

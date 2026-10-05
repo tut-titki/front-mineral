@@ -70,8 +70,11 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Ерлан Ахметов'), findsNothing);
-      expect(find.text('Бригада №1'), findsOneWidget);
-      await tester.tap(find.text('Бригада №1'));
+      final brigadeLabel = AppLocalizations.of(
+        tester.element(find.byType(TeamScreen)),
+      ).brigadeNumber('1');
+      expect(find.text(brigadeLabel), findsOneWidget);
+      await tester.tap(find.text(brigadeLabel));
       await tester.pumpAndSettle();
       expect(find.byType(BrigadeMembersScreen), findsOneWidget);
       expect(find.text('Ерлан Ахметов'), findsOneWidget);

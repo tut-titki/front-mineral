@@ -424,6 +424,276 @@ String uiText(BuildContext context, String source) {
       return s.language;
     case "Минеральный комплекс":
       return s.complex;
+    case "Мои наряды":
+      return s.myOrders;
+    case "История нарядов":
+      return s.orderHistory;
+    case "Профиль":
+      return s.profile;
+    case "История":
+      return s.history;
+    case "Повторить":
+      return s.retry;
+    case "Завершённые, отменённые и отклонённые наряды":
+      return s.archivedOrdersHint;
+    case "Поиск по номеру или оборудованию":
+      return s.executorSearch;
+    case "По вашему запросу ничего не найдено":
+      return s.noSearchResults;
+    case "История пока пуста":
+      return s.emptyHistory;
+    case "Нет активных нарядов":
+      return s.noActiveOrders;
+    case "Не удалось обновить данные. Потяните список вниз, чтобы повторить.":
+      return s.refreshFailed;
+    case "Доброе утро":
+      return s.goodMorning;
+    case "Добрый день":
+      return s.goodAfternoon;
+    case "Добрый вечер":
+      return s.goodEvening;
+    case "Доброй ночи":
+      return s.goodNight;
+    case "Активных":
+      return s.activeOrders;
+    case "На смене":
+      return s.onShift;
+    case "Разряд":
+      return s.grade;
+    case "Мой рейтинг":
+      return s.myRating;
+    case "Пока нет оценки":
+      return s.noRatingYet;
+    case "После проверки выполненных нарядов здесь появятся рейтинг и его объяснение.":
+      return s.executorRatingHint;
+    case "Качество":
+      return s.quality;
+    case "В срок":
+      return s.onTime;
+    case "Доработки":
+      return s.reworks;
+    case "Закрыто нарядов":
+      return s.closedOrders;
+    case "Выйти":
+      return s.logout;
+    case "Оценка ожидается":
+      return s.ratingPending;
+    case "ИИ":
+      return s.aiShort;
+    case "Аварийный наряд — требуется ответ":
+      return s.emergencyResponse;
+    case "Вам назначен новый наряд":
+      return s.newOrderAssigned;
+    case "Наряд возвращён на доработку":
+      return s.returnedForRework;
+    case "Мастер закрыл наряд":
+      return s.masterClosedOrder;
+    case "Срок выполнения истёк":
+      return s.deadlineExpired;
+    case "Уведомлений пока нет":
+      return s.noExecutorNotifications;
+    case "Причина отказа":
+      return s.rejectReason;
+    case "Причина приостановки":
+      return s.pauseReason;
+    case "Наряд переназначен другому исполнителю.":
+      return s.orderReassignedWarning;
+    case "Принять в работу":
+      return s.acceptWork;
+    case "Поставить в очередь":
+      return s.queueOrder;
+    case "Отклонить":
+      return s.rejectOrder;
+    case "Возобновить работу":
+      return s.resumeWork;
+    case "Начать исполнение":
+      return s.startExecution;
+    case "Приостановить":
+      return s.pauseWork;
+    case "Исполнено":
+      return s.workDone;
+    case "Срок выполнения":
+      return s.executionDeadline;
+    case "Описание неисправности":
+      return s.faultDescription;
+    case "Фото до начала работ":
+      return s.photosBeforeWork;
+    case "Мастер не добавил фотографии":
+      return s.masterNoPhotos;
+    case "Оценка мастера пока не выставлена":
+      return s.masterScorePending;
+    case "Заключение по выполнению пока не получено.":
+      return s.assessmentPending;
+    case "Отчёт отправлен. Ожидает проверки мастером.":
+      return s.reportAwaitingMaster;
+    case "Уточните замечания у мастера":
+      return s.askMasterRemarks;
+    case "Ваш отчёт":
+      return s.yourReport;
+    case "Работы не указаны":
+      return s.workNotSpecified;
+    case "Фото после":
+      return s.photosAfter;
+    case "Перейти к доработке":
+      return s.goToRework;
+    case "Открыть наряд":
+      return s.openOrder;
+    case "Не удалось добавить фото. Проверьте разрешения.":
+      return s.addPhotoFailed;
+    case "Для внепланового наряда нужно фото после":
+      return s.unplannedPhotoRequired;
+    case "Добавьте выбранный материал в список":
+      return s.commitSelectedMaterial;
+    case "Материал":
+      return s.material;
+    case "Выберите материал":
+      return s.selectMaterial;
+    case "Количество":
+      return s.quantity;
+    case "Введите количество больше нуля":
+      return s.positiveQuantity;
+    case "Добавить материал":
+      return s.addMaterial;
+    case "Отправка…":
+      return s.sending;
+    case "Отправить на проверку":
+      return s.submitForReview;
+    case "Материалы и код":
+      return s.materialsAndCode;
+    case "Фото и комментарий":
+      return s.photosAndComment;
+    case "Что было сделано?":
+      return s.whatWasDone;
+    case "Опишите выполненные работы":
+      return s.describeCompletedWork;
+    case "Код неисправности":
+      return s.faultCodeLabel;
+    case "Выберите код":
+      return s.selectCode;
+    case "Выберите шифр":
+      return s.selectFaultCode;
+    case "Использованные материалы":
+      return s.usedExecutorMaterials;
+    case "Материалы не использовались":
+      return s.noMaterialsUsed;
+    case "Уменьшить":
+      return s.decrease;
+    case "Увеличить":
+      return s.increase;
+    case "Фото после выполнения работ":
+      return s.photosAfterWork;
+    case "Удалить фото":
+      return s.removePhotoLabel;
+    case "Сделать фото после":
+      return s.takeAfterPhoto;
+    case "Выбрать из галереи":
+      return s.chooseFromGallery;
+    case "Добавлено 5 из 5 фото. Удалите фото, чтобы добавить новое.":
+      return s.photoLimitReached;
+    case "Комментарий (необязательно)":
+      return s.optionalComment;
+    case "Дополнительная информация":
+      return s.additionalInformation;
+    case "Не удалось изменить статус. Повторите попытку.":
+      return s.changeStatusFailed;
+    case "Не удалось отправить отчёт. Повторите попытку.":
+      return s.submitReportFailed;
+    case "Наряд выдан":
+      return s.orderIssuedLabel;
+    case "Слесарь":
+      return s.mechanicSpecialty;
+    case "Электрик":
+      return s.electricianSpecialty;
+    case "Сварщик":
+      return s.welderSpecialty;
+    case "Дробление":
+      return s.crushingArea;
+    case "Обогащение":
+      return s.beneficiationArea;
+    case "Ремонтный цех":
+      return s.repairArea;
+    case "Транспортный участок":
+      return s.transportArea;
+    case "Подшипник · шт":
+      return s.bearingMaterial;
+    case "Уплотнение · шт":
+      return s.sealMaterial;
+    case "Кабель · м":
+      return s.cableMaterial;
+    case "Масло · л":
+      return s.oilMaterial;
+    case "Смазка · кг":
+      return s.greaseMaterial;
+    case "Пример вывода: конвейер К-3 часто останавливается из-за подшипников. Рекомендация: проверить соосность привода и скорректировать план ППР.":
+      return s.anomalyExample;
+    case "М-02 · Подшипник":
+      return s.faultBearing;
+    case "Г-01 · Течь масла":
+      return s.faultOilLeak;
+    case "Э-03 · Обрыв кабеля":
+      return s.faultCableBreak;
+    case "С-01 · Недостаток смазки":
+      return s.faultGreaseLack;
+    case "П-02 · Утечка воздуха":
+      return s.faultAirLeak;
+    case "Дробилка КМД-1750":
+      return s.crusherEquipment;
+    case "Конвейер К-3":
+      return s.conveyorEquipment;
+    case "Грохот ГИС-52":
+      return s.screenEquipment;
+    case "Насос Н-12":
+      return s.pumpEquipment;
+    case "Мельница МШР-3":
+      return s.millEquipment;
+    case "Сепаратор С-4":
+      return s.separatorEquipment;
+    case "Станок Т-16":
+      return s.machineEquipment;
+    case "Кран-балка КБ-2":
+      return s.craneEquipment;
+    case "Погрузчик П-7":
+      return s.loaderEquipment;
+    case "Компрессор ВК-22":
+      return s.compressorEquipment;
+    case "Замена подшипника привода":
+      return s.demoBearingWork;
+    case "Устранение течи масла":
+      return s.demoOilLeakWork;
+    case "Проверка питания двигателя":
+      return s.demoPowerWork;
+    case "Плановая смазка узлов":
+      return s.demoLubricationWork;
+    case "Замена уплотнения вала":
+      return s.demoSealWork;
+    case "Восстановление защитного кожуха":
+      return s.demoGuardWork;
+    case "Плановая смазка и проверка узлов":
+      return s.demoLubricationCheckWork;
+    case "Проверить состояние оборудования, устранить неисправность и выполнить контрольный запуск.":
+      return s.demoOrderDescription;
+    case "Заменено уплотнение. Соединения проверены. При контрольном запуске течь отсутствует.":
+      return s.demoSealReport;
+    case "Подшипник заменён. Проверены крепления и выполнен контрольный запуск. Посторонний шум устранён.":
+      return s.demoBearingReport;
+    case "Выполнена смазка узлов. Проверены крепления и работа оборудования под нагрузкой.":
+      return s.demoLubricationReport;
+    case "Ждём подшипник со склада":
+      return s.demoWaitingBearing;
+    case "Уплотнение 40×60 — 1 шт.":
+      return s.demoSealMaterial;
+    case "Масло И-40 — 0,5 л":
+      return s.demoOilMaterial;
+    case "Подшипник — 1 шт.":
+      return s.demoBearingMaterial;
+    case "Смазка — 0,2 кг":
+      return s.demoGreaseSmall;
+    case "Смазка — 0,5 кг":
+      return s.demoGreaseHalf;
+    case "Ожидает проверки":
+      return s.awaitingCheck;
+    case "Отчёт отправлен. Проверка ИИ ещё не выполнена.":
+      return s.reportAiPending;
   }
   RegExpMatch? match;
   match = RegExp(r'^Наряд №(\d+)$').firstMatch(source);
@@ -441,7 +711,9 @@ String uiText(BuildContext context, String source) {
   match = RegExp(r'^([\d.,]+) из 5$').firstMatch(source);
   if (match != null) return s.scoreValue(match[1]!);
   match = RegExp(r'^(.+) · (\d+) разряд$').firstMatch(source);
-  if (match != null) return s.employeeGrade(match[1]!, match[2]!);
+  if (match != null) {
+    return s.employeeGrade(uiText(context, match[1]!), match[2]!);
+  }
   match = RegExp(r'^В работе · №(\d+) · очередь (\d+)$').firstMatch(source);
   if (match != null) return s.workingQueue(match[1]!, match[2]!);
   match = RegExp(r'^В работе · №(\d+)$').firstMatch(source);
@@ -475,6 +747,21 @@ String uiText(BuildContext context, String source) {
     final label = uiText(context, match[1]!);
     if (label != match[1]) return s.boardCount(label, match[2]!);
   }
+  match = RegExp(r'^Бригада №(\d+)$').firstMatch(source);
+  if (match != null) return s.brigadeNumber(match[1]!);
+  match = RegExp(
+    r'^Демо-ответ: здесь появятся рекомендации по запросу «([\s\S]*)»\. Для анализа необходимо подключить backend и ИИ\.$',
+  ).firstMatch(source);
+  if (match != null) return s.masterDemoAnswer(match[1]!);
+  match = RegExp(r'^(.+): ([\d.,]+)$').firstMatch(source);
+  if (match != null) return '${uiText(context, match[1]!)}: ${match[2]}';
+  // Translate catalog labels within composed display values without changing IDs.
+  if (source.contains('\n')) {
+    return source.split('\n').map((line) => uiText(context, line)).join('\n');
+  }
+  if (source.contains(' · ')) {
+    return source.split(' · ').map((part) => uiText(context, part)).join(' · ');
+  }
   return source;
 }
 
@@ -483,9 +770,9 @@ String eventText(BuildContext context, OrderEvent event) {
   final value = event.value ?? '';
   switch (event.kind) {
     case OrderEventKind.issued:
-      return s.eventIssued(value);
+      return s.eventIssued(uiText(context, value));
     case OrderEventKind.reassigned:
-      return s.eventReassigned(value);
+      return s.eventReassigned(uiText(context, value));
     case OrderEventKind.priority:
       return s.eventPriority(uiText(context, value));
     case OrderEventKind.score:
@@ -499,7 +786,9 @@ String eventText(BuildContext context, OrderEvent event) {
           : event.reason;
       return reason.isEmpty ? label : s.eventReason(label, reason);
     case null:
-      return event.title; // Mock/imported history is not translated.
+      return event.status != null
+          ? uiText(context, event.status!.label)
+          : uiText(context, event.title);
   }
 }
 

@@ -15,7 +15,7 @@ Future<void> openLogin(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('splash and login open master with four mobile destinations', (
+  testWidgets('splash and login open executor with three mobile destinations', (
     tester,
   ) async {
     await openLogin(tester);
@@ -27,14 +27,14 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(1), 'password123');
     await tester.tap(find.text('Войти'));
     await tester.pumpAndSettle();
-    expect(find.text('Обзор смены'), findsOneWidget);
-    expect(find.byType(NavigationDestination), findsNWidgets(4));
+    expect(find.text('Мои наряды'), findsOneWidget);
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
     expect(find.text('ИИ'), findsNothing);
     final context = tester.element(find.byType(NavigationBar));
     expect(Theme.of(context).colorScheme.primary, AppColors.primary);
-    await tester.tap(find.text('Отчёты').last);
+    await tester.tap(find.text('Профиль').last);
     await tester.pumpAndSettle();
-    expect(find.text('Рейтинг исполнителей'), findsOneWidget);
+    expect(find.text('Мой рейтинг'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

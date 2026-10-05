@@ -241,7 +241,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                ranking[index].specialty,
+                                uiText(context, ranking[index].specialty),
                                 style: const TextStyle(
                                   color: muted,
                                   fontSize: 12,

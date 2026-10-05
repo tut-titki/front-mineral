@@ -831,4 +831,548 @@ class AppLocalizationsRu extends AppLocalizations {
   String eventReason(String status, String reason) {
     return '$status: $reason';
   }
+
+  @override
+  String get myOrders => 'Мои наряды';
+
+  @override
+  String get orderHistory => 'История нарядов';
+
+  @override
+  String get profile => 'Профиль';
+
+  @override
+  String get history => 'История';
+
+  @override
+  String get retry => 'Повторить';
+
+  @override
+  String get archivedOrdersHint =>
+      'Завершённые, отменённые и отклонённые наряды';
+
+  @override
+  String get executorSearch => 'Поиск по номеру или оборудованию';
+
+  @override
+  String get noSearchResults => 'По вашему запросу ничего не найдено';
+
+  @override
+  String get emptyHistory => 'История пока пуста';
+
+  @override
+  String get noActiveOrders => 'Нет активных нарядов';
+
+  @override
+  String get refreshFailed =>
+      'Не удалось обновить данные. Потяните список вниз, чтобы повторить.';
+
+  @override
+  String get goodMorning => 'Доброе утро';
+
+  @override
+  String get goodAfternoon => 'Добрый день';
+
+  @override
+  String get goodEvening => 'Добрый вечер';
+
+  @override
+  String get goodNight => 'Доброй ночи';
+
+  @override
+  String get activeOrders => 'Активных';
+
+  @override
+  String get onShift => 'На смене';
+
+  @override
+  String get grade => 'Разряд';
+
+  @override
+  String get myRating => 'Мой рейтинг';
+
+  @override
+  String get noRatingYet => 'Пока нет оценки';
+
+  @override
+  String get executorRatingHint =>
+      'После проверки выполненных нарядов здесь появятся рейтинг и его объяснение.';
+
+  @override
+  String get quality => 'Качество';
+
+  @override
+  String get onTime => 'В срок';
+
+  @override
+  String get reworks => 'Доработки';
+
+  @override
+  String get closedOrders => 'Закрыто нарядов';
+
+  @override
+  String get logout => 'Выйти';
+
+  @override
+  String get ratingPending => 'Оценка ожидается';
+
+  @override
+  String get aiShort => 'ИИ';
+
+  @override
+  String get emergencyResponse => 'Аварийный наряд — требуется ответ';
+
+  @override
+  String get newOrderAssigned => 'Вам назначен новый наряд';
+
+  @override
+  String get returnedForRework => 'Наряд возвращён на доработку';
+
+  @override
+  String get masterClosedOrder => 'Мастер закрыл наряд';
+
+  @override
+  String get deadlineExpired => 'Срок выполнения истёк';
+
+  @override
+  String get noExecutorNotifications => 'Уведомлений пока нет';
+
+  @override
+  String get rejectReason => 'Причина отказа';
+
+  @override
+  String get pauseReason => 'Причина приостановки';
+
+  @override
+  String get orderReassignedWarning =>
+      'Наряд переназначен другому исполнителю.';
+
+  @override
+  String get acceptWork => 'Принять в работу';
+
+  @override
+  String get queueOrder => 'Поставить в очередь';
+
+  @override
+  String get rejectOrder => 'Отклонить';
+
+  @override
+  String get resumeWork => 'Возобновить работу';
+
+  @override
+  String get startExecution => 'Начать исполнение';
+
+  @override
+  String get pauseWork => 'Приостановить';
+
+  @override
+  String get workDone => 'Исполнено';
+
+  @override
+  String get executionDeadline => 'Срок выполнения';
+
+  @override
+  String get faultDescription => 'Описание неисправности';
+
+  @override
+  String get photosBeforeWork => 'Фото до начала работ';
+
+  @override
+  String get masterNoPhotos => 'Мастер не добавил фотографии';
+
+  @override
+  String get masterScorePending => 'Оценка мастера пока не выставлена';
+
+  @override
+  String get assessmentPending => 'Заключение по выполнению пока не получено.';
+
+  @override
+  String get reportAwaitingMaster =>
+      'Отчёт отправлен. Ожидает проверки мастером.';
+
+  @override
+  String get askMasterRemarks => 'Уточните замечания у мастера';
+
+  @override
+  String get yourReport => 'Ваш отчёт';
+
+  @override
+  String get workNotSpecified => 'Работы не указаны';
+
+  @override
+  String get photosAfter => 'Фото после';
+
+  @override
+  String get goToRework => 'Перейти к доработке';
+
+  @override
+  String get openOrder => 'Открыть наряд';
+
+  @override
+  String get addPhotoFailed =>
+      'Не удалось добавить фото. Проверьте разрешения.';
+
+  @override
+  String get unplannedPhotoRequired =>
+      'Для внепланового наряда нужно фото после';
+
+  @override
+  String get commitSelectedMaterial => 'Добавьте выбранный материал в список';
+
+  @override
+  String get material => 'Материал';
+
+  @override
+  String get selectMaterial => 'Выберите материал';
+
+  @override
+  String get quantity => 'Количество';
+
+  @override
+  String get positiveQuantity => 'Введите количество больше нуля';
+
+  @override
+  String get addMaterial => 'Добавить материал';
+
+  @override
+  String get sending => 'Отправка…';
+
+  @override
+  String get submitForReview => 'Отправить на проверку';
+
+  @override
+  String get materialsAndCode => 'Материалы и код';
+
+  @override
+  String get photosAndComment => 'Фото и комментарий';
+
+  @override
+  String get whatWasDone => 'Что было сделано?';
+
+  @override
+  String get describeCompletedWork => 'Опишите выполненные работы';
+
+  @override
+  String get faultCodeLabel => 'Код неисправности';
+
+  @override
+  String get selectCode => 'Выберите код';
+
+  @override
+  String get selectFaultCode => 'Выберите шифр';
+
+  @override
+  String get usedExecutorMaterials => 'Использованные материалы';
+
+  @override
+  String get noMaterialsUsed => 'Материалы не использовались';
+
+  @override
+  String get decrease => 'Уменьшить';
+
+  @override
+  String get increase => 'Увеличить';
+
+  @override
+  String get photosAfterWork => 'Фото после выполнения работ';
+
+  @override
+  String get removePhotoLabel => 'Удалить фото';
+
+  @override
+  String get takeAfterPhoto => 'Сделать фото после';
+
+  @override
+  String get chooseFromGallery => 'Выбрать из галереи';
+
+  @override
+  String get photoLimitReached =>
+      'Добавлено 5 из 5 фото. Удалите фото, чтобы добавить новое.';
+
+  @override
+  String get optionalComment => 'Комментарий (необязательно)';
+
+  @override
+  String get additionalInformation => 'Дополнительная информация';
+
+  @override
+  String get changeStatusFailed =>
+      'Не удалось изменить статус. Повторите попытку.';
+
+  @override
+  String get submitReportFailed =>
+      'Не удалось отправить отчёт. Повторите попытку.';
+
+  @override
+  String get orderIssuedLabel => 'Наряд выдан';
+
+  @override
+  String get mechanicSpecialty => 'Слесарь';
+
+  @override
+  String get electricianSpecialty => 'Электрик';
+
+  @override
+  String get welderSpecialty => 'Сварщик';
+
+  @override
+  String get crushingArea => 'Дробление';
+
+  @override
+  String get beneficiationArea => 'Обогащение';
+
+  @override
+  String get repairArea => 'Ремонтный цех';
+
+  @override
+  String get transportArea => 'Транспортный участок';
+
+  @override
+  String get bearingMaterial => 'Подшипник · шт';
+
+  @override
+  String get sealMaterial => 'Уплотнение · шт';
+
+  @override
+  String get cableMaterial => 'Кабель · м';
+
+  @override
+  String get oilMaterial => 'Масло · л';
+
+  @override
+  String get greaseMaterial => 'Смазка · кг';
+
+  @override
+  String get anomalyExample =>
+      'Пример вывода: конвейер К-3 часто останавливается из-за подшипников. Рекомендация: проверить соосность привода и скорректировать план ППР.';
+
+  @override
+  String closeOrderNumber(String number) {
+    return 'Закрытие наряда №$number';
+  }
+
+  @override
+  String resultOrderNumber(String number) {
+    return 'Результат · №$number';
+  }
+
+  @override
+  String deadlineMinutesLeft(String minutes) {
+    return 'До срока осталось $minutes мин';
+  }
+
+  @override
+  String workTimeValue(String time) {
+    return 'Время в работе: $time';
+  }
+
+  @override
+  String workMinutesValue(String minutes) {
+    return 'Время в работе: $minutes мин';
+  }
+
+  @override
+  String historyWorkMinutes(String minutes) {
+    return '$minutes мин в работе';
+  }
+
+  @override
+  String priorityValue(String priority) {
+    return 'Приоритет: $priority';
+  }
+
+  @override
+  String assessmentVerdict(String verdict) {
+    return 'Проверка: $verdict';
+  }
+
+  @override
+  String assessmentScore(String score) {
+    return 'Оценка: $score / 5';
+  }
+
+  @override
+  String assessmentStrengths(String text) {
+    return 'Что сделано хорошо: $text';
+  }
+
+  @override
+  String assessmentImprovements(String text) {
+    return 'Что улучшить: $text';
+  }
+
+  @override
+  String normHoursValue(String hours) {
+    return 'Норматив: $hours ч';
+  }
+
+  @override
+  String reworkReasonValue(String reason) {
+    return 'Доработка: $reason';
+  }
+
+  @override
+  String faultCodeValue(String code) {
+    return 'Шифр: $code';
+  }
+
+  @override
+  String previousMaterialsValue(String materials) {
+    return 'Ранее указанные материалы:\n$materials';
+  }
+
+  @override
+  String brigadeNumber(String number) {
+    return 'Бригада №$number';
+  }
+
+  @override
+  String get faultBearing => 'М-02 · Подшипник';
+
+  @override
+  String get faultOilLeak => 'Г-01 · Течь масла';
+
+  @override
+  String get faultCableBreak => 'Э-03 · Обрыв кабеля';
+
+  @override
+  String get faultGreaseLack => 'С-01 · Недостаток смазки';
+
+  @override
+  String get faultAirLeak => 'П-02 · Утечка воздуха';
+
+  @override
+  String get crusherEquipment => 'Дробилка КМД-1750';
+
+  @override
+  String get conveyorEquipment => 'Конвейер К-3';
+
+  @override
+  String get screenEquipment => 'Грохот ГИС-52';
+
+  @override
+  String get pumpEquipment => 'Насос Н-12';
+
+  @override
+  String get millEquipment => 'Мельница МШР-3';
+
+  @override
+  String get separatorEquipment => 'Сепаратор С-4';
+
+  @override
+  String get machineEquipment => 'Станок Т-16';
+
+  @override
+  String get craneEquipment => 'Кран-балка КБ-2';
+
+  @override
+  String get loaderEquipment => 'Погрузчик П-7';
+
+  @override
+  String get compressorEquipment => 'Компрессор ВК-22';
+
+  @override
+  String get demoBearingWork => 'Замена подшипника привода';
+
+  @override
+  String get demoOilLeakWork => 'Устранение течи масла';
+
+  @override
+  String get demoPowerWork => 'Проверка питания двигателя';
+
+  @override
+  String get demoLubricationWork => 'Плановая смазка узлов';
+
+  @override
+  String get demoSealWork => 'Замена уплотнения вала';
+
+  @override
+  String get demoGuardWork => 'Восстановление защитного кожуха';
+
+  @override
+  String get demoLubricationCheckWork => 'Плановая смазка и проверка узлов';
+
+  @override
+  String get demoOrderDescription =>
+      'Проверить состояние оборудования, устранить неисправность и выполнить контрольный запуск.';
+
+  @override
+  String get demoSealReport =>
+      'Заменено уплотнение. Соединения проверены. При контрольном запуске течь отсутствует.';
+
+  @override
+  String get demoBearingReport =>
+      'Подшипник заменён. Проверены крепления и выполнен контрольный запуск. Посторонний шум устранён.';
+
+  @override
+  String get demoLubricationReport =>
+      'Выполнена смазка узлов. Проверены крепления и работа оборудования под нагрузкой.';
+
+  @override
+  String get demoWaitingBearing => 'Ждём подшипник со склада';
+
+  @override
+  String get demoSealMaterial => 'Уплотнение 40×60 — 1 шт.';
+
+  @override
+  String get demoOilMaterial => 'Масло И-40 — 0,5 л';
+
+  @override
+  String get demoBearingMaterial => 'Подшипник — 1 шт.';
+
+  @override
+  String get demoGreaseSmall => 'Смазка — 0,2 кг';
+
+  @override
+  String get demoGreaseHalf => 'Смазка — 0,5 кг';
+
+  @override
+  String get awaitingCheck => 'Ожидает проверки';
+
+  @override
+  String get reportAiPending =>
+      'Отчёт отправлен. Проверка ИИ ещё не выполнена.';
+
+  @override
+  String masterDemoAnswer(String query) {
+    return 'Демо-ответ: здесь появятся рекомендации по запросу «$query». Для анализа необходимо подключить backend и ИИ.';
+  }
+
+  @override
+  String queuePosition(String position) {
+    return 'В очереди · позиция $position';
+  }
+
+  @override
+  String get finishCurrentFirst =>
+      'Сначала приостановите или завершите текущий наряд';
+
+  @override
+  String get wholePieceQuantity =>
+      'Для штучного материала укажите целое количество';
+
+  @override
+  String get removeMaterial => 'Удалить материал';
+
+  @override
+  String get removeMaterialQuestion => 'Удалить материал из отчёта?';
+
+  @override
+  String get draftSaved => 'Черновик сохранён';
+
+  @override
+  String get draftLoadFailed =>
+      'Не удалось восстановить черновик. Повторите попытку — сохранённые данные не изменены.';
+
+  @override
+  String get draftSaveFailed =>
+      'Черновик не сохранён. Нажмите, чтобы повторить.';
+
+  @override
+  String overdueByMinutes(String minutes) {
+    return 'Просрочен на $minutes мин';
+  }
+
+  @override
+  String get executionResult => 'Результат проверки';
 }
