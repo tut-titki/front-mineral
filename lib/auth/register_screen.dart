@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:mineral/l10n/app_localizations.dart';
 
 import 'phone_input_formatter.dart';
+import 'auth_page.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const new({super.key});
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -46,142 +48,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const blue = Color(0xFF01408B);
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F5FA),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Center(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      tooltip: 'Назад',
-                      onPressed: () {
-                        FocusScope.of(context).unfocus();
-                        if (_step == 1) {
-                          setState(() => _step = 0);
-                        } else {
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: Colors.black,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Text(
-                      'Создание аккаунта',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 24),
-                Row(
-                  children: [
-                    _stepIndicator(0, 'Личные данные'),
-                    const SizedBox(width: 12),
-                    _stepIndicator(1, 'Доступ к аккаунту'),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Theme(
-                    data: Theme.of(context).copyWith(
-                      inputDecorationTheme: InputDecorationTheme(
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 18,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE1E7F0),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: blue, width: 1.5),
-                        ),
-                      ),
-                      filledButtonTheme: FilledButtonThemeData(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: blue,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size.fromHeight(54),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    child: AnimatedSize(
-                      duration: const Duration(milliseconds: 250),
-                      alignment: Alignment.topCenter,
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: _step == 0
-                            ? _buildNameStep()
-                            : _buildAccountStep(),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Уже есть аккаунт? Войти'),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return AuthPage(
+      title: AppLocalizations.of(context).registrationTitle,
+      subtitle: _step == 0
+          ? AppLocalizations.of(context).nameSubtitle
+          : AppLocalizations.of(context).accountSubtitle,
+      step: _step + 1,
+      onBack: () {
+        FocusScope.of(context).unfocus();
+        if (_step == 1) {
+          setState(() => _step = 0);
+        } else {
+          Navigator.of(context).pop();
+        }
+      },
+      footer: TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: Text(AppLocalizations.of(context).alreadyHaveAccount),
       ),
-    );
-  }
-
-  Widget _stepIndicator(int index, String label) {
-    final active = _step >= index;
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            height: 4,
-            decoration: BoxDecoration(
-              color: active ? const Color(0xFF01408B) : const Color(0xFFDDE3ED),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '${index + 1}. $label',
-            style: TextStyle(
-              color: active ? const Color(0xFF01408B) : const Color(0xFF748095),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        alignment: Alignment.topCenter,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: _step == 0 ? _buildNameStep() : _buildAccountStep(),
+        ),
       ),
     );
   }
@@ -192,24 +83,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            "Как вас зовут?",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Укажите данные для вашего профиля.',
-            style: TextStyle(color: Color(0xFF748095)),
-          ),
-          SizedBox(height: 24),
           TextFormField(
             controller: _lastName,
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
             autofillHints: [AutofillHints.familyName],
-            decoration: InputDecoration(labelText: "Фамилия"),
-            validator: (value) =>
-                (value ?? '').trim().isEmpty ? 'Введите фамилию' : null,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).lastName,
+            ),
+            validator: (value) => (value ?? '').trim().isEmpty
+                ? AppLocalizations.of(context).enterLastName
+                : null,
           ),
           SizedBox(height: 16),
           TextFormField(
@@ -217,9 +101,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
             autofillHints: [AutofillHints.givenName],
-            decoration: InputDecoration(labelText: "Имя"),
-            validator: (value) =>
-                (value ?? '').trim().isEmpty ? 'Введите имя' : null,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).firstName,
+            ),
+            validator: (value) => (value ?? '').trim().isEmpty
+                ? AppLocalizations.of(context).enterFirstName
+                : null,
           ),
           SizedBox(height: 16),
           TextFormField(
@@ -228,15 +115,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             textInputAction: TextInputAction.done,
             autofillHints: [AutofillHints.middleName],
             decoration: InputDecoration(
-              labelText: "Отчество",
-              helperText: 'При наличии',
+              labelText: AppLocalizations.of(context).patronymic,
+              helperText: AppLocalizations.of(context).ifAvailable,
             ),
           ),
-          SizedBox(height: 24),
-          FilledButton.icon(
+          SizedBox(height: 28),
+          FilledButton(
             onPressed: _continue,
-            label: const Text('Продолжить'),
-            icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+            child: Text(AppLocalizations.of(context).continueButton),
           ),
         ],
       ),
@@ -249,24 +135,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text("Данные для входа", style: TextStyle(fontSize: 24)),
-          const SizedBox(height: 8),
-          const Text(
-            'Используйте телефон и пароль для входа в аккаунт.',
-            style: TextStyle(color: Color(0xFF748095)),
-          ),
-          SizedBox(height: 24),
           TextFormField(
             controller: _phone,
             keyboardType: TextInputType.phone,
             inputFormatters: const [PhoneInputFormatter()],
             autofillHints: [AutofillHints.telephoneNumber],
             decoration: InputDecoration(
-              labelText: "Номер телефона",
+              labelText: AppLocalizations.of(context).phoneLabel,
               hintText: "+7 700 123 45 67",
-              prefixIcon: const Icon(Icons.phone_outlined),
             ),
-            validator: validatePhone,
+            validator: (value) => validatePhone(
+              value,
+              emptyMessage: AppLocalizations.of(context).enterPhone,
+              incompleteMessage: AppLocalizations.of(context).incompletePhone,
+            ),
           ),
           SizedBox(height: 16),
           TextFormField(
@@ -274,9 +156,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             obscureText: _hidePassword,
             autofillHints: [AutofillHints.newPassword],
             decoration: InputDecoration(
-              labelText: "Пароль",
-              helperText: "Минимум 8 символов",
-              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              labelText: AppLocalizations.of(context).passwordLabel,
+              helperText: AppLocalizations.of(context).passwordHint,
               suffixIcon: IconButton(
                 onPressed: () {
                   setState(() => _hidePassword = !_hidePassword);
@@ -291,13 +172,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
             validator: (value) {
               if (value == null || value.length < 8) {
-                return "Пароль должен содержать минимум 8 символов";
+                return AppLocalizations.of(context).passwordTooShort;
               }
               return null;
             },
           ),
-          SizedBox(height: 24),
-          FilledButton(onPressed: _register, child: Text("Зарегистрироваться")),
+          SizedBox(height: 28),
+          FilledButton(
+            onPressed: _register,
+            child: Text(AppLocalizations.of(context).registerButton),
+          ),
         ],
       ),
     );

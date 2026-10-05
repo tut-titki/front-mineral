@@ -1,0 +1,37 @@
+{
+  "@@locale": "kk",
+  "loginTitle": "Кіру",
+  "loginSubtitle": "Телефон нөміріңіз бен құпиясөзіңізді енгізіңіз.",
+  "registrationTitle": "Тіркелу",
+  "nameSubtitle": "Тегіңізді, атыңызды және әкеңіздің атын енгізіңіз.",
+  "accountSubtitle": "Телефон нөміріңізді енгізіп, құпиясөз жасаңыз.",
+  "createAccount": "Тіркелгі жасау",
+  "alreadyHaveAccount": "Тіркелгіңіз бар ма? Кіру",
+  "phoneLabel": "Телефон нөмірі",
+  "passwordLabel": "Құпиясөз",
+  "showPassword": "Құпиясөзді көрсету",
+  "hidePassword": "Құпиясөзді жасыру",
+  "enterPassword": "Құпиясөзді енгізіңіз",
+  "loginButton": "Кіру",
+  "lastName": "Тегі",
+  "firstName": "Аты",
+  "patronymic": "Әкесінің аты",
+  "enterLastName": "Тегіңізді енгізіңіз",
+  "enterFirstName": "Атыңызды енгізіңіз",
+  "ifAvailable": "Бар болса",
+  "continueButton": "Жалғастыру",
+  "passwordHint": "Кемінде 8 таңба",
+  "passwordTooShort": "Құпиясөз кемінде 8 таңбадан тұруы керек",
+  "registerButton": "Тіркелу",
+  "back": "Артқа",
+  "enterPhone": "Телефон нөмірін енгізіңіз",
+  "incompletePhone": "Телефон нөмірін толық енгізіңіз",
+  "stepLabel": "2 қадамның {step}-қадамы",
+  "@stepLabel": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  }
+}

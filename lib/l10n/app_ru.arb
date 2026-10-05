@@ -1,0 +1,37 @@
+{
+  "@@locale": "ru",
+  "loginTitle": "Вход",
+  "loginSubtitle": "Введите телефон и пароль вашего аккаунта.",
+  "registrationTitle": "Регистрация",
+  "nameSubtitle": "Укажите фамилию, имя и отчество.",
+  "accountSubtitle": "Добавьте телефон и придумайте пароль.",
+  "createAccount": "Создать аккаунт",
+  "alreadyHaveAccount": "Уже есть аккаунт? Войти",
+  "phoneLabel": "Номер телефона",
+  "passwordLabel": "Пароль",
+  "showPassword": "Показать пароль",
+  "hidePassword": "Скрыть пароль",
+  "enterPassword": "Введите пароль",
+  "loginButton": "Войти",
+  "lastName": "Фамилия",
+  "firstName": "Имя",
+  "patronymic": "Отчество",
+  "enterLastName": "Введите фамилию",
+  "enterFirstName": "Введите имя",
+  "ifAvailable": "При наличии",
+  "continueButton": "Продолжить",
+  "passwordHint": "Минимум 8 символов",
+  "passwordTooShort": "Пароль должен содержать минимум 8 символов",
+  "registerButton": "Зарегистрироваться",
+  "back": "Назад",
+  "enterPhone": "Введите номер телефона",
+  "incompletePhone": "Введите номер полностью",
+  "stepLabel": "Шаг {step} из 2",
+  "@stepLabel": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  }
+}

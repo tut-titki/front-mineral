@@ -59,12 +59,16 @@ class PhoneInputFormatter extends TextInputFormatter {
   }
 }
 
-String? validatePhone(String? value) {
+String? validatePhone(
+  String? value, {
+  String emptyMessage = 'Введите номер телефона',
+  String incompleteMessage = 'Введите номер полностью',
+}) {
   if (value == null || value.trim().isEmpty) {
-    return 'Введите номер телефона';
+    return emptyMessage;
   }
   if (!RegExp(r'^\+7 \d{3} \d{3} \d{2} \d{2}$').hasMatch(value)) {
-    return 'Введите номер полностью';
+    return incompleteMessage;
   }
   return null;
 }

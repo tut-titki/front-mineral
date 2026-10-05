@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:mineral/l10n/app_localizations.dart';
 
 import 'phone_input_formatter.dart';
+import 'auth_page.dart';
 
 import 'package:mineral/auth/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const new({super.key});
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -32,74 +34,72 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(12),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Image.asset('assets/logo_blue.png', height: 85),
-                  SizedBox(height: 20),
-                  Text(
-                    "Вход",
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
-                  ),
-                  SizedBox(height: 24),
-                  TextFormField(
-                    controller: _phone,
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: const [PhoneInputFormatter()],
-                    autofillHints: [AutofillHints.telephoneNumber],
-                    decoration: InputDecoration(
-                      labelText: "Номер телефона",
-                      hintText: "+7 700 123 45 67",
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: validatePhone,
-                  ),
-                  SizedBox(height: 20),
-                  TextFormField(
-                    controller: _password,
-                    obscureText: _hidePassword,
-                    autofillHints: [AutofillHints.password],
-                    decoration: InputDecoration(
-                      labelText: "Пароль",
-                      border: OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() => _hidePassword = !_hidePassword);
-                        },
-                        icon: Icon(
-                          _hidePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
-                      ),
-                    ),
-
-                    validator: (value) => value == null || value.isEmpty
-                        ? "Введите пароль"
-                        : null,
-                  ),
-                  SizedBox(height: 24),
-                  FilledButton(onPressed: _login, child: Text("Войти")),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => RegisterScreen()),
-                      );
-                    },
-                    child: Text("Создать аккаунт"),
-                  ),
-                ],
+    return AuthPage(
+      title: AppLocalizations.of(context).loginTitle,
+      subtitle: AppLocalizations.of(context).loginSubtitle,
+      showLogo: true,
+      footer: TextButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const RegisterScreen()),
+          );
+        },
+        child: Text(AppLocalizations.of(context).createAccount),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: _phone,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              inputFormatters: const [PhoneInputFormatter()],
+              autofillHints: const [AutofillHints.telephoneNumber],
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).phoneLabel,
+                hintText: '+7 700 123 45 67',
+              ),
+              validator: (value) => validatePhone(
+                value,
+                emptyMessage: AppLocalizations.of(context).enterPhone,
+                incompleteMessage: AppLocalizations.of(context).incompletePhone,
               ),
             ),
-          ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _password,
+              obscureText: _hidePassword,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _login(),
+              autofillHints: const [AutofillHints.password],
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).passwordLabel,
+                suffixIcon: IconButton(
+                  tooltip: _hidePassword
+                      ? AppLocalizations.of(context).showPassword
+                      : AppLocalizations.of(context).hidePassword,
+                  onPressed: () =>
+                      setState(() => _hidePassword = !_hidePassword),
+                  icon: Icon(
+                    _hidePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    size: 20,
+                  ),
+                ),
+              ),
+              validator: (value) => value == null || value.isEmpty
+                  ? AppLocalizations.of(context).enterPassword
+                  : null,
+            ),
+            const SizedBox(height: 28),
+            FilledButton(
+              onPressed: _login,
+              child: Text(AppLocalizations.of(context).loginButton),
+            ),
+          ],
         ),
       ),
     );
