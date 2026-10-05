@@ -1,43 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:mineral/auth/login_screen.dart';
-import 'package:mineral/splash_screen.dart';
-import 'package:mineral/l10n/app_localizations.dart';
-import 'package:mineral/l10n/app_locale.dart';
 
-void main() {
-  runApp(const MainApp());
-}
+import 'auth/login_screen.dart';
+import 'splash_screen.dart';
+import 'src/demo_store.dart';
+import 'src/master_shell.dart';
+import 'src/photo_picker_service.dart';
+import 'theme.dart';
 
-class MainApp extends StatelessWidget {
+void main() => runApp(const MainApp());
+
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const logoBlue = Color(0xFF01408B);
+  State<MainApp> createState() => _MainAppState();
+}
 
-    return ValueListenableBuilder<Locale?>(
-      valueListenable: appLocale,
-      builder: (context, value, child) {
-        return MaterialApp(
-          locale: value,
-          debugShowCheckedModeBanner: false,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: logoBlue),
-            filledButtonTheme: FilledButtonThemeData(
-              style: FilledButton.styleFrom(
-                backgroundColor: logoBlue,
-                foregroundColor: Colors.white,
-              ),
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: logoBlue),
-            ),
-          ),
-          home: const SplashScreen(nextScreen: LoginScreen()),
-        );
-      },
+class _MainAppState extends State<MainApp> {
+  final store = DemoStore();
+
+  @override
+  void initState() {
+    super.initState();
+    PhotoPickerService.instance.recoverLostPhotos();
+  }
+
+  @override
+  void dispose() {
+    store.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Mineral · Мастер смены',
+      theme: buildAppTheme(),
+      routes: {'/master': (_) => MasterShell(store: store)},
+      home: const SplashScreen(nextScreen: LoginScreen()),
     );
   }
 }

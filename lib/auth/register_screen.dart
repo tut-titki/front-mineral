@@ -6,6 +6,7 @@ import 'auth_page.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -43,7 +44,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _register() {
     if (!_accountFormKey.currentState!.validate()) return;
 
-    // Вызов Api регистрации
+    // Временный переход для визуального прототипа, без регистрации API.
+    FocusScope.of(context).unfocus();
+    Navigator.of(context).pushNamedAndRemoveUntil('/master', (_) => false);
   }
 
   @override
