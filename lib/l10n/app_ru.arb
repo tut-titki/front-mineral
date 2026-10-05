@@ -1,5 +1,28 @@
 {
   "@@locale": "ru",
+  "exportReport": "Экспорт",
+  "reportPeriodHint": "Наряды, выданные за выбранный период",
+  "todayPeriod": "Сегодня",
+  "weekPeriod": "7 дней",
+  "monthPeriod": "30 дней",
+  "allTimePeriod": "Всё время",
+  "noPeriodEmployees": "За этот период нет исполнителей с нарядами",
+  "editOrder": "Редактирование наряда",
+  "changeDeadline": "Изменить срок выполнения",
+  "brigadeMembers": "Состав бригады",
+  "brigades": "Бригады",
+  "teamBrigadeSearch": "Бригада, имя или специальность",
+  "eventDeadline": "Срок изменён: {value}",
+  "@eventDeadline": {"placeholders": {"value": {"type": "String"}}},
+  "filters": "Фильтры",
+  "applyFilters": "Применить",
+  "resetFilters": "Сбросить",
+  "closeFilters": "Закрыть фильтры",
+  "statusFilter": "Статус",
+  "onlyOverdue": "Только просроченные",
+  "clearSearch": "Очистить поиск",
+  "attachPhoto": "Прикрепить фото",
+  "choosePhotoSource": "Выберите источник фото",
   "loginTitle": "Вход",
   "loginSubtitle": "Введите телефон и пароль вашего аккаунта.",
   "registrationTitle": "Регистрация",
@@ -31,6 +54,405 @@
     "placeholders": {
       "step": {
         "type": "int"
+      }
+    }
+  },
+  "dashboard": "Обзор смены",
+  "greeting": "Здравствуйте, Серик. Вот что происходит на участке.",
+  "createOrder": "Создать наряд",
+  "issuedOrders": "Выдано нарядов",
+  "completed": "Выполнено",
+  "overdue": "Просрочено",
+  "awaitingAcceptance": "На приёмке",
+  "equipmentStopped": "Оборудование в простое",
+  "needsAttention": "Требуют внимания",
+  "noAttention": "Нет нарядов, требующих внимания",
+  "shiftTeam": "Команда на смене",
+  "allTeam": "Вся команда →",
+  "allAreas": "Все участки",
+  "allEquipment": "Всё оборудование",
+  "allPriorities": "Все приоритеты",
+  "all": "Все",
+  "overduePlural": "Просрочены",
+  "issuedPlural": "Выданные",
+  "acceptedPlural": "Принятые",
+  "working": "В работе",
+  "queued": "В очереди",
+  "completedPlural": "Выполненные",
+  "pausedPlural": "Приостановлены",
+  "rework": "На доработке",
+  "rejectedPlural": "Отклонены",
+  "cancelledPlural": "Отменены",
+  "orders": "Наряды",
+  "ordersSubtitle": "Назначения, сроки и текущие статусы работ",
+  "newOrder": "Новый наряд",
+  "listView": "Список",
+  "kanban": "Канбан",
+  "orderSearch": "Номер, работа или оборудование",
+  "area": "Участок",
+  "equipment": "Оборудование",
+  "employee": "Исполнитель",
+  "allEmployees": "Все исполнители",
+  "priority": "Приоритет",
+  "noFilteredOrders": "По выбранным фильтрам нарядов нет",
+  "overdueOrders": "Просроченные",
+  "demoRating": "Демо-рейтинг",
+  "available": "Свободен",
+  "team": "Команда",
+  "teamSubtitle": "Загрузка исполнителей, специальности и доступность",
+  "employeeSearch": "Имя или специальность",
+  "onlyAvailable": "Только свободные",
+  "noEmployees": "Исполнители не найдены",
+  "aiControl": "ИИ-контроль",
+  "aiSubtitle": "Рекомендации цифрового контролёра. Финальное решение принимает мастер.",
+  "deadlineControl": "Контроль сроков",
+  "deadlineHelp": "Напоминание за 30 минут до срока. Эскалация, если обычный наряд не принят за 10 минут, аварийный — за 3 минуты.",
+  "completionCheck": "Проверка выполнения",
+  "noReviewOrders": "Нет нарядов на проверке",
+  "photoAnalysis": "Анализ фото до / после",
+  "photoAnalysisHelp": "Проверка наличия и актуальности фото, сравнение оборудования и видимых дефектов. При низкой уверенности потребуется проверка мастера.",
+  "orderReport": "Отчёт по наряду",
+  "orderReportHelp": "Работы, материалы, хронология, соблюдение срока и объяснение оценки собраны в карточке наряда.",
+  "equipmentAnomalies": "Аномалии оборудования",
+  "employeeRating": "Рейтинг исполнителей",
+  "ratingHelp": "Качество, выполнение в срок, доработки, сложность работ и обоснованность отказов формируют оценку.",
+  "masterAssistant": "Ассистент мастера",
+  "chatHelp": "Макет чата. Ответы демонстрационные.",
+  "chatHint": "Например: кто сейчас свободен?",
+  "showDemoAnswer": "Показать демо-ответ",
+  "reportsRating": "Отчёты и рейтинг",
+  "reportsSubtitle": "Сводка текущей демонстрационной смены",
+  "pdfNotReady": "Выгрузку PDF подключим вместе с backend",
+  "exportPdf": "Экспорт PDF",
+  "excelNotReady": "Выгрузку Excel подключим вместе с backend",
+  "exportExcel": "Экспорт Excel",
+  "periodNotReady": "Отчёты за произвольный период подключим после добавления истории на backend",
+  "selectPeriod": "Выбрать период",
+  "totalOrders": "Всего нарядов",
+  "closed": "Закрыто",
+  "rejected": "Отклонено",
+  "equipmentDowntime": "Простои оборудования",
+  "downtimeReportHelp": "Макет отчёта: время остановки по оборудованию, причины и доля плановых / внеплановых работ.",
+  "usedMaterials": "Списанные материалы",
+  "materialsReportHelp": "Макет отчёта: расход по материалам, участкам и исполнителям, сравнение с нормативами.",
+  "notificationCenter": "Центр уведомлений",
+  "notificationsSubtitle": "Локальные уведомления прототипа. Push не подключён.",
+  "noNotifications": "Новых уведомлений нет",
+  "awaitingReview": "Работа ожидает приёмки",
+  "emergencyAwaiting": "Аварийный наряд ожидает ответа",
+  "normalPriority": "Обычный",
+  "permissionDenied": "Разрешите доступ к камере или фото в настройках приложения.",
+  "pickerFailed": "Не удалось открыть камеру или галерею. Попробуйте ещё раз.",
+  "photoLoadFailed": "Не удалось загрузить фото. Выберите другой снимок.",
+  "deadline": "Срок исполнения",
+  "cancel": "Отмена",
+  "select": "Выбрать",
+  "executionTime": "Время исполнения",
+  "futureDeadline": "Выберите срок в будущем.",
+  "createOrderTitle": "Создание наряда",
+  "workDescription": "Описание работ",
+  "unplanned": "Внеплановый",
+  "planned": "Плановый",
+  "optionalWorkTitle": "Название работы (необязательно)",
+  "problemWorks": "Проблема и необходимые работы",
+  "voiceInput": "Голосовой ввод",
+  "voiceNotReady": "Голосовой ввод подключим позже.",
+  "describeProblem": "Опишите проблему",
+  "locationAssignee": "Место и исполнитель",
+  "brigade": "Бригада",
+  "selectEmployee": "Выберите исполнителя",
+  "selectBrigade": "Выберите бригаду",
+  "deadlinePriority": "Срок и приоритет",
+  "emergencyPriority": "Аварийный",
+  "highPriority": "Высокий",
+  "normHoursShort": "Норматив, ч",
+  "dateTime": "Дата и время",
+  "normHours": "Норматив в часах",
+  "normRange": "Укажите от 1 минуты до 8760 часов",
+  "optionalFaultCode": "Шифр неисправности (необязательно)",
+  "notSpecified": "Не указан",
+  "comment": "Комментарий",
+  "faultPhotos": "Фото неисправности · до 5",
+  "issueOrder": "Выдать наряд",
+  "reason": "Причина",
+  "specifyReason": "Укажите причину",
+  "confirm": "Подтвердить",
+  "employeeOrBrigade": "Исполнитель или бригада",
+  "orderPriority": "Приоритет наряда",
+  "masterScore": "Оценка мастера",
+  "overdueSingular": "Просрочен",
+  "orderInformation": "Информация о наряде",
+  "workType": "Тип работ",
+  "description": "Описание",
+  "issueDate": "Дата выдачи",
+  "norm": "Норматив",
+  "faultCode": "Шифр неисправности",
+  "master": "Мастер",
+  "orderDowntime": "Простой оборудования",
+  "stopped": "Оборудование остановлено",
+  "noDowntime": "Нет активного простоя",
+  "beforeWork": "До выполнения",
+  "afterWork": "После выполнения",
+  "reassign": "Переназначить",
+  "changePriority": "Изменить приоритет",
+  "cancelOrderTitle": "Отмена наряда",
+  "cancelOrder": "Отменить наряд",
+  "workerReport": "Отчёт исполнителя",
+  "completedWorks": "Выполненные работы",
+  "materials": "Материалы",
+  "notSpecifiedPlural": "Не указаны",
+  "changeScore": "Изменить оценку",
+  "acceptedByMaster": "Работы приняты мастером",
+  "acceptClose": "Принять и закрыть",
+  "returnRework": "Вернуть на доработку",
+  "toRework": "На доработку",
+  "actionHistory": "История действий",
+  "reports": "Отчёты",
+  "notifications": "Уведомления",
+  "shift": "Смена",
+  "shiftManagement": "УПРАВЛЕНИЕ СМЕНОЙ",
+  "masterRole": "Мастер смены",
+  "offShift": "Не на смене",
+  "aiDemoLabel": "Демонстрационные данные · ИИ не подключён",
+  "photoOpenFailed": "Не удалось открыть фото",
+  "noPhotos": "Фото не прикреплены",
+  "camera": "Камера",
+  "gallery": "Галерея",
+  "statusIssued": "Выдан",
+  "statusAccepted": "Принят",
+  "statusPaused": "Приостановлен",
+  "statusReview": "На проверке",
+  "statusClosed": "Закрыт",
+  "statusRejected": "Отклонён",
+  "statusCancelled": "Отменён",
+  "emergencyFull": "Аварийный — срочно в работу",
+  "normalFull": "Обычный — в порядке очереди",
+  "noAiVerdict": "Нет заключения",
+  "aiUnavailable": "ИИ пока не подключён.",
+  "positiveNorm": "Норматив должен быть больше нуля",
+  "onShiftAssignee": "Выберите исполнителя или бригаду на смене",
+  "futureDeadlineError": "Срок должен быть в будущем",
+  "fivePhotos": "Не более 5 фото",
+  "employeeOffShift": "Сотрудник не на смене",
+  "brigadeOffShift": "Бригада не на смене",
+  "language": "Язык",
+  "complex": "Минеральный комплекс",
+  "orderNumber": "Наряд №{number}",
+  "@orderNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "orderNumberUpper": "НАРЯД №{number}",
+  "@orderNumberUpper": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "issuePreview": "Выдача: {date}",
+  "@issuePreview": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "issuedAt": "Выдан {date}",
+  "@issuedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dueAt": "До {date}",
+  "@dueAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursValue": "{hours} ч",
+  "@hoursValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "scoreValue": "{score} из 5",
+  "@scoreValue": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "employeeGrade": "{specialty} · {grade} разряд",
+  "@employeeGrade": {
+    "placeholders": {
+      "specialty": {
+        "type": "String"
+      },
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
+  "workingOrder": "В работе · №{number}",
+  "@workingOrder": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "workingQueue": "В работе · №{number} · очередь {count}",
+  "@workingQueue": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "queuedCount": "В очереди · {count}",
+  "@queuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "assignedOrder": "Занят · назначен №{number}",
+  "@assignedOrder": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "brigadeAvailability": "На смене: {total} · свободны: {free} · заняты: {busy}",
+  "@brigadeAvailability": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "free": {
+        "type": "String"
+      },
+      "busy": {
+        "type": "String"
+      }
+    }
+  },
+  "overdueMinutes": "Просрочка · {minutes} мин.",
+  "@overdueMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "removePhoto": "Удалить фото {number}",
+  "@removePhoto": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "boardCount": "{label} · {count}",
+  "@boardCount": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "shiftTime": "Смена №{number} · {time}",
+  "@shiftTime": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "aiVerdict": "Вердикт ИИ: {verdict}",
+  "@aiVerdict": {
+    "placeholders": {
+      "verdict": {
+        "type": "String"
+      }
+    }
+  },
+  "aiSummary": "{explanation}\nОценка ИИ: {aiScore} / 5.\nИтоговая оценка: {score} / 5.\nОкончательное решение принимает мастер.",
+  "@aiSummary": {
+    "placeholders": {
+      "explanation": {
+        "type": "String"
+      },
+      "aiScore": {
+        "type": "String"
+      },
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "eventIssued": "Наряд выдан: {assignee}",
+  "@eventIssued": {
+    "placeholders": {
+      "assignee": {
+        "type": "String"
+      }
+    }
+  },
+  "eventReassigned": "Переназначен: {assignee}",
+  "@eventReassigned": {
+    "placeholders": {
+      "assignee": {
+        "type": "String"
+      }
+    }
+  },
+  "eventPriority": "Приоритет изменён: {priority}",
+  "@eventPriority": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "eventScore": "Оценка мастера: {score} / 5",
+  "@eventScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "eventReason": "{status}: {reason}",
+  "@eventReason": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
       }
     }
   }

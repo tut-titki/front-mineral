@@ -6,7 +6,6 @@ import 'auth_page.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
-  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();

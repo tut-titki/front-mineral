@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mineral/l10n/app_locale.dart';
+import 'package:mineral/l10n/app_localizations.dart';
 
 class AuthPage extends StatelessWidget {
   const AuthPage({
@@ -31,8 +32,9 @@ class AuthPage extends StatelessWidget {
     return Theme(
       data: Theme.of(context).copyWith(
         textTheme: Theme.of(context).textTheme.copyWith(
-          bodyLarge: Theme.of(context).textTheme.bodyLarge
-              ?.copyWith(fontSize: 17),
+          bodyLarge: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(fontSize: 17),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
@@ -66,15 +68,19 @@ class AuthPage extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            textStyle: Theme.of(context).textTheme.labelLarge
-                ?.copyWith(fontSize: 17, fontWeight: FontWeight.w600),
+            textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
             foregroundColor: blue,
-            textStyle: Theme.of(context).textTheme.labelLarge
-                ?.copyWith(fontSize: 16, fontWeight: FontWeight.w500),
+            textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ),
@@ -115,7 +121,9 @@ class AuthPage extends StatelessWidget {
                                   children: [
                                     IconButton(
                                       onPressed: onBack,
-                                      tooltip: 'Назад',
+                                      tooltip: AppLocalizations.of(
+                                        context,
+                                      ).back,
                                       icon: const Icon(
                                         Icons.arrow_back_ios_new,
                                         size: 22,
@@ -126,7 +134,9 @@ class AuthPage extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      'Шаг $step из 2',
+                                      AppLocalizations.of(
+                                        context,
+                                      ).stepLabel(step!),
                                       style: const TextStyle(
                                         color: Color(0xFF687385),
                                         fontSize: 14,
