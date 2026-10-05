@@ -109,6 +109,18 @@ class AuthPage extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              if (showLogo) ...[
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: Image.asset(
+                                    'assets/logo_blue.png',
+                                    width: 220,
+                                    height: 120,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+                              ],
                               if (onBack != null) ...[
                                 Row(
                                   mainAxisAlignment:
@@ -137,18 +149,6 @@ class AuthPage extends StatelessWidget {
                                   ],
                                 ),
                                 const SizedBox(height: 24),
-                              ],
-                              if (showLogo) ...[
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: Image.asset(
-                                    'assets/logo_blue.png',
-                                    width: 180,
-                                    height: 108,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                                const SizedBox(height: 32),
                               ],
                               Text(
                                 title,

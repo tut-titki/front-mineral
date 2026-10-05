@@ -49,6 +49,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return AuthPage(
+      showLogo: true,
       title: AppLocalizations.of(context).registrationTitle,
       subtitle: _step == 0
           ? AppLocalizations.of(context).nameSubtitle
