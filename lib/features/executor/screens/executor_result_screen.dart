@@ -3,7 +3,7 @@ import 'package:mineral/l10n/ui_localization.dart';
 import 'package:mineral/features/executor/data/executor_repository.dart';
 import 'package:mineral/shared/models/models.dart';
 import 'package:mineral/features/orders/widgets/photo_attachments.dart';
-import 'executor_order_screen.dart';
+import 'executor_order_loader.dart';
 
 class ExecutorResultScreen extends StatelessWidget {
   const ExecutorResultScreen({
@@ -18,7 +18,8 @@ class ExecutorResultScreen extends StatelessWidget {
 
   void _open(BuildContext context) => Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => ExecutorOrderScreen(
+      builder: (_) => ExecutorOrderLoader(
+        showResult: false,
         store: store,
         order: order,
         employeeId: employeeId,
@@ -38,7 +39,7 @@ class ExecutorResultScreen extends StatelessWidget {
           ?.reason;
       return Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(title: Text(s.resultOrderNumber('${order.number}'))),
+        appBar: AppBar(title: Text(s.resultOrderNumber(order.displayNumber))),
         bottomNavigationBar: SafeArea(
           top: false,
           child: Padding(

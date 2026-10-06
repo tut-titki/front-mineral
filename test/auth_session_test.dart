@@ -252,11 +252,16 @@ void main() {
       await storage.write('existing-token');
       final session = AuthSession(
         storage: storage,
-        client: MockClient(
-          (request) async => request.url.path == '/api/auth/me'
-              ? response({...profile, 'id': 42, 'language': 'ru'}, 200)
-              : response({'error': 'Нужна авторизация'}, 401),
-        ),
+        client: MockClient((request) async {
+          if (request.url.path == '/api/auth/me') {
+            return response({...profile, 'id': 42, 'language': 'ru'}, 200);
+          }
+          if (request.url.queryParameters['compact'] == '1' ||
+              request.url.path.startsWith('/api/references/')) {
+            return response([], 200);
+          }
+          return response({'error': 'Нужна авторизация'}, 401);
+        }),
       );
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;

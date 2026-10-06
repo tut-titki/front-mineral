@@ -2,8 +2,7 @@ import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:mineral/features/executor/data/executor_repository.dart';
 import 'package:mineral/shared/models/models.dart';
-import 'executor_order_screen.dart';
-import 'executor_result_screen.dart';
+import 'executor_order_loader.dart';
 
 class ExecutorNotificationsScreen extends StatelessWidget {
   const ExecutorNotificationsScreen({
@@ -104,27 +103,16 @@ class ExecutorNotificationsScreen extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(
-                  '№${order.number} · ${uiText(context, order.equipment)}',
+                  '№${order.displayNumber} · ${uiText(context, order.equipment)}',
                 ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) =>
-                        {
-                          OrderStatus.closed,
-                          OrderStatus.rework,
-                          OrderStatus.review,
-                        }.contains(order.status)
-                        ? ExecutorResultScreen(
-                            store: store,
-                            order: order,
-                            employeeId: employeeId,
-                          )
-                        : ExecutorOrderScreen(
-                            store: store,
-                            order: order,
-                            employeeId: employeeId,
-                          ),
+                    builder: (_) => ExecutorOrderLoader(
+                      store: store,
+                      order: order,
+                      employeeId: employeeId,
+                    ),
                   ),
                 ),
               ),

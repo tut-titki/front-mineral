@@ -13,13 +13,15 @@ class ExecutorHistoryTile extends StatelessWidget {
   final DateTime now;
   final VoidCallback onTap;
 
-  DateTime get _finishedAt => order.history
-      .where((event) => event.status == order.status)
-      .map((event) => event.time)
-      .fold(
-        order.createdAt,
-        (latest, time) => time.isAfter(latest) ? time : latest,
-      );
+  DateTime get _finishedAt =>
+      order.finishedAt ??
+      order.history
+          .where((event) => event.status == order.status)
+          .map((event) => event.time)
+          .fold(
+            order.createdAt,
+            (latest, time) => time.isAfter(latest) ? time : latest,
+          );
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +80,7 @@ class ExecutorHistoryTile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          strings(context).orderNumber('${order.number}'),
+                          strings(context).orderNumber(order.displayNumber),
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF01408B),
@@ -118,7 +120,9 @@ class ExecutorHistoryTile extends StatelessWidget {
                   _metric(
                     Icons.timer_outlined,
                     strings(context).historyWorkMinutes(
-                      '${order.workDuration(now).inMinutes}',
+                      order.detailsLoaded
+                          ? '${order.workDuration(now).inMinutes}'
+                          : '—',
                     ),
                   ),
                   if (order.status == OrderStatus.closed)

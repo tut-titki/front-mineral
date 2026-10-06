@@ -3,8 +3,7 @@ import 'dart:async';
 import '../widgets/executor_greeting.dart';
 import '../widgets/executor_history_tile.dart';
 import '../models/executor_order_queue.dart';
-import 'executor_order_screen.dart';
-import 'executor_result_screen.dart';
+import 'executor_order_loader.dart';
 import 'executor_profile_screen.dart';
 import 'executor_notifications_screen.dart';
 import 'package:mineral/l10n/ui_localization.dart';
@@ -49,6 +48,9 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_refresh());
+    });
     _greetingTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -65,23 +67,12 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
 
   void _openOrder(WorkOrder order) => Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) =>
-          _page == 1 ||
-              {
-                OrderStatus.review,
-                OrderStatus.rework,
-                OrderStatus.closed,
-              }.contains(order.status)
-          ? ExecutorResultScreen(
-              store: store,
-              order: order,
-              employeeId: employeeId,
-            )
-          : ExecutorOrderScreen(
-              store: store,
-              order: order,
-              employeeId: employeeId,
-            ),
+      builder: (_) => ExecutorOrderLoader(
+        store: store,
+        order: order,
+        employeeId: employeeId,
+        showResult: _page == 1 ? true : null,
+      ),
     ),
   );
 
@@ -170,7 +161,11 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
             return _page == 1 ? archived : !archived;
           }).toList();
           orders.sort((a, b) {
-            if (_page == 1) return b.createdAt.compareTo(a.createdAt);
+            if (_page == 1) {
+              return (b.finishedAt ?? b.createdAt).compareTo(
+                a.finishedAt ?? a.createdAt,
+              );
+            }
             return ExecutorOrderQueue.compare(a, b);
           });
 
@@ -178,7 +173,7 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
           final visible = orders
               .where(
                 (o) =>
-                    ('${o.number} ${o.title} ${o.equipment} ${uiText(context, o.title)} ${uiText(context, o.equipment)}'
+                    ('${o.displayNumber} ${o.title} ${o.equipment} ${uiText(context, o.title)} ${uiText(context, o.equipment)}'
                         .toLowerCase()
                         .contains(_query.trim().toLowerCase())),
               )
@@ -391,7 +386,7 @@ class _OrderTile extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      strings(context).orderNumber('${order.number}'),
+                      strings(context).orderNumber(order.displayNumber),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

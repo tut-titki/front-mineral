@@ -5,12 +5,16 @@ import 'package:mineral/shared/models/models.dart';
 import 'execution_draft_storage.dart';
 import 'executor_repository.dart';
 
-ExecutionDraftStorage createStorage() => FileExecutionDraftStorage();
+ExecutionDraftStorage createStorage({String folderName = 'execution_drafts'}) =>
+    FileExecutionDraftStorage(folderName: folderName);
 
 class FileExecutionDraftStorage implements ExecutionDraftStorage {
-  FileExecutionDraftStorage({Future<Directory> Function()? directory})
-    : _directory = directory ?? getApplicationSupportDirectory;
+  FileExecutionDraftStorage({
+    Future<Directory> Function()? directory,
+    this.folderName = 'execution_drafts',
+  }) : _directory = directory ?? getApplicationSupportDirectory;
   final Future<Directory> Function() _directory;
+  final String folderName;
   Future<void> _pending = Future.value();
 
   Future<T> _serial<T>(Future<T> Function() action) {
@@ -21,7 +25,7 @@ class FileExecutionDraftStorage implements ExecutionDraftStorage {
 
   Future<File> _file(int employeeId, int number) async {
     final root = await _directory();
-    final folder = Directory('${root.path}/execution_drafts');
+    final folder = Directory('${root.path}/$folderName');
     await folder.create(recursive: true);
     return File('${folder.path}/${employeeId}_$number.json');
   }

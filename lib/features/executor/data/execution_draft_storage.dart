@@ -9,4 +9,6 @@ abstract interface class ExecutionDraftStorage {
   Future<void> remove(int employeeId, int orderNumber);
 }
 
-ExecutionDraftStorage createExecutionDraftStorage() => platform.createStorage();
+ExecutionDraftStorage createExecutionDraftStorage({
+  String folderName = 'execution_drafts',
+}) => platform.createStorage(folderName: folderName);

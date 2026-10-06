@@ -86,6 +86,10 @@ class WorkOrder {
     required this.priority,
     required this.deadline,
     required this.createdAt,
+    this.apiId,
+    this.apiNumber,
+    this.detailsLoaded = true,
+    this.finishedAt,
     this.planned = false,
     this.status = OrderStatus.issued,
     this.comment = '',
@@ -112,7 +116,10 @@ class WorkOrder {
 
   final int number;
   final DateTime createdAt;
-
+  final int? apiId;
+  final String? apiNumber;
+  bool detailsLoaded;
+  DateTime? finishedAt;
   String title;
   String description;
   String area;
@@ -142,6 +149,7 @@ class WorkOrder {
   bool equipmentStopped;
 
   double get finalScore => masterScore ?? aiScore;
+  String get displayNumber => apiNumber ?? '$number';
 
   final List<OrderEvent> history;
 

@@ -130,7 +130,7 @@ class AuthSession extends ChangeNotifier {
   DateTime? blockedUntil;
   bool get authenticated => _token != null && user != null;
 
-  Future<Map<String, dynamic>> request(
+  Future<Object?> _requestJson(
     String method,
     String path, {
     Map<String, dynamic>? body,
@@ -147,16 +147,19 @@ class AuthSession extends ChangeNotifier {
       await _client.send(request).timeout(timeout),
     ).timeout(timeout);
     if (protected && response.statusCode == 401) await expire();
-    Map<String, dynamic> data = {};
+
+    Object? decoded;
     try {
       if (response.bodyBytes.isNotEmpty) {
-        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-        if (decoded is Map) data = Map<String, dynamic>.from(decoded);
+        decoded = jsonDecode(utf8.decode(response.bodyBytes));
       }
     } on FormatException {
-      /* A proxy can return a non-JSON error. */
+      // прокси может вернуть ошибку не в json
     }
-    if (response.statusCode >= 200 && response.statusCode < 300) return data;
+    final data = decoded is Map
+        ? Map<String, dynamic>.from(decoded)
+        : <String, dynamic>{};
+    if (response.statusCode >= 200 && response.statusCode < 300) return decoded;
     final seconds = int.tryParse(response.headers['retry-after'] ?? '');
     throw ApiException(
       response.statusCode,
@@ -164,6 +167,75 @@ class AuthSession extends ChangeNotifier {
       details: data['details'],
       retryAfter: seconds == null ? null : Duration(seconds: seconds),
     );
+  }
+
+  Future<Map<String, dynamic>> request(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+    bool protected = true,
+    Duration timeout = const Duration(seconds: 20),
+  }) async {
+    final result = await _requestJson(
+      method,
+      path,
+      body: body,
+      protected: protected,
+      timeout: timeout,
+    );
+    if (result == null) return {};
+    if (result is! Map) {
+      throw const FormatException("Ожидался JSON-обьект");
+    }
+    return Map<String, dynamic>.from(result);
+  }
+
+  Future<List<Map<String, dynamic>>> requestList(String path) async {
+    final result = await _requestJson("GET", path);
+    if (result is! List) {
+      throw const FormatException("Ожидался JSON-массив");
+    }
+    return result.map((item) {
+      if (item is! Map) {
+        throw const FormatException("Некорректный элемент списка");
+      }
+      return Map<String, dynamic>.from(item);
+    }).toList();
+  }
+
+  Future<Map<String, dynamic>> uploadPhoto(String name, Uint8List bytes) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/api/uploads'),
+    );
+    if (_token != null) request.headers['Authorization'] = 'Bearer $_token';
+    request.files.add(
+      http.MultipartFile.fromBytes('file', bytes, filename: name),
+    );
+    final response = await http.Response.fromStream(
+      await _client.send(request).timeout(const Duration(seconds: 60)),
+    ).timeout(const Duration(seconds: 60));
+    if (response.statusCode == 401) await expire();
+    final decoded =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        response.statusCode,
+        decoded['error'] as String? ?? '',
+        details: decoded['details'],
+      );
+    }
+    return decoded;
+  }
+
+  Future<Uint8List> downloadPhoto(String url) async {
+    final uri = Uri.parse(baseUrl).resolve(url);
+    final response = await _client
+        .get(uri)
+        .timeout(const Duration(seconds: 30));
+    // Signed image URLs are independent of the application session.
+    if (response.statusCode != 200) throw ApiException(response.statusCode, '');
+    return response.bodyBytes;
   }
 
   Future<AuthUser> login(String phone, String password) async {

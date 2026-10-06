@@ -1,3 +1,4 @@
+import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/material.dart';
 import 'completion_screen.dart';
@@ -44,9 +45,11 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              error is StateError &&
-                      error.message ==
-                          'Сначала приостановите или завершите текущий наряд'
+              error is ApiException && error.message.isNotEmpty
+                  ? error.message
+                  : error is StateError &&
+                        error.message ==
+                            'Сначала приостановите или завершите текущий наряд'
                   ? strings(context).finishCurrentFirst
                   : strings(context).changeStatusFailed,
             ),
@@ -152,7 +155,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
           surfaceTintColor: Colors.transparent,
           centerTitle: true,
           title: Text(
-            strings(context).orderNumber('${order.number}'),
+            strings(context).orderNumber(order.displayNumber),
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
           ),
         ),

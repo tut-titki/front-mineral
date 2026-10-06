@@ -1,3 +1,5 @@
+import 'package:mineral/features/executor/data/api_executor_repository.dart';
+import 'package:mineral/features/executor/data/executor_api.dart';
 import 'package:mineral/shared/models/models.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:mineral/features/auth/widgets/auth_scope.dart';
@@ -31,6 +33,17 @@ class _MainAppState extends State<MainApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   late final AuthSession _session = widget.session ?? AuthSession();
   bool _wasAuthenticated = false;
+  ApiExecutorRepository? _executorStore;
+  int? _executorUserId;
+  ApiExecutorRepository _apiExecutorStore() {
+    final userId = _session.user!.id;
+    if (_executorStore != null && _executorUserId == userId) {
+      return _executorStore!;
+    }
+    _executorStore?.dispose();
+    _executorUserId = userId;
+    return _executorStore = ApiExecutorRepository(api: ExecutorApi(_session));
+  }
 
   void _sessionChanged() {
     final authenticated = _session.authenticated;
@@ -47,6 +60,9 @@ class _MainAppState extends State<MainApp> {
       );
     }
     if (_wasAuthenticated && !authenticated) {
+      final previous = _executorStore;
+      _executorStore = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) => previous?.dispose());
       _navigatorKey.currentState?.pushNamedAndRemoveUntil(
         '/login',
         (_) => false,
@@ -71,6 +87,7 @@ class _MainAppState extends State<MainApp> {
   void dispose() {
     _session.removeListener(_sessionChanged);
     if (widget.session == null) _session.dispose();
+    _executorStore?.dispose();
     store.dispose();
     unawaited(notificationSound.dispose());
     super.dispose();
@@ -102,7 +119,7 @@ class _MainAppState extends State<MainApp> {
                         _session.user?.role != 'EXECUTOR')
                 ? const LoginScreen()
                 : ExecutorScreen(
-                    store: store,
+                    store: widget.demoMode ? store : _apiExecutorStore(),
                     employeeId: widget.demoMode
                         ? (ModalRoute.of(context)?.settings.arguments as int? ??
                               1)

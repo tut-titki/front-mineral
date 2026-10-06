@@ -1,0 +1,478 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
+import 'package:mineral/features/auth/data/auth_session.dart';
+import 'package:mineral/shared/models/models.dart';
+import '../models/execution_assessment.dart';
+import '../models/executor_order_dto.dart';
+import 'executor_api.dart';
+import 'executor_repository.dart';
+import 'execution_draft_storage.dart';
+
+class ApiExecutorRepository extends ChangeNotifier
+    implements ExecutorRepository {
+  ApiExecutorRepository({
+    required this.api,
+    ExecutionDraftStorage? draftStorage,
+  }) : draftStorage =
+           draftStorage ??
+           createExecutionDraftStorage(folderName: 'api_execution_drafts'),
+       _user = api.session.user ?? (throw StateError('Требуется вход'));
+  final ExecutorApi api;
+  final ExecutionDraftStorage draftStorage;
+  final AuthUser _user;
+  final _active = <int, WorkOrder>{};
+  final _history = <int, WorkOrder>{};
+  final _drafts = <(int, int), ExecutionDraft>{};
+  final _faultIds = <String, int>{};
+  final _materialIds = <String, int>{};
+  final _uploaded = <OrderPhoto, String>{};
+  final _actionIds = <String, String>{};
+  bool _loading = false;
+  int _revision = 0;
+  bool _disposed = false;
+  String? _error;
+  List<WorkOrder> get activeOrders => List.unmodifiable(_active.values);
+  List<WorkOrder> get historyOrders => List.unmodifiable(_history.values);
+  @override
+  DateTime get now => DateTime.now();
+  @override
+  bool get isLoading => _loading;
+  @override
+  String? get loadError => _error;
+  @override
+  List<String> get executorFaultCodes => List.unmodifiable(_faultIds.keys);
+  @override
+  List<String> get executorMaterials => List.unmodifiable(_materialIds.keys);
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+
+  void _checkUser(int id) {
+    if (id != _user.id ||
+        api.session.user?.id != id ||
+        _user.role != 'EXECUTOR') {
+      throw const ApiException(403, 'Недостаточно прав');
+    }
+  }
+
+  void _checkOrder(int id, WorkOrder order) {
+    _checkUser(id);
+    if (order.apiId == null || order.employeeId != id) {
+      throw const ApiException(403, 'Недостаточно прав');
+    }
+  }
+
+  @override
+  Employee employee(int id) {
+    if (id != _user.id) throw StateError('Неизвестный исполнитель');
+    return Employee(
+      id: id,
+      name: _user.fullName,
+      specialty: _user.specialty,
+      grade: _user.grade,
+      brigade: _user.brigadeId?.toString() ?? '',
+      rating: 0,
+      onShift: _user.isOnShift,
+    );
+  }
+
+  @override
+  ExecutorRating? executorRating(int employeeId) => null;
+  @override
+  List<WorkOrder> assignedTo(int employeeId) => [
+    ..._active.values,
+    ..._history.values,
+  ].where((o) => o.employeeId == employeeId).toList();
+  Future<List<ExecutorOrderDto>> _pages(String statuses) async {
+    final result = <ExecutorOrderDto>[];
+    while (true) {
+      final page = await api.loadOrders(statuses, offset: result.length);
+      result.addAll(page);
+      if (page.length < 200) return result;
+    }
+  }
+
+  @override
+  Future<void> refreshExecutor(int employeeId) async {
+    _checkUser(employeeId);
+    if (_loading) return;
+    final revision = _revision;
+    _loading = true;
+    _error = null;
+    _notify();
+    try {
+      // Commit both lists together: a failed history request cannot erase current data.
+      final active = await _pages(
+        'ISSUED,QUEUED,ACCEPTED,IN_PROGRESS,PAUSED,REWORK',
+      );
+      final history = await _pages(
+        'COMPLETED,AI_REVIEW,CLOSED,CANCELLED,REJECTED',
+      );
+      final faults = await api.references('fault-codes');
+      final materials = await api.references('materials');
+      _checkUser(employeeId);
+      if (revision != _revision) return;
+      for (final dto in [...active, ...history]) {
+        dto.toWorkOrder();
+      }
+      _faultIds.clear();
+      for (final f in faults) {
+        _faultIds['${f['code']} · ${f['name']}'] = f['id'] as int;
+      }
+      _materialIds.clear();
+      for (final m in materials) {
+        _materialIds['${m['name']} · ${m['unit']}'] = m['id'] as int;
+      }
+      final old = {..._active, ..._history};
+      _active.clear();
+      _history.clear();
+      for (final dto in [...active, ...history]) {
+        if (dto.assigneeId != employeeId) continue;
+        _store(dto, existing: old[dto.id]);
+      }
+    } catch (e) {
+      _error = e is ApiException && e.message.isNotEmpty
+          ? e.message
+          : 'Не удалось обновить данные. Потяните список вниз, чтобы повторить.';
+      rethrow;
+    } finally {
+      _loading = false;
+      _notify();
+    }
+  }
+
+  double? _decimal(Object? value) =>
+      value == null ? null : double.parse('$value');
+  OrderStatus _status(String value) => executorOrderStatus(value);
+  WorkOrder _store(
+    ExecutorOrderDto dto, {
+    WorkOrder? existing,
+    List<OrderPhoto>? before,
+    List<OrderPhoto>? after,
+  }) {
+    final mapped = dto.toWorkOrder();
+    final order = existing ?? _active[dto.id] ?? _history[dto.id] ?? mapped;
+    order.title = mapped.title;
+    order.description = mapped.description;
+    order.area = mapped.area;
+    order.equipment = mapped.equipment;
+    order.employeeId = mapped.employeeId;
+    order.priority = mapped.priority;
+    order.deadline = mapped.deadline;
+    order.planned = mapped.planned;
+    order.status = mapped.status;
+    order.comment = mapped.comment;
+    final data = dto.details;
+    final finished = data['closedAt'] ?? data['completedAt'];
+    order.finishedAt = finished == null
+        ? null
+        : DateTime.parse(finished as String).toLocal();
+    order.completedWork = data['completionText'] as String? ?? '';
+    final fault = data['faultCode'] as Map?;
+    order.faultCode = fault == null
+        ? ''
+        : '${fault['code']} · ${fault['name']}';
+    if (data['materialUsages'] case final List usages) {
+      order.materials = usages
+          .map(
+            (u) =>
+                '${u['material']['name']} · ${u['material']['unit']}: ${_decimal(u['quantity'])}',
+          )
+          .join('\n');
+    }
+    if (data['normative'] case final Map normative) {
+      order.normHours = _decimal(normative['hours']);
+    }
+    order.downtimeMinutes = data['actualDowntimeMinutes'] as int? ?? 0;
+    if (data['events'] case final List events) {
+      order.detailsLoaded = true;
+      order.history.clear();
+      for (final e in events) {
+        final status = e['toStatus'] == null
+            ? null
+            : _status(e['toStatus'] as String);
+        order.history.add(
+          OrderEvent(
+            title: status?.label ?? e['action'] as String,
+            author: (e['actor'] as Map?)?['fullName'] as String? ?? '',
+            time: DateTime.parse(e['createdAt'] as String).toLocal(),
+            kind: status == null ? null : OrderEventKind.status,
+            status: status,
+            reason: e['comment'] as String? ?? '',
+          ),
+        );
+      }
+    }
+    if (data['aiAssessment'] case final Map a) {
+      order.aiScore = _decimal(a['score']) ?? 0;
+      order.masterScore = _decimal(a['masterScore']);
+      order.assessment = ExecutionAssessment(
+        verdict: a['verdict'] as String? ?? '',
+        score: _decimal(a['score']),
+        explanation: a['explanation'] as String? ?? '',
+        strengths: (a['strengths'] as List?)?.join('\n') ?? '',
+        improvements: (a['improvements'] as List?)?.join('\n') ?? '',
+      );
+      order.aiVerdict = order.assessment!.verdict;
+      order.aiExplanation = order.assessment!.explanation;
+    } else {
+      order.assessment = null;
+      order.aiScore = 0;
+      order.masterScore = null;
+    }
+    if (before != null) {
+      order.beforeImages
+        ..clear()
+        ..addAll(before);
+      order.beforePhotos = before.length;
+    }
+    if (after != null) {
+      order.afterImages
+        ..clear()
+        ..addAll(after);
+      order.afterPhotos = after.length;
+    }
+    _active.remove(dto.id);
+    _history.remove(dto.id);
+    final archived = {
+      OrderStatus.closed,
+      OrderStatus.cancelled,
+      OrderStatus.rejected,
+    }.contains(order.status);
+    (archived ? _history : _active)[dto.id] = order;
+    return order;
+  }
+
+  @override
+  Future<WorkOrder> loadExecutorOrder(int employeeId, WorkOrder order) async {
+    _checkOrder(employeeId, order);
+    var loadingMetadata = true;
+    try {
+      var dto = await api.loadOrder(order.apiId!);
+      if (dto.assigneeId != employeeId) {
+        throw const ApiException(403, 'Недостаточно прав');
+      }
+      loadingMetadata = false;
+      Future<List<OrderPhoto>> photos(
+        ExecutorOrderDto dto,
+        String type,
+      ) async => Future.wait(
+        ((dto.details['photos'] as List?) ?? [])
+            .where((p) => p['type'] == type)
+            .map((p) async {
+              final url = p['fileUrl'] as String;
+              final photo = OrderPhoto(
+                name: Uri.parse(url).path.split('/').last,
+                bytes: await api.session.downloadPhoto(url),
+              );
+              if (type == 'AFTER') _uploaded[photo] = url;
+              return photo;
+            }),
+      );
+      List<OrderPhoto> before, after;
+      try {
+        before = await photos(dto, 'BEFORE');
+        after = await photos(dto, 'AFTER');
+      } on ApiException catch (e) {
+        if (e.status != 401 && e.status != 403) rethrow;
+        loadingMetadata = true;
+        dto = await api.loadOrder(order.apiId!);
+        if (dto.assigneeId != employeeId) {
+          throw const ApiException(403, 'Недостаточно прав');
+        }
+        loadingMetadata = false;
+        before = await photos(dto, 'BEFORE');
+        after = await photos(dto, 'AFTER');
+      }
+      final result = _store(dto, existing: order, before: before, after: after);
+      _notify();
+      return result;
+    } on ApiException catch (e) {
+      if (loadingMetadata && (e.status == 403 || e.status == 404)) {
+        _active.remove(order.apiId);
+        _history.remove(order.apiId);
+        _notify();
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _send(
+    int employeeId,
+    WorkOrder order,
+    Map<String, dynamic> body,
+  ) async {
+    _checkOrder(employeeId, order);
+    final key = '${order.apiId}:${jsonEncode(body)}';
+    final id = _actionIds.putIfAbsent(key, () => const Uuid().v4());
+    try {
+      final response = await api.action(order.apiId!, {
+        ...body,
+        'clientActionId': id,
+      });
+      final data = Map<String, dynamic>.from(response['order'] as Map);
+      if (response['assessment'] is Map) {
+        data['aiAssessment'] = response['assessment'];
+      }
+      final dto = ExecutorOrderDto.fromJson(data);
+      final oldStatus = order.status;
+      _store(dto, existing: order);
+      // Action responses can omit events; preserve the timer until detail refresh succeeds.
+      if (!dto.details.containsKey('events') &&
+          oldStatus != order.status &&
+          dto.details['updatedAt'] is String) {
+        order.history.add(
+          OrderEvent(
+            title: order.status.label,
+            author: _user.fullName,
+            time: DateTime.parse(dto.details['updatedAt'] as String).toLocal(),
+            status: order.status,
+            kind: OrderEventKind.status,
+            reason: body['comment'] as String? ?? '',
+          ),
+        );
+      }
+      _revision++;
+      _actionIds.remove(key);
+      _notify();
+    } on ApiException catch (e) {
+      if (e.status == 409) {
+        try {
+          await loadExecutorOrder(employeeId, order);
+        } catch (_) {
+          /* Preserve original error. */
+        }
+      }
+      if (e.status == 403 || e.status == 404) {
+        _active.remove(order.apiId);
+        _history.remove(order.apiId);
+        _notify();
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> executorAction(
+    int employeeId,
+    WorkOrder order,
+    OrderStatus status, {
+    String reason = '',
+  }) async {
+    final action = switch (status) {
+      OrderStatus.accepted => 'ACCEPT',
+      OrderStatus.queued => 'QUEUE',
+      OrderStatus.rejected => 'REJECT',
+      OrderStatus.paused => 'PAUSE',
+      OrderStatus.working =>
+        order.status == OrderStatus.paused ? 'RESUME' : 'START',
+      _ => throw StateError('Недоступное действие исполнителя'),
+    };
+    if ((action == 'PAUSE' || action == 'REJECT') && reason.trim().isEmpty) {
+      throw StateError('Укажите причину');
+    }
+    await _send(employeeId, order, {
+      'action': action,
+      if (reason.trim().isNotEmpty) 'comment': reason.trim(),
+    });
+  }
+
+  @override
+  Future<void> submitExecution(
+    int employeeId,
+    WorkOrder order,
+    ExecutionDraft report,
+  ) async {
+    _checkOrder(employeeId, order);
+    if (order.status != OrderStatus.working) {
+      throw StateError('Наряд не в работе');
+    }
+    final fault = _faultIds[report.faultCode];
+    if (report.work.trim().isEmpty || fault == null) {
+      throw StateError('Заполните выполненные работы и шифр');
+    }
+    if ((!order.planned && report.photos.isEmpty) || report.photos.length > 5) {
+      throw StateError('Проверьте фото после работ');
+    }
+    if (report.legacyMaterials.isNotEmpty) {
+      throw StateError('Выберите материалы из справочника');
+    }
+    final materials = <Map<String, dynamic>>[];
+    for (final e in report.materials.entries) {
+      final id = _materialIds[e.key];
+      if (id == null || !e.value.isFinite || e.value <= 0) {
+        throw StateError('Проверьте материалы');
+      }
+      materials.add({'materialId': id, 'quantity': e.value});
+    }
+    await saveExecutionDraft(employeeId, order.number, report);
+    final urls = <String>[];
+    for (final photo in report.photos) {
+      if (photo.bytes.length > 15 * 1024 * 1024) {
+        throw StateError('Фото больше 15 МБ');
+      }
+      final url = _uploaded[photo] ?? await api.upload(photo);
+      _uploaded[photo] = url;
+      urls.add(url);
+    }
+    await _send(employeeId, order, {
+      'action': 'COMPLETE',
+      'completionText': report.work.trim(),
+      'faultCodeId': fault,
+      'afterPhotoUrls': urls,
+      'materials': materials,
+      if (report.comment.trim().isNotEmpty) 'comment': report.comment.trim(),
+    });
+    order.afterImages
+      ..clear()
+      ..addAll(report.photos);
+    order.afterPhotos = report.photos.length;
+    // A cleanup failure must never turn an acknowledged COMPLETE into a second submission.
+    try {
+      await clearExecutionDraft(employeeId, order.number);
+    } catch (_) {
+      _drafts.remove((employeeId, order.number));
+    }
+    _notify();
+  }
+
+  @override
+  ExecutionDraft? executionDraft(int employeeId, int orderNumber) =>
+      _drafts[(employeeId, orderNumber)];
+  @override
+  Future<ExecutionDraft?> restoreExecutionDraft(
+    int employeeId,
+    int orderNumber,
+  ) async {
+    _checkUser(employeeId);
+    final draft =
+        executionDraft(employeeId, orderNumber) ??
+        await draftStorage.load(employeeId, orderNumber);
+    if (draft != null) _drafts[(employeeId, orderNumber)] = draft;
+    return draft;
+  }
+
+  @override
+  Future<void> saveExecutionDraft(
+    int employeeId,
+    int orderNumber,
+    ExecutionDraft draft,
+  ) async {
+    _checkUser(employeeId);
+    await draftStorage.save(employeeId, orderNumber, draft);
+    _drafts[(employeeId, orderNumber)] = draft;
+  }
+
+  @override
+  Future<void> clearExecutionDraft(int employeeId, int orderNumber) async {
+    await draftStorage.remove(employeeId, orderNumber);
+    _drafts.remove((employeeId, orderNumber));
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+}

@@ -1,3 +1,4 @@
+import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -284,10 +285,16 @@ class _CompletionScreenState extends State<CompletionScreen> {
       );
       _submitted = true;
       if (mounted) Navigator.pop(context);
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings(context).submitReportFailed)),
+          SnackBar(
+            content: Text(
+              error is ApiException && error.message.isNotEmpty
+                  ? error.message
+                  : strings(context).submitReportFailed,
+            ),
+          ),
         );
       }
     } finally {
@@ -665,7 +672,7 @@ class _CompletionScreenState extends State<CompletionScreen> {
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
         title: Text(
-          strings(context).closeOrderNumber('${widget.order.number}'),
+          strings(context).closeOrderNumber(widget.order.displayNumber),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),

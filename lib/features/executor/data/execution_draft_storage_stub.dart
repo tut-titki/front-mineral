@@ -2,7 +2,8 @@ import 'execution_draft_storage.dart';
 import 'executor_repository.dart';
 
 // Native phones use files. Web remains an explicitly in-memory demo.
-ExecutionDraftStorage createStorage() => _MemoryDraftStorage();
+ExecutionDraftStorage createStorage({String folderName = 'execution_drafts'}) =>
+    _MemoryDraftStorage();
 
 class _MemoryDraftStorage implements ExecutionDraftStorage {
   final _drafts = <(int, int), ExecutionDraft>{};

@@ -64,6 +64,12 @@ class DemoStore extends ChangeNotifier implements ExecutorRepository {
     notifyListeners();
   }
 
+  @override
+  Future<WorkOrder> loadExecutorOrder(int employeeId, WorkOrder order) async {
+    _checkExecutor(employeeId, order);
+    return order;
+  }
+
   void _checkExecutor(int employeeId, WorkOrder order) {
     if (!assignedTo(employeeId).contains(order)) {
       throw StateError('Наряд переназначен другому исполнителю');
