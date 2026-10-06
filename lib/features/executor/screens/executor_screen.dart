@@ -205,11 +205,11 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
                     ),
                   ),
                 const SizedBox(height: 16),
-                if (_refreshError != null)
+                if (store.loadError != null || _refreshError != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Text(
-                      _refreshError!,
+                      store.loadError ?? _refreshError!,
                       style: const TextStyle(color: Colors.red),
                     ),
                   ),

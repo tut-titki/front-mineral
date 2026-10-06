@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'executor_realtime.dart';
+import 'pending_action_storage.dart';
+import '../models/pending_action.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:mineral/shared/models/models.dart';
@@ -18,12 +20,18 @@ class ApiExecutorRepository extends ChangeNotifier
   ApiExecutorRepository({
     required this.api,
     ExecutionDraftStorage? draftStorage,
+    PendingActionStorage? actionStorage,
   }) : draftStorage =
            draftStorage ??
            createExecutionDraftStorage(folderName: 'api_execution_drafts'),
+       actionStorage =
+           actionStorage ?? createPendingActionStorage(api.session.user!.id),
        _user = api.session.user ?? (throw StateError('Требуется вход'));
   final ExecutorApi api;
   final ExecutionDraftStorage draftStorage;
+  final PendingActionStorage actionStorage;
+  Future<void>? _syncFuture;
+  Timer? _queueTimer;
   final AuthUser _user;
   ExecutorRealtime? _realtime;
   final _notification = <Map<String, dynamic>>[];
@@ -44,6 +52,11 @@ class ApiExecutorRepository extends ChangeNotifier
       onNotification: _onNotification,
     );
     _realtime!.connect();
+    _queueTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (_sessionActive) {
+        unawaited(syncPendingActions().catchError((Object _) {}));
+      }
+    });
   }
 
   Future<void> _refreshAfterConnection() async {
@@ -54,7 +67,17 @@ class ApiExecutorRepository extends ChangeNotifier
     int revision;
     do {
       revision = _revision;
+      String? syncError;
+      try {
+        await syncPendingActions();
+      } catch (_) {
+        syncError = _error;
+      }
       await refreshExecutor(_user.id);
+      if (syncError != null) {
+        _error = syncError;
+        _notify();
+      }
     } while (_sessionActive && revision != _revision);
   }
 
@@ -108,7 +131,7 @@ class ApiExecutorRepository extends ChangeNotifier
   final _faultIds = <String, int>{};
   final _materialIds = <String, int>{};
   final _uploaded = <OrderPhoto, String>{};
-  final _actionIds = <String, String>{};
+
   bool _loading = false;
   int _revision = 0;
   bool _disposed = false;
@@ -406,8 +429,107 @@ class ApiExecutorRepository extends ChangeNotifier
     Map<String, dynamic> body,
   ) async {
     _checkOrder(employeeId, order);
-    final key = '${order.apiId}:${jsonEncode(body)}';
-    final id = _actionIds.putIfAbsent(key, () => const Uuid().v4());
+    final actions = await actionStorage.load();
+    final same = actions.where(
+      (a) =>
+          a.orderNumber == order.apiId && a.payload['action'] == body['action'],
+    );
+    if (same.isEmpty) {
+      await actionStorage.add(
+        PendingAction(
+          id: const Uuid().v4(),
+          employeeId: employeeId,
+          orderNumber: order.apiId!,
+          type: 'workOrderAction',
+          payload: body,
+          createdAt: now,
+        ),
+      );
+    }
+    await syncPendingActions();
+  }
+
+  Future<void> syncPendingActions() =>
+      _syncFuture ??= _syncQueue().whenComplete(() {
+        _syncFuture = null;
+      });
+
+  Future<void> _syncQueue() async {
+    final actions = await actionStorage.load();
+    ApiException? permanentError;
+    for (final action in actions) {
+      if (!_sessionActive || action.employeeId != _user.id) return;
+      if (action.type != 'workOrderAction') {
+        throw StateError('Unsupported queued action');
+      }
+      final body = Map<String, dynamic>.from(action.payload);
+      try {
+        final photos = body.remove('_localPhotos') as List?;
+        if (photos != null) {
+          final urls = List<String>.from(body['afterPhotoUrls'] as List);
+          for (var index = urls.length; index < photos.length; index++) {
+            final photo = photos[index] as Map;
+            final url =
+                photo['url'] as String? ??
+                await api.upload(
+                  OrderPhoto(
+                    name: photo['name'] as String,
+                    bytes: base64Decode(photo['bytes'] as String),
+                  ),
+                );
+            urls.add(url);
+            // Persist every successful upload before the next network request.
+            action.payload['afterPhotoUrls'] = List.of(urls);
+            await actionStorage.add(action);
+          }
+          body['afterPhotoUrls'] = urls;
+        }
+        var order = _active[action.orderNumber] ?? _history[action.orderNumber];
+        order ??= (await api.loadOrder(action.orderNumber)).toWorkOrder();
+        await _sendOnline(action.employeeId, order, body, action.id);
+        await actionStorage.remove(action.id);
+        if (body['action'] == 'COMPLETE') {
+          try {
+            await clearExecutionDraft(action.employeeId, order.number);
+          } catch (_) {}
+        }
+      } on ApiException catch (e) {
+        if ({400, 403, 404, 409}.contains(e.status)) {
+          await actionStorage.remove(action.id);
+          _error = _user.language == 'kk'
+              ? 'Әрекет қолданылмады: ${e.message}'
+              : 'Действие не применено: ${e.message}';
+          _notify();
+          permanentError ??= e;
+          continue;
+        }
+        _error = _user.language == 'kk'
+            ? 'Телефонда сақталды. Жіберуді күтіп тұр.'
+            : 'Сохранено на телефоне. Ожидает отправки.';
+        _notify();
+        rethrow;
+      } catch (_) {
+        _error = _user.language == 'kk'
+            ? 'Телефонда сақталды. Жіберуді күтіп тұр.'
+            : 'Сохранено на телефоне. Ожидает отправки.';
+        _notify();
+        throw ApiException(0, _error!);
+      }
+    }
+    if (permanentError != null) throw permanentError;
+    if (actions.isNotEmpty) {
+      _error = null;
+      _notify();
+    }
+  }
+
+  Future<void> _sendOnline(
+    int employeeId,
+    WorkOrder order,
+    Map<String, dynamic> body,
+    String id,
+  ) async {
+    _checkOrder(employeeId, order);
     try {
       final response = await api.action(order.apiId!, {
         ...body,
@@ -436,7 +558,7 @@ class ApiExecutorRepository extends ChangeNotifier
         );
       }
       _revision++;
-      _actionIds.remove(key);
+
       _notify();
     } on ApiException catch (e) {
       if (e.status == 409) {
@@ -521,17 +643,20 @@ class ApiExecutorRepository extends ChangeNotifier
       validatePhotoSize(photo.bytes.length);
     }
     await saveExecutionDraft(employeeId, order.number, report);
-    final urls = <String>[];
-    for (final photo in report.photos) {
-      final url = _uploaded[photo] ?? await api.upload(photo);
-      _uploaded[photo] = url;
-      urls.add(url);
-    }
     await _send(employeeId, order, {
       'action': 'COMPLETE',
       'completionText': report.work.trim(),
       'faultCodeId': fault,
-      'afterPhotoUrls': urls,
+      'afterPhotoUrls': <String>[],
+      '_localPhotos': report.photos
+          .map(
+            (p) => {
+              'name': p.name,
+              'bytes': base64Encode(p.bytes),
+              'url': _uploaded[p],
+            },
+          )
+          .toList(),
       'materials': materials,
       if (report.comment.trim().isNotEmpty) 'comment': report.comment.trim(),
     });
@@ -584,6 +709,7 @@ class ApiExecutorRepository extends ChangeNotifier
   @override
   void dispose() {
     _disposed = true;
+    _queueTimer?.cancel();
     _realtime?.dispose();
     super.dispose();
   }

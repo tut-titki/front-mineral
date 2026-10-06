@@ -1,3 +1,6 @@
+import 'package:mineral/features/executor/data/pending_action_storage_io.dart';
+import 'package:mineral/features/executor/models/pending_action.dart';
+import 'package:mineral/features/executor/data/pending_action_storage.dart';
 import 'package:mineral/core/services/photo_upload_rules.dart';
 import 'package:mineral/features/executor/screens/executor_order_screen.dart';
 import 'package:mineral/features/executor/screens/executor_order_loader.dart';
@@ -138,6 +141,7 @@ void main() {
     );
     await session.restore();
     repository = ApiExecutorRepository(
+      actionStorage: MemoryPendingActionStorage(),
       api: ExecutorApi(session),
       draftStorage: drafts,
     );
@@ -282,6 +286,134 @@ void main() {
       );
     },
   );
+  test(
+    'durable COMPLETE survives restart, keeps UUID and never uploads twice',
+    () async {
+      repository.dispose();
+      final storage = FilePendingActionStorage(
+        5,
+        directory: () async => directory,
+      );
+      repository = ApiExecutorRepository(
+        api: ExecutorApi(session),
+        draftStorage: drafts,
+        actionStorage: storage,
+      );
+      await repository.refreshExecutor(5);
+      final previous = handler;
+      final bodies = <Map>[];
+      var fail = true;
+      handler = (r) async {
+        if (r.url.path.endsWith('/action')) {
+          bodies.add(jsonDecode(r.body) as Map);
+          if (fail) return json({'error': 'Unavailable'}, 503);
+        }
+        return previous(r);
+      };
+      await expectLater(
+        repository.submitExecution(
+          5,
+          repository.activeOrders.single,
+          ExecutionDraft(
+            work: 'Done',
+            faultCode: repository.executorFaultCodes.single,
+            photos: [
+              OrderPhoto(
+                name: 'after.jpg',
+                bytes: Uint8List.fromList([1, 2, 3]),
+              ),
+            ],
+          ),
+        ),
+        throwsA(isA<ApiException>()),
+      );
+      final saved = (await storage.load()).single;
+      expect(saved.payload['afterPhotoUrls'], [
+        '/uploads/photo.jpg?signed=yes',
+      ]);
+      repository.dispose();
+      fail = false;
+      repository = ApiExecutorRepository(
+        api: ExecutorApi(session),
+        draftStorage: drafts,
+        actionStorage: FilePendingActionStorage(
+          5,
+          directory: () async => directory,
+        ),
+      );
+      await repository.syncPendingActions();
+      expect(bodies.map((b) => b['clientActionId']).toSet(), {saved.id});
+      expect(requests.where((r) => r.url.path == '/api/uploads').length, 1);
+      expect(await storage.load(), isEmpty);
+      expect(await drafts.load(5, 76), isNull);
+    },
+  );
+
+  test(
+    'FIFO stops on network error; replay and permanent errors are removed',
+    () async {
+      repository.dispose();
+      final storage = MemoryPendingActionStorage();
+      repository = ApiExecutorRepository(
+        api: ExecutorApi(session),
+        draftStorage: drafts,
+        actionStorage: storage,
+      );
+      await repository.refreshExecutor(5);
+      for (var i = 0; i < 4; i++) {
+        await storage.add(
+          PendingAction(
+            id: 'stable-uuid-$i',
+            employeeId: 5,
+            orderNumber: 76,
+            type: 'workOrderAction',
+            payload: {'action': 'PAUSE', 'comment': '$i'},
+            createdAt: DateTime.utc(2026, 10, 6),
+          ),
+        );
+      }
+      final previous = handler;
+      final sent = <String>[];
+      var networkDown = true;
+      handler = (r) async {
+        if (!r.url.path.endsWith('/action')) return previous(r);
+        final id = (jsonDecode(r.body) as Map)['clientActionId'] as String;
+        sent.add(id);
+        if (networkDown) {
+          throw const SocketException('offline');
+        }
+        if (id.endsWith('0')) {
+          return json({'order': order(76, 'IN_PROGRESS'), 'replayed': true});
+        }
+        if (id.endsWith('1')) return json({'error': 'Conflict'}, 409);
+        if (id.endsWith('2')) return json({'error': 'Invalid data'}, 400);
+        return json({'error': 'Forbidden'}, 403);
+      };
+      await expectLater(repository.syncPendingActions(), throwsA(anything));
+      expect(sent, ['stable-uuid-0']);
+      expect((await storage.load()).length, 4);
+      networkDown = false;
+      await expectLater(
+        repository.syncPendingActions(),
+        throwsA(isA<ApiException>()),
+      );
+      expect(sent.skip(1), [
+        'stable-uuid-0',
+        'stable-uuid-1',
+        'stable-uuid-2',
+        'stable-uuid-3',
+      ]);
+      expect(await storage.load(), isEmpty);
+      expect(repository.loadError, contains('Forbidden'));
+      expect(
+        requests.any(
+          (r) => r.method == 'GET' && r.url.path == '/api/work-orders/76',
+        ),
+        isTrue,
+      );
+    },
+  );
+
   test('pagination collects active orders and history independently', () async {
     final previous = handler;
     handler = (r) async {
