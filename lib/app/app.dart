@@ -1,3 +1,7 @@
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/features/auth/data/auth_session.dart';
+import 'package:mineral/features/auth/widgets/auth_scope.dart';
+import 'package:mineral/features/auth/screens/session_gate.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -10,12 +14,13 @@ import 'package:mineral/core/services/notification_sound.dart';
 import 'package:mineral/core/theme/app_theme.dart';
 import 'package:mineral/l10n/app_locale.dart';
 import 'package:mineral/l10n/app_localizations.dart';
-import 'package:mineral/l10n/ui_localization.dart';
 import 'package:mineral/features/executor/screens/executor_screen.dart';
 import 'package:mineral/features/executor/data/execution_draft_storage.dart';
 
 class MainApp extends StatefulWidget {
-  const MainApp({super.key});
+  const MainApp({super.key, this.demoMode = false, this.session});
+  final bool demoMode;
+  final AuthSession? session;
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -23,6 +28,33 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> {
   final notificationSound = NotificationSound();
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  late final AuthSession _session = widget.session ?? AuthSession();
+  bool _wasAuthenticated = false;
+
+  void _sessionChanged() {
+    final authenticated = _session.authenticated;
+    final user = _session.user;
+    if (user != null) {
+      store.sessionEmployee = Employee(
+        id: user.id,
+        name: user.fullName,
+        specialty: user.specialty,
+        grade: user.grade,
+        brigade: user.brigadeId == null ? '' : '${user.brigadeId}',
+        rating: 0,
+        onShift: user.isOnShift,
+      );
+    }
+    if (_wasAuthenticated && !authenticated) {
+      _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        '/login',
+        (_) => false,
+      );
+    }
+    _wasAuthenticated = authenticated;
+  }
+
   late final store = DemoStore(
     onOrderChanged: notificationSound.play,
     draftStorage: createExecutionDraftStorage(),
@@ -31,11 +63,14 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
+    _session.addListener(_sessionChanged);
     PhotoPickerService.instance.recoverLostPhotos();
   }
 
   @override
   void dispose() {
+    _session.removeListener(_sessionChanged);
+    if (widget.session == null) _session.dispose();
     store.dispose();
     unawaited(notificationSound.dispose());
     super.dispose();
@@ -45,23 +80,43 @@ class _MainAppState extends State<MainApp> {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Locale?>(
       valueListenable: appLocale,
-      builder: (context, locale, _) => MaterialApp(
-        locale: locale ?? const Locale('ru'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        debugShowCheckedModeBanner: false,
-        onGenerateTitle: (context) =>
-            'Mineral · ${strings(context).masterRole}',
-        theme: buildAppTheme(),
-        routes: {
-          '/master': (_) => MasterShell(store: store),
-          '/executor': (context) => ExecutorScreen(
-            store: store,
-            employeeId: ModalRoute.of(context)?.settings.arguments as int? ?? 1,
+      builder: (context, locale, _) {
+        final app = MaterialApp(
+          navigatorKey: _navigatorKey,
+          locale: locale ?? const Locale('ru'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          debugShowCheckedModeBanner: false,
+          onGenerateTitle: (context) => 'Костанайские минералы',
+          theme: buildAppTheme(),
+          routes: {
+            '/login': (_) => const LoginScreen(),
+            '/master': (_) =>
+                !widget.demoMode &&
+                    (!_session.authenticated || _session.user?.role != 'MASTER')
+                ? const LoginScreen()
+                : MasterShell(store: store),
+            '/executor': (context) =>
+                !widget.demoMode &&
+                    (!_session.authenticated ||
+                        _session.user?.role != 'EXECUTOR')
+                ? const LoginScreen()
+                : ExecutorScreen(
+                    store: store,
+                    employeeId: widget.demoMode
+                        ? (ModalRoute.of(context)?.settings.arguments as int? ??
+                              1)
+                        : _session.user!.id,
+                  ),
+          },
+          home: SplashScreen(
+            nextScreen: widget.demoMode
+                ? const LoginScreen()
+                : SessionGate(session: _session),
           ),
-        },
-        home: const SplashScreen(nextScreen: LoginScreen()),
-      ),
+        );
+        return widget.demoMode ? app : AuthScope(session: _session, child: app);
+      },
     );
   }
 }

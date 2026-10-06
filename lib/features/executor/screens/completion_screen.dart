@@ -324,87 +324,324 @@ class _CompletionScreenState extends State<CompletionScreen> {
   );
 
   Future<void> _addMaterial() async {
+    _quantity.text = '1';
+    final baseTheme = Theme.of(context);
+    final materialTheme = baseTheme.copyWith(
+      textTheme: baseTheme.textTheme.apply(
+        bodyColor: const Color(0xFF172033),
+        displayColor: const Color(0xFF172033),
+      ),
+      dividerColor: const Color(0xFFDCE4EE),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        labelStyle: const TextStyle(color: Color(0xFF7A8597)),
+        hintStyle: const TextStyle(color: Color(0xFF7A8597)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFDCE4EE)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFDCE4EE)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFF0A57A3), width: 1.5),
+        ),
+      ),
+    );
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          8,
-          24,
-          MediaQuery.viewInsetsOf(context).bottom + 24,
-        ),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _materialForm,
-            child: Column(
-              children: [
-                DropdownButtonFormField<String>(
-                  key: ValueKey(_material),
-                  initialValue: _material,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: uiText(context, 'Материал'),
-                  ),
-                  items: _catalog
-                      .map(
-                        (m) => DropdownMenuItem(
-                          value: m,
-                          child: Text(uiText(context, m)),
+      backgroundColor: const Color(0xFFF4F7FB),
+      builder: (sheetContext) => Theme(
+        data: materialTheme,
+        child: StatefulBuilder(
+          builder: (context, updateSheet) {
+            final step = _material?.endsWith('шт') == true ? 1.0 : .1;
+            void changeQuantity(double delta) {
+              final current =
+                  double.tryParse(_quantity.text.replaceAll(',', '.')) ?? 1;
+              final next = double.parse((current + delta).toStringAsFixed(3));
+              if (next <= 0) return;
+              updateSheet(
+                () => _quantity.text = next == next.roundToDouble()
+                    ? '${next.toInt()}'
+                    : '$next',
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                8,
+                20,
+                MediaQuery.viewInsetsOf(context).bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _materialForm,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      FormField<String>(
+                        initialValue: _material,
+                        validator: (value) => value == null
+                            ? uiText(context, 'Выберите материал')
+                            : null,
+                        builder: (field) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                overlayColor: const Color(0xFF084781),
+                                minimumSize: const Size.fromHeight(64),
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF172033),
+                                side: const BorderSide(
+                                  color: Color(0xFFDCE4EE),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                              ),
+                              onPressed: () async {
+                                final selected =
+                                    await showModalBottomSheet<String>(
+                                      context: context,
+                                      useSafeArea: true,
+                                      showDragHandle: true,
+                                      backgroundColor: const Color(0xFFF4F7FB),
+                                      isScrollControlled: true,
+                                      builder: (pickerContext) => ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxHeight:
+                                              MediaQuery.sizeOf(
+                                                pickerContext,
+                                              ).height *
+                                              .7,
+                                        ),
+                                        child: ListView.separated(
+                                          shrinkWrap: true,
+                                          padding: const EdgeInsets.fromLTRB(
+                                            16,
+                                            0,
+                                            16,
+                                            24,
+                                          ),
+                                          itemCount: _catalog.length,
+                                          separatorBuilder: (_, _) =>
+                                              const Divider(height: 1),
+                                          itemBuilder: (context, i) => ListTile(
+                                            minTileHeight: 64,
+                                            tileColor: Colors.white,
+                                            textColor: const Color(0xFF172033),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 8,
+                                                ),
+                                            title: Text(
+                                              uiText(context, _catalog[i]),
+                                            ),
+                                            trailing: _material == _catalog[i]
+                                                ? const Icon(
+                                                    Icons.check,
+                                                    color: Color(0xFF0A57A3),
+                                                  )
+                                                : null,
+                                            onTap: () => Navigator.pop(
+                                              pickerContext,
+                                              _catalog[i],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                if (selected == null || !sheetContext.mounted) {
+                                  return;
+                                }
+                                updateSheet(() {
+                                  _material = selected;
+                                  if (selected.endsWith('шт')) {
+                                    final quantity =
+                                        double.tryParse(
+                                          _quantity.text.replaceAll(',', '.'),
+                                        ) ??
+                                        1;
+                                    _quantity.text =
+                                        '${quantity.ceil().clamp(1, 999999)}';
+                                  }
+                                });
+                                field.didChange(selected);
+                              },
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      uiText(
+                                        context,
+                                        _material ?? 'Выберите материал',
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Icon(Icons.expand_more),
+                                ],
+                              ),
+                            ),
+                            if (field.hasError)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  field.errorText!,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                      )
-                      .toList(),
-                  onChanged: (v) => setState(() => _material = v),
-                  validator: (v) =>
-                      v == null ? uiText(context, 'Выберите материал') : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _quantity,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 64,
+                            height: 64,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                overlayColor: const Color(0xFF084781),
+                                padding: EdgeInsets.zero,
+                                backgroundColor: const Color(0xFFEAF3FC),
+                                foregroundColor: const Color(0xFF0A57A3),
+                                disabledBackgroundColor: const Color(
+                                  0xFFEAF3FC,
+                                ),
+                                disabledForegroundColor: const Color(
+                                  0xFF7A8597,
+                                ),
+                                side: BorderSide.none,
+                              ),
+                              onPressed:
+                                  (double.tryParse(
+                                            _quantity.text.replaceAll(',', '.'),
+                                          ) ??
+                                          1) >
+                                      step
+                                  ? () => changeQuantity(-step)
+                                  : null,
+                              child: const Icon(Icons.remove, size: 28),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _quantity,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Color(0xFF172033),
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              onChanged: (_) => updateSheet(() {}),
+                              decoration: InputDecoration(
+                                labelText: uiText(context, 'Количество'),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 20,
+                                ),
+                              ),
+                              validator: (value) {
+                                final number = double.tryParse(
+                                  (value ?? '').replaceAll(',', '.'),
+                                );
+                                if (number == null ||
+                                    !number.isFinite ||
+                                    number <= 0) {
+                                  return uiText(
+                                    context,
+                                    'Введите количество больше нуля',
+                                  );
+                                }
+                                if (_material?.endsWith('шт') == true &&
+                                    number != number.roundToDouble()) {
+                                  return strings(context).wholePieceQuantity;
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          SizedBox(
+                            width: 64,
+                            height: 64,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                overlayColor: const Color(0xFF084781),
+                                padding: EdgeInsets.zero,
+                                backgroundColor: const Color(0xFFEAF3FC),
+                                foregroundColor: const Color(0xFF0A57A3),
+                                disabledBackgroundColor: const Color(
+                                  0xFFEAF3FC,
+                                ),
+                                disabledForegroundColor: const Color(
+                                  0xFF7A8597,
+                                ),
+                                side: BorderSide.none,
+                              ),
+                              onPressed: () => changeQuantity(step),
+                              child: const Icon(Icons.add, size: 28),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      FilledButton(
+                        style:
+                            FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(64),
+                              foregroundColor: Colors.white,
+                            ).copyWith(
+                              backgroundColor: WidgetStateProperty.resolveWith(
+                                (states) =>
+                                    states.contains(WidgetState.pressed) ||
+                                        states.contains(WidgetState.hovered)
+                                    ? const Color(0xFF084781)
+                                    : const Color(0xFF0A57A3),
+                              ),
+                            ),
+                        onPressed: () {
+                          if (!_materialForm.currentState!.validate()) return;
+                          final quantity = double.parse(
+                            _quantity.text.replaceAll(',', '.'),
+                          );
+                          _edit(
+                            () => _materials.update(
+                              _material!,
+                              (n) => n + quantity,
+                              ifAbsent: () => quantity,
+                            ),
+                          );
+                          Navigator.pop(sheetContext);
+                        },
+                        child: Text(uiText(context, 'Добавить материал')),
+                      ),
+                    ],
                   ),
-                  decoration: InputDecoration(
-                    labelText: uiText(context, 'Количество'),
-                  ),
-                  validator: (v) {
-                    final n = double.tryParse((v ?? '').replaceAll(',', '.'));
-                    return n == null || !n.isFinite || n <= 0
-                        ? uiText(context, 'Введите количество больше нуля')
-                        : _material?.endsWith('шт') == true &&
-                              n != n.roundToDouble()
-                        ? strings(context).wholePieceQuantity
-                        : null;
-                  },
                 ),
-                OutlinedButton(
-                  onPressed: () {
-                    if (!_materialForm.currentState!.validate()) return;
-                    _edit(() {
-                      _materials.update(
-                        _material!,
-                        (n) =>
-                            n +
-                            double.parse(_quantity.text.replaceAll(',', '.')),
-                        ifAbsent: () =>
-                            double.parse(_quantity.text.replaceAll(',', '.')),
-                      );
-                      _material = null;
-                      _quantity.clear();
-                      _materialForm.currentState!.reset();
-                      Navigator.pop(context);
-                    });
-                  },
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(60),
-                  ),
-                  child: Text(uiText(context, 'Добавить материал')),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

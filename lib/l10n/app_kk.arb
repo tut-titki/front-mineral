@@ -623,5 +623,31 @@
   "draftLoadFailed": "Қараламаны қалпына келтіру мүмкін болмады. Қайта көріңіз — сақталған деректер өзгерген жоқ.",
   "draftSaveFailed": "Қаралама сақталмады. Қайталау үшін басыңыз.",
   "overdueByMinutes": "Мерзімі {minutes} мин өтті",
-  "executionResult": "Тексеру нәтижесі"
+  "executionResult": "Тексеру нәтижесі",
+  "authLoginLabel": "Логин",
+  "authPinLabel": "ПИН",
+  "authEnterLogin": "Логинді енгізіңіз",
+  "authPinLength": "ПИН 4–12 таңбадан тұруы керек",
+  "authSubtitle": "Телефон нөмірі мен құпиясөзді енгізіңіз.",
+  "authAccountHint": "Тіркелгіні әкімші береді.",
+  "authNetworkError": "Қосылу мүмкін болмады. Байланысты тексеріп, қайталаңыз.",
+  "authMobileRole": "Бұл рөл веб-панельде қолжетімді.",
+  "authRetryMinutes": "Әрекет тым көп. {minutes} минуттан кейін қайталаңыз.",
+  "authRateLimited": "Әрекет тым көп. Кейінірек қайталаңыз.",
+  "demoDataNotice": "Демонстрациялық деректер",
+  "@authRetryMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "authInvalidPhone": "10–15 цифрдан тұратын нөмірді енгізіңіз",
+  "changePasswordTitle": "Құпиясөзді өзгерту",
+  "currentPasswordLabel": "Қазіргі құпиясөз",
+  "newPasswordLabel": "Жаңа құпиясөз",
+  "newPasswordLength": "Құпиясөз 6–128 таңбадан тұруы керек",
+  "passwordChanged": "Құпиясөз өзгертілді",
+  "changePasswordButton": "Құпиясөзді өзгерту",
+  "passwordResetHint": "Ұмытылған құпиясөзді әкімші қалпына келтіреді."
 }

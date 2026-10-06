@@ -191,7 +191,7 @@ void main() {
     await tester.tap(find.text(s.addMaterial));
     await tester.pumpAndSettle();
     checkNoRussianLabels(tester);
-    await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+    await tester.tap(find.text(uiText(context, 'Выберите материал')));
     await tester.pumpAndSettle();
     await tester.tap(
       find.text(uiText(context, store.executorMaterials.first)).last,

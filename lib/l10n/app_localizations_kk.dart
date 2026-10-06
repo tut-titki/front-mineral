@@ -1379,4 +1379,65 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get executionResult => 'Тексеру нәтижесі';
+
+  @override
+  String get authLoginLabel => 'Логин';
+
+  @override
+  String get authPinLabel => 'ПИН';
+
+  @override
+  String get authEnterLogin => 'Логинді енгізіңіз';
+
+  @override
+  String get authPinLength => 'ПИН 4–12 таңбадан тұруы керек';
+
+  @override
+  String get authSubtitle => 'Телефон нөмірі мен құпиясөзді енгізіңіз.';
+
+  @override
+  String get authAccountHint => 'Тіркелгіні әкімші береді.';
+
+  @override
+  String get authNetworkError =>
+      'Қосылу мүмкін болмады. Байланысты тексеріп, қайталаңыз.';
+
+  @override
+  String get authMobileRole => 'Бұл рөл веб-панельде қолжетімді.';
+
+  @override
+  String authRetryMinutes(String minutes) {
+    return 'Әрекет тым көп. $minutes минуттан кейін қайталаңыз.';
+  }
+
+  @override
+  String get authRateLimited => 'Әрекет тым көп. Кейінірек қайталаңыз.';
+
+  @override
+  String get demoDataNotice => 'Демонстрациялық деректер';
+
+  @override
+  String get authInvalidPhone => '10–15 цифрдан тұратын нөмірді енгізіңіз';
+
+  @override
+  String get changePasswordTitle => 'Құпиясөзді өзгерту';
+
+  @override
+  String get currentPasswordLabel => 'Қазіргі құпиясөз';
+
+  @override
+  String get newPasswordLabel => 'Жаңа құпиясөз';
+
+  @override
+  String get newPasswordLength => 'Құпиясөз 6–128 таңбадан тұруы керек';
+
+  @override
+  String get passwordChanged => 'Құпиясөз өзгертілді';
+
+  @override
+  String get changePasswordButton => 'Құпиясөзді өзгерту';
+
+  @override
+  String get passwordResetHint =>
+      'Ұмытылған құпиясөзді әкімші қалпына келтіреді.';
 }

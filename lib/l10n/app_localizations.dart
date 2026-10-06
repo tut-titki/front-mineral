@@ -2587,6 +2587,120 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Результат проверки'**
   String get executionResult;
+
+  /// No description provided for @authLoginLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логин'**
+  String get authLoginLabel;
+
+  /// No description provided for @authPinLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПИН'**
+  String get authPinLabel;
+
+  /// No description provided for @authEnterLogin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите логин'**
+  String get authEnterLogin;
+
+  /// No description provided for @authPinLength.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПИН должен содержать от 4 до 12 символов'**
+  String get authPinLength;
+
+  /// No description provided for @authSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите номер телефона и пароль.'**
+  String get authSubtitle;
+
+  /// No description provided for @authAccountHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Учётную запись выдаёт администратор.'**
+  String get authAccountHint;
+
+  /// No description provided for @authNetworkError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось подключиться. Проверьте связь и повторите.'**
+  String get authNetworkError;
+
+  /// No description provided for @authMobileRole.
+  ///
+  /// In ru, this message translates to:
+  /// **'Эта роль доступна в веб-панели.'**
+  String get authMobileRole;
+
+  /// No description provided for @authRetryMinutes.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много попыток. Повторите через {minutes} мин.'**
+  String authRetryMinutes(String minutes);
+
+  /// No description provided for @authRateLimited.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много попыток. Повторите позже.'**
+  String get authRateLimited;
+
+  /// No description provided for @demoDataNotice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Демонстрационные данные'**
+  String get demoDataNotice;
+
+  /// No description provided for @authInvalidPhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите номер от 10 до 15 цифр'**
+  String get authInvalidPhone;
+
+  /// No description provided for @changePasswordTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Смена пароля'**
+  String get changePasswordTitle;
+
+  /// No description provided for @currentPasswordLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Текущий пароль'**
+  String get currentPasswordLabel;
+
+  /// No description provided for @newPasswordLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новый пароль'**
+  String get newPasswordLabel;
+
+  /// No description provided for @newPasswordLength.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль должен содержать от 6 до 128 символов'**
+  String get newPasswordLength;
+
+  /// No description provided for @passwordChanged.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль изменён'**
+  String get passwordChanged;
+
+  /// No description provided for @changePasswordButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить пароль'**
+  String get changePasswordButton;
+
+  /// No description provided for @passwordResetHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Забытый пароль сбрасывает администратор.'**
+  String get passwordResetHint;
 }
 
 class _AppLocalizationsDelegate

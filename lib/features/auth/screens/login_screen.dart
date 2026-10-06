@@ -1,3 +1,7 @@
+import 'dart:async';
+import '../data/auth_session.dart';
+import '../widgets/auth_scope.dart';
+import 'package:mineral/l10n/app_locale.dart';
 import 'package:flutter/material.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 
@@ -18,37 +22,115 @@ class _LoginScreenState extends State<LoginScreen> {
   final _phone = TextEditingController();
   final _password = TextEditingController();
   bool _hidePassword = true;
+  bool _busy = false;
+  String? _error;
+  String? _phoneError;
+  String? _passwordError;
+  Timer? _timer;
+  AuthSession? _session;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _session = AuthScope.maybeOf(context);
+    _timer ??= Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && _session?.blockedUntil != null) setState(() {});
+    });
+  }
+
+  bool get _blocked => _session?.blockedUntil?.isAfter(DateTime.now()) ?? false;
 
   @override
   void dispose() {
+    _timer?.cancel();
     _phone.dispose();
     _password.dispose();
     super.dispose();
   }
 
-  void _login() {
-    if (!_formKey.currentState!.validate()) return;
-
-    // Временный переход для визуального прототипа, без авторизации API.
+  Future<void> _login() async {
+    if (_busy || _blocked || !_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    //Navigator.of(context).pushNamedAndRemoveUntil('/master', (_) => false);
-    Navigator.of(context).pushNamedAndRemoveUntil('/executor', (_) => false);
+    final session = _session;
+    if (session == null) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/executor', (_) => false);
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+      _phoneError = null;
+      _passwordError = null;
+    });
+    try {
+      final user = await session.login(_phone.text, _password.text);
+      if (!mounted) return;
+      appLocale.value = Locale(user.language == 'kk' ? 'kk' : 'ru');
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        user.mobileRoute!,
+        (_) => false,
+        arguments: user.id,
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      final s = AppLocalizations.of(context);
+      setState(() {
+        if (error.status == 400) {
+          _phoneError = error.fieldMessage('phone');
+          if (_phoneError == null) {
+            _passwordError = error.message.isEmpty
+                ? s.enterPassword
+                : error.message;
+          }
+          _error = null;
+        } else {
+          _error = switch (error.status) {
+            429 => error.retryAfter == null ? s.authRateLimited : null,
+            403 => error.message.isEmpty ? s.authMobileRole : error.message,
+            _ => error.message.isEmpty ? s.authNetworkError : error.message,
+          };
+        }
+      });
+      if (error.status == 400) _formKey.currentState!.validate();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = AppLocalizations.of(context).authNetworkError);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final api = _session != null;
+    final s = AppLocalizations.of(context);
+    final until = _session?.blockedUntil;
+    final blockMessage = _blocked && until != null
+        ? s.authRetryMinutes(
+            '${(until.difference(DateTime.now()).inSeconds + 59) ~/ 60}',
+          )
+        : null;
     return AuthPage(
       title: AppLocalizations.of(context).loginTitle,
-      subtitle: AppLocalizations.of(context).loginSubtitle,
+      subtitle: api ? s.authSubtitle : s.loginSubtitle,
       showLogo: true,
-      footer: TextButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const RegisterScreen()),
-          );
-        },
-        child: Text(AppLocalizations.of(context).createAccount),
-      ),
+      footer: api
+          ? Text(
+              s.authAccountHint,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFF7A8597)),
+            )
+          : TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const RegisterScreen(),
+                  ),
+                );
+              },
+              child: Text(AppLocalizations.of(context).createAccount),
+            ),
       child: Form(
         key: _formKey,
         child: Column(
@@ -56,29 +138,47 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             TextFormField(
               controller: _phone,
+              enabled: !_busy,
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.next,
-              inputFormatters: const [PhoneInputFormatter()],
+              inputFormatters: api
+                  ? const [ApiPhoneInputFormatter()]
+                  : const [PhoneInputFormatter()],
               autofillHints: const [AutofillHints.telephoneNumber],
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).phoneLabel,
+                labelText: s.phoneLabel,
                 hintText: '+7 700 123 45 67',
               ),
-              validator: (value) => validatePhone(
-                value,
-                emptyMessage: AppLocalizations.of(context).enterPhone,
-                incompleteMessage: AppLocalizations.of(context).incompletePhone,
-              ),
+              onChanged: (_) {
+                if (_phoneError != null) setState(() => _phoneError = null);
+              },
+              validator: (value) {
+                if (!api) {
+                  return validatePhone(
+                    value,
+                    emptyMessage: s.enterPhone,
+                    incompleteMessage: s.incompletePhone,
+                  );
+                }
+                if (_phoneError != null) return _phoneError;
+                if (value == null || value.trim().isEmpty) return s.enterPhone;
+                final digits = value.replaceAll(RegExp(r'\D'), '');
+                if (digits.length < 10 || digits.length > 15) {
+                  return s.authInvalidPhone;
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _password,
+              enabled: !_busy,
               obscureText: _hidePassword,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _login(),
               autofillHints: const [AutofillHints.password],
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).passwordLabel,
+                labelText: s.passwordLabel,
                 suffixIcon: IconButton(
                   tooltip: _hidePassword
                       ? AppLocalizations.of(context).showPassword
@@ -93,14 +193,35 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              validator: (value) => value == null || value.isEmpty
-                  ? AppLocalizations.of(context).enterPassword
-                  : null,
+              onChanged: (_) {
+                if (_passwordError != null) {
+                  setState(() => _passwordError = null);
+                }
+              },
+              validator: (value) =>
+                  _passwordError ??
+                  (value == null || value.isEmpty ? s.enterPassword : null),
             ),
             const SizedBox(height: 28),
+            if (blockMessage != null || _error != null) ...[
+              Text(
+                blockMessage ?? _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              const SizedBox(height: 16),
+            ],
             FilledButton(
-              onPressed: _login,
-              child: Text(AppLocalizations.of(context).loginButton),
+              onPressed: _busy || _blocked ? null : _login,
+              child: _busy
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(s.loginButton),
             ),
           ],
         ),

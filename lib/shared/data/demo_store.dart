@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:mineral/features/executor/data/executor_repository.dart';
 import 'package:mineral/features/executor/data/execution_draft_storage.dart';
+import 'package:mineral/features/executor/data/offline_action_queue.dart';
 import 'package:mineral/features/executor/models/execution_assessment.dart';
-
+import 'package:mineral/features/executor/models/pending_action.dart';
+import 'package:uuid/uuid.dart';
 import 'package:mineral/shared/models/models.dart';
 
 class DemoStore extends ChangeNotifier implements ExecutorRepository {
+  String createUniqueId() => const Uuid().v4();
+  final OfflineActionQueue? queue;
   @override
   ExecutorRating? executorRating(int employeeId) => null;
   @override
@@ -100,12 +104,31 @@ class DemoStore extends ChangeNotifier implements ExecutorRepository {
         reason.trim().isEmpty) {
       throw ArgumentError('Укажите причину');
     }
+    final actionQueue = queue;
+
+    if (actionQueue != null) {
+      final action = PendingAction(
+        id: createUniqueId(),
+        employeeId: employeeId,
+        orderNumber: order.number,
+        type: 'changeStatus',
+        payload: {'status': status.name, 'reason': reason.trim()},
+        createdAt: now,
+      );
+
+      await actionQueue.enqueue(action);
+    }
+
     changeStatus(
       order,
       status,
       reason: reason.trim(),
       author: employee(employeeId).name,
     );
+
+    if (actionQueue != null) {
+      await actionQueue.sync();
+    }
   }
 
   @override
@@ -165,6 +188,7 @@ class DemoStore extends ChangeNotifier implements ExecutorRepository {
     DateTime Function()? clock,
     this.onOrderChanged,
     this.draftStorage,
+    this.queue,
   }) : _clock = clock ?? DateTime.now;
 
   final void Function(OrderEventKind kind)? onOrderChanged;
@@ -504,8 +528,11 @@ class DemoStore extends ChangeNotifier implements ExecutorRepository {
     ];
   }
 
+  Employee? sessionEmployee;
+
   @override
   Employee employee(int id) {
+    if (sessionEmployee?.id == id) return sessionEmployee!;
     return employees.firstWhere((item) => item.id == id);
   }
 

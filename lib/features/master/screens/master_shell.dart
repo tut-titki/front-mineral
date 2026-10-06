@@ -1,3 +1,5 @@
+import 'package:mineral/features/auth/screens/change_password_screen.dart';
+import 'package:mineral/features/auth/widgets/auth_scope.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -21,6 +23,24 @@ class MasterShell extends StatefulWidget {
 
 class _MasterShellState extends State<MasterShell> {
   int page = 0;
+  bool _loggingOut = false;
+  Future<void> _logout() async {
+    final session = AuthScope.maybeOf(context);
+    if (session == null || _loggingOut) return;
+    setState(() => _loggingOut = true);
+    try {
+      await session.logout();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings(context).authNetworkError)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loggingOut = false);
+    }
+  }
+
   Timer? refreshTimer;
 
   @override
@@ -130,6 +150,23 @@ class _MasterShellState extends State<MasterShell> {
                   ),
                   actions: [
                     const LanguageSwitcher(),
+                    if (AuthScope.maybeOf(context) != null)
+                      IconButton(
+                        tooltip: strings(context).changePasswordTitle,
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => const ChangePasswordScreen(),
+                          ),
+                        ),
+                        icon: const Icon(Icons.lock_outline),
+                      ),
+                    if (AuthScope.maybeOf(context) != null)
+                      IconButton(
+                        tooltip: uiText(context, 'Выйти'),
+                        onPressed: _loggingOut ? null : _logout,
+                        icon: const Icon(Icons.logout),
+                      ),
                     IconButton(
                       tooltip: uiText(context, 'Уведомления'),
                       onPressed: openNotifications,
@@ -268,6 +305,24 @@ class _MasterShellState extends State<MasterShell> {
                             ),
                             SizedBox(width: 14),
                             const LanguageSwitcher(),
+                            if (AuthScope.maybeOf(context) != null)
+                              IconButton(
+                                tooltip: strings(context).changePasswordTitle,
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        const ChangePasswordScreen(),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.lock_outline),
+                              ),
+                            if (AuthScope.maybeOf(context) != null)
+                              IconButton(
+                                tooltip: uiText(context, 'Выйти'),
+                                onPressed: _loggingOut ? null : _logout,
+                                icon: const Icon(Icons.logout),
+                              ),
                             IconButton(
                               tooltip: uiText(context, 'Уведомления'),
                               onPressed: openNotifications,

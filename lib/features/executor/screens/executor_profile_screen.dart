@@ -1,3 +1,5 @@
+import 'package:mineral/features/auth/screens/change_password_screen.dart';
+import 'package:mineral/features/auth/widgets/auth_scope.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:mineral/features/executor/data/executor_repository.dart';
@@ -175,6 +177,19 @@ class ExecutorProfileScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+        if (AuthScope.maybeOf(context) != null) ...[
+          OutlinedButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const ChangePasswordScreen(),
+              ),
+            ),
+            icon: const Icon(Icons.lock_outline),
+            label: Text(strings(context).changePasswordTitle),
+          ),
+          const SizedBox(height: 12),
+        ],
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(56),
@@ -184,8 +199,22 @@ class ExecutorProfileScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
             ),
           ),
-          onPressed: () =>
-              Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false),
+          onPressed: () async {
+            final session = AuthScope.maybeOf(context);
+            if (session == null) {
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
+              return;
+            }
+            try {
+              await session.logout();
+            } catch (_) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(strings(context).authNetworkError)),
+                );
+              }
+            }
+          },
           icon: const Icon(Icons.logout),
           label: Text(uiText(context, 'Выйти')),
         ),

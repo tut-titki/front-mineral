@@ -72,3 +72,20 @@ String? validatePhone(
   }
   return null;
 }
+
+/// Keep international numbers and invalid long input intact for validation.
+class ApiPhoneInputFormatter extends TextInputFormatter {
+  const ApiPhoneInputFormatter();
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text.trimLeft();
+    final digits = text.replaceAll(RegExp(r'\D'), '');
+    if ((text.startsWith('+') && !text.startsWith('+7')) || digits.length > 11) {
+      return newValue;
+    }
+    return const PhoneInputFormatter().formatEditUpdate(oldValue, newValue);
+  }
+}

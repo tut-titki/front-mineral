@@ -1375,4 +1375,65 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get executionResult => 'Результат проверки';
+
+  @override
+  String get authLoginLabel => 'Логин';
+
+  @override
+  String get authPinLabel => 'ПИН';
+
+  @override
+  String get authEnterLogin => 'Введите логин';
+
+  @override
+  String get authPinLength => 'ПИН должен содержать от 4 до 12 символов';
+
+  @override
+  String get authSubtitle => 'Введите номер телефона и пароль.';
+
+  @override
+  String get authAccountHint => 'Учётную запись выдаёт администратор.';
+
+  @override
+  String get authNetworkError =>
+      'Не удалось подключиться. Проверьте связь и повторите.';
+
+  @override
+  String get authMobileRole => 'Эта роль доступна в веб-панели.';
+
+  @override
+  String authRetryMinutes(String minutes) {
+    return 'Слишком много попыток. Повторите через $minutes мин.';
+  }
+
+  @override
+  String get authRateLimited => 'Слишком много попыток. Повторите позже.';
+
+  @override
+  String get demoDataNotice => 'Демонстрационные данные';
+
+  @override
+  String get authInvalidPhone => 'Введите номер от 10 до 15 цифр';
+
+  @override
+  String get changePasswordTitle => 'Смена пароля';
+
+  @override
+  String get currentPasswordLabel => 'Текущий пароль';
+
+  @override
+  String get newPasswordLabel => 'Новый пароль';
+
+  @override
+  String get newPasswordLength =>
+      'Пароль должен содержать от 6 до 128 символов';
+
+  @override
+  String get passwordChanged => 'Пароль изменён';
+
+  @override
+  String get changePasswordButton => 'Изменить пароль';
+
+  @override
+  String get passwordResetHint => 'Забытый пароль сбрасывает администратор.';
 }

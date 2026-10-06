@@ -9,7 +9,7 @@ Future<void> openLogin(WidgetTester tester) async {
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
-  await tester.pumpWidget(const MainApp());
+  await tester.pumpWidget(const MainApp(demoMode: true));
   await tester.pump(const Duration(milliseconds: 2500));
   await tester.pumpAndSettle();
 }

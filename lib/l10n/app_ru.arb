@@ -756,5 +756,31 @@
       }
     }
   },
-  "executionResult": "Результат проверки"
+  "executionResult": "Результат проверки",
+  "authLoginLabel": "Логин",
+  "authPinLabel": "ПИН",
+  "authEnterLogin": "Введите логин",
+  "authPinLength": "ПИН должен содержать от 4 до 12 символов",
+  "authSubtitle": "Введите номер телефона и пароль.",
+  "authAccountHint": "Учётную запись выдаёт администратор.",
+  "authNetworkError": "Не удалось подключиться. Проверьте связь и повторите.",
+  "authMobileRole": "Эта роль доступна в веб-панели.",
+  "authRetryMinutes": "Слишком много попыток. Повторите через {minutes} мин.",
+  "authRateLimited": "Слишком много попыток. Повторите позже.",
+  "demoDataNotice": "Демонстрационные данные",
+  "@authRetryMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "authInvalidPhone": "Введите номер от 10 до 15 цифр",
+  "changePasswordTitle": "Смена пароля",
+  "currentPasswordLabel": "Текущий пароль",
+  "newPasswordLabel": "Новый пароль",
+  "newPasswordLength": "Пароль должен содержать от 6 до 128 символов",
+  "passwordChanged": "Пароль изменён",
+  "changePasswordButton": "Изменить пароль",
+  "passwordResetHint": "Забытый пароль сбрасывает администратор."
 }
