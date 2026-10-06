@@ -1,13 +1,11 @@
+import 'helpers/backend_api_fixture.dart';
+import 'package:mineral/features/orders/screens/order_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mineral/l10n/app_localizations.dart';
-import 'package:mineral/features/team/screens/brigade_screen.dart';
 import 'package:mineral/features/master/screens/dashboard_screen.dart';
 import 'package:mineral/shared/data/demo_store.dart';
 import 'package:mineral/shared/models/models.dart';
-import 'package:mineral/features/orders/screens/order_screens.dart';
-import 'package:mineral/shared/widgets/ui.dart';
-import 'package:mineral/core/theme/app_theme.dart';
 
 void main() {
   test('deadline changes clear old norm, record history and notify once', () {
@@ -42,102 +40,95 @@ void main() {
   });
 
   for (final language in ['ru', 'kk']) {
-    testWidgets('brigade opens its complete roster in $language', (
+    testWidgets('backend brigade opens complete roster in $language', (
       tester,
     ) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      final store = DemoStore();
-      addTearDown(() async {
-        await tester.pumpWidget(const SizedBox());
-        store.dispose();
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      final api = testApi(
+        handle: (request) async {
+          if (request.url.path == '/api/references/executors') {
+            return jsonResponse([executorJson()]);
+          }
+          if (request.url.path == '/api/references/brigades') {
+            return jsonResponse([
+              {
+                'id': 1,
+                'name': 'Test Brigade',
+                'members': [
+                  {
+                    'id': 7,
+                    'fullName': 'Test Executor',
+                    'specialty': 'Specialty',
+                  },
+                ],
+              },
+            ]);
+          }
+          return null;
+        },
+      );
+      addTearDown(api.dispose);
       await tester.pumpWidget(
         MaterialApp(
           locale: Locale(language),
-          theme: buildAppTheme(),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(18),
-              child: TeamScreen(store: store),
-            ),
+            body: SingleChildScrollView(child: TeamScreen(api: api)),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Ерлан Ахметов'), findsNothing);
-      final brigadeLabel = AppLocalizations.of(
-        tester.element(find.byType(TeamScreen)),
-      ).brigadeNumber('1');
-      expect(find.text(brigadeLabel), findsOneWidget);
-      await tester.tap(find.text(brigadeLabel));
+      expect(find.text('Test Executor'), findsNothing);
+      await tester.tap(find.text('Test Brigade'));
       await tester.pumpAndSettle();
-      expect(find.byType(BrigadeMembersScreen), findsOneWidget);
-      expect(find.text('Ерлан Ахметов'), findsOneWidget);
-      expect(find.text('Алексей Ким'), findsOneWidget);
-      expect(find.text('Данияр Садыков'), findsNothing);
-      expect(find.byIcon(Icons.arrow_back_ios_new), findsOneWidget);
+      expect(find.text('Test Executor'), findsOneWidget);
+      expect(find.textContaining('3'), findsWidgets);
       expect(tester.takeException(), isNull);
-      await tester.tap(find.byType(BackButton));
-      await tester.pumpAndSettle();
-      expect(find.byType(BrigadeMembersScreen), findsNothing);
+      await tester.pumpWidget(const SizedBox());
     });
   }
-
-  testWidgets('detail is flat and editing actions open from its top', (
+  testWidgets('close posts score and refreshes full order from server', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    final store = DemoStore();
-    addTearDown(() async {
-      await tester.pumpWidget(const SizedBox());
-      store.dispose();
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    final order = store.orders.first;
+    var closed = false;
+    var gets = 0;
+    final api = testApi(
+      handle: (request) async {
+        if (request.method == 'POST') {
+          closed = true;
+          expect(request.body, contains('CLOSE'));
+          expect(request.body, contains('masterScore'));
+          expect(request.body, contains('clientActionId'));
+          // The mutation response deliberately differs from the next GET.
+          return jsonResponse(orderJson(status: 'AI_REVIEW'));
+        }
+        if (request.url.path == '/api/work-orders/773') {
+          gets++;
+          return jsonResponse(
+            orderJson(status: closed ? 'CLOSED' : 'AI_REVIEW'),
+          );
+        }
+        return null;
+      },
+    );
+    addTearDown(api.dispose);
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildAppTheme(),
-        home: OrderDetailScreen(store: store, order: order),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: OrderDetailScreen(api: api, orderId: 773),
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(Panel), findsNothing);
-    expect(find.text('Переназначить'), findsNothing);
-    expect(
-      find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byTooltip('Редактирование наряда'),
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(find.byTooltip('Редактирование наряда'));
+    await tester.tap(find.text('Принять и закрыть'));
     await tester.pumpAndSettle();
-    for (final label in [
-      'Переназначить',
-      'Изменить приоритет',
-      'Отменить наряд',
-      'Изменить срок выполнения',
-    ]) {
-      expect(find.text(label), findsOneWidget);
-    }
-    await tester.tap(find.text('Изменить приоритет'));
+    await tester.tap(find.text('Закрыть наряд'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Обычный — в порядке очереди'));
-    await tester.pumpAndSettle();
-    expect(order.priority, 'Обычный');
-    expect(order.history.last.kind, OrderEventKind.priority);
-    await tester.tap(find.byTooltip('Редактирование наряда'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Изменить срок выполнения'));
-    await tester.pumpAndSettle();
-    expect(find.byType(DatePickerDialog), findsOneWidget);
+    expect(closed, true);
+    expect(gets, greaterThanOrEqualTo(2));
+    expect(find.text('Закрыт'), findsOneWidget);
+    expect(find.text('Принять и закрыть'), findsNothing);
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
   });
 }

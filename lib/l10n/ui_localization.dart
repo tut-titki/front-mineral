@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 import 'package:mineral/l10n/app_localizations_ru.dart';
 import 'package:mineral/shared/models/models.dart';
+import 'backend_ui_labels.dart';
 
 AppLocalizations strings(BuildContext context) =>
     Localizations.of<AppLocalizations>(context, AppLocalizations) ??
@@ -762,7 +763,9 @@ String uiText(BuildContext context, String source) {
   if (source.contains(' · ')) {
     return source.split(' · ').map((part) => uiText(context, part)).join(' · ');
   }
-  return source;
+  return s.localeName.startsWith('kk')
+      ? backendUiLabels[source] ?? source
+      : source;
 }
 
 String executorStatusText(BuildContext context, WorkOrder order) {

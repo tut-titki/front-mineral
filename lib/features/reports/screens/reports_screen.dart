@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-
-import 'package:mineral/l10n/ui_localization.dart';
-import 'package:mineral/shared/data/demo_store.dart';
-import 'package:mineral/shared/models/models.dart';
-import 'package:mineral/features/reports/widgets/report_metrics.dart';
-import 'package:mineral/features/reports/models/report_snapshot.dart';
-import 'package:mineral/shared/widgets/ui.dart';
+import 'package:file_saver/file_saver.dart';
+import '../../../core/api/api_services.dart';
+import '../../../core/api/backend_document.dart';
+import '../../orders/models/work_order_api_models.dart';
+import '../../../l10n/ui_localization.dart';
+import '../../../shared/models/models.dart' show dateLabel;
+import '../../../shared/widgets/backend_section.dart';
+import '../../../shared/widgets/ui.dart';
 
 class ReportsScreen extends StatefulWidget {
-  const ReportsScreen({super.key, required this.store});
-  final DemoStore store;
-
+  const ReportsScreen({super.key, required this.api});
+  final ApiServices api;
   @override
   State<ReportsScreen> createState() => _ReportsScreenState();
 }
@@ -18,262 +18,287 @@ class ReportsScreen extends StatefulWidget {
 class _ReportsScreenState extends State<ReportsScreen> {
   DateTimeRange? selectedPeriod;
   String preset = 'today';
-
+  bool exporting = false;
   DateTime get today {
-    final now = widget.store.now;
+    final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);
   }
 
   DateTimeRange? get period => switch (preset) {
     'all' => null,
     'week' => DateTimeRange(
-      start: DateTime(today.year, today.month, today.day - 6),
+      start: today.subtract(const Duration(days: 6)),
       end: today,
     ),
     'month' => DateTimeRange(
-      start: DateTime(today.year, today.month, today.day - 29),
+      start: today.subtract(const Duration(days: 29)),
       end: today,
     ),
     'custom' => selectedPeriod,
     _ => DateTimeRange(start: today, end: today),
   };
-
   Future<void> selectPeriod() async {
-    final earliest = widget.store.orders.fold<DateTime>(
-      DateTime(today.year - 5, today.month, today.day),
-      (date, order) => order.createdAt.isBefore(date) ? order.createdAt : date,
-    );
-    final selected = await showDateRangePicker(
+    final range = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(earliest.year, earliest.month, earliest.day),
+      firstDate: DateTime(2000),
       lastDate: today,
       currentDate: today,
       initialDateRange: period,
       helpText: strings(context).selectPeriod,
-      builder: (context, child) {
-        final theme = Theme.of(context);
-        return Theme(
-          data: theme.copyWith(
-            datePickerTheme: theme.datePickerTheme.copyWith(
-              rangePickerHeaderHeadlineStyle: TextStyle(
-                fontSize: MediaQuery.sizeOf(context).width < 480 ? 16 : 22,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
-    if (selected != null && mounted) {
+    if (range != null && mounted) {
       setState(() {
-        selectedPeriod = selected;
+        selectedPeriod = range;
         preset = 'custom';
       });
     }
   }
 
-  @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: widget.store,
-    builder: (context, _) {
-      final s = strings(context);
-      final snapshot = ReportSnapshot(widget.store, period);
-      final ranking = snapshot.ranking;
-      final range = period;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Future<void> _export(String format) async {
+    if (exporting) return;
+    setState(() => exporting = true);
+    try {
+      final pdf = format == 'pdf';
+      final bytes = await widget.api.reports.export(pdf: pdf);
+      if (!mounted) return;
+      final saved = await FileSaver.instance.saveAs(
+        name: 'mineral-report',
+        bytes: bytes,
+        fileExtension: pdf ? 'pdf' : 'xlsx',
+        mimeType: pdf ? MimeType.pdf : MimeType.microsoftExcel,
+      );
+      if (mounted && saved != null) {
+        showMessage(
+          context,
+          backendText(context, 'Отчёт сохранён', 'Есеп сақталды'),
+        );
+      }
+    } catch (error) {
+      if (mounted) showMessage(context, backendError(context, error));
+    } finally {
+      if (mounted) setState(() => exporting = false);
+    }
+  }
+
+  Widget _report(String title, Future<BackendDocument> Function() load) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Panel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: Text(
-                  s.reportsRating,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: ink,
-                    letterSpacing: -.8,
-                  ),
-                ),
+              SectionHeading(title),
+              BackendSection<BackendDocument>(
+                load: load,
+                changes: widget.api.realtime.changes,
+                builder: (context, data) => BackendDocumentView(document: data),
               ),
-              const SizedBox(width: 12),
-              PopupMenuButton<String>(
-                tooltip: s.exportReport,
-                onSelected: (format) => showMessage(
-                  context,
-                  format == 'pdf'
-                      ? 'Выгрузку PDF подключим вместе с backend'
-                      : 'Выгрузку Excel подключим вместе с backend',
+            ],
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final s = strings(context);
+    final range = period;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PageHeading(
+          s.reportsRating,
+          subtitle: s.reportPeriodHint,
+          action: exporting
+              ? const CircularProgressIndicator()
+              : PopupMenuButton<String>(
+                  tooltip: s.exportReport,
+                  onSelected: _export,
+                  itemBuilder: (_) => [
+                    PopupMenuItem(value: 'pdf', child: Text(s.exportPdf)),
+                    PopupMenuItem(value: 'excel', child: Text(s.exportExcel)),
+                  ],
+                  child: Chip(
+                    avatar: const Icon(Icons.ios_share, color: brand),
+                    label: Text(s.exportReport),
+                  ),
                 ),
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: 'pdf',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.picture_as_pdf_outlined, color: brand),
-                        const SizedBox(width: 12),
-                        Text(s.exportPdf),
-                      ],
+        ),
+        Text(s.reportPeriodHint, style: const TextStyle(color: muted)),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final choice in [
+              ('today', s.todayPeriod),
+              ('week', s.weekPeriod),
+              ('month', s.monthPeriod),
+              ('all', s.allTimePeriod),
+            ])
+              ChoiceChip(
+                label: Text(choice.$2),
+                selected: preset == choice.$1,
+                onSelected: (_) => setState(() => preset = choice.$1),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: OutlinedButton.icon(
+            onPressed: selectPeriod,
+            icon: const Icon(Icons.date_range_outlined),
+            label: Text(
+              range == null
+                  ? s.selectPeriod
+                  : '${dateLabel(range.start)} — ${dateLabel(range.end)}',
+            ),
+          ),
+        ),
+        BackendSection<List<WorkOrderApiModel>>(
+          load: () => widget.api.workOrders.getAllWorkOrders(compact: false),
+          changes: widget.api.realtime.changes,
+          builder: (context, allOrders) {
+            final selected = allOrders.where((o) {
+              final created = o.createdAt.toLocal();
+              return range == null ||
+                  (!created.isBefore(range.start) &&
+                      created.isBefore(
+                        DateTime(
+                          range.end.year,
+                          range.end.month,
+                          range.end.day + 1,
+                        ),
+                      ));
+            }).toList();
+            final closed = selected
+                .where((o) => o.status == WorkOrderStatus.closed)
+                .toList();
+            final scores = closed
+                .map((o) => o.aiAssessment?.masterScore)
+                .whereType<num>()
+                .toList();
+            final average = scores.isEmpty
+                ? null
+                : scores.reduce((a, b) => a + b) / scores.length;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AdaptiveGrid(
+                  minWidth: 190,
+                  children: [
+                    MetricCard(
+                      title: 'Выдано нарядов',
+                      value: '${selected.length}',
+                      icon: Icons.assignment_outlined,
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'excel',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.table_chart_outlined, color: brand),
-                        const SizedBox(width: 12),
-                        Text(s.exportExcel),
-                      ],
+                    MetricCard(
+                      title: 'Выполнено',
+                      value:
+                          '${selected.where((o) => [WorkOrderStatus.completed, WorkOrderStatus.aiReview, WorkOrderStatus.closed].contains(o.status)).length}',
+                      icon: Icons.task_alt,
+                      color: Colors.green,
                     ),
-                  ),
-                ],
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: border),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                    MetricCard(
+                      title: 'Просрочено',
+                      value: '${selected.where((o) => o.isOverdue).length}',
+                      icon: Icons.schedule,
+                      color: Colors.red,
+                    ),
+                    MetricCard(
+                      title: backendText(
+                        context,
+                        'Средняя оценка мастера',
+                        'Шебердің орташа бағасы',
+                      ),
+                      value: average?.toStringAsFixed(1) ?? '—',
+                      icon: Icons.star_outline,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Panel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.ios_share, size: 18, color: brand),
-                      const SizedBox(width: 8),
-                      Text(
-                        s.exportReport,
-                        style: const TextStyle(
-                          color: brand,
-                          fontWeight: FontWeight.w600,
+                      SectionHeading(
+                        backendText(
+                          context,
+                          'Рейтинг за выбранный период',
+                          'Таңдалған кезеңдегі рейтинг',
                         ),
                       ),
+                      if (scores.isEmpty) Text(s.noPeriodEmployees),
+                      ..._ranking(context, closed),
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            s.reportPeriodHint,
-            style: const TextStyle(color: muted, height: 1.5),
-          ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final choice in [
-                ('today', s.todayPeriod),
-                ('week', s.weekPeriod),
-                ('month', s.monthPeriod),
-                ('all', s.allTimePeriod),
-              ])
-                ChoiceChip(
-                  label: Text(choice.$2),
-                  selected: preset == choice.$1,
-                  onSelected: (_) => setState(() => preset = choice.$1),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: selectPeriod,
-              icon: const Icon(Icons.date_range_outlined),
-              label: Text(
-                range == null
-                    ? s.selectPeriod
-                    : '${dateLabel(range.start)} — ${dateLabel(range.end)}',
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          ReportMetrics(store: widget.store, orders: snapshot.orders),
-          const SizedBox(height: 24),
-          Panel(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SectionHeading('Рейтинг исполнителей'),
-                if (ranking.isEmpty)
-                  Text(
-                    s.noPeriodEmployees,
-                    style: const TextStyle(color: muted),
-                  ),
-                for (var index = 0; index < ranking.length; index++)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 28,
-                          child: Text(
-                            '${index + 1}',
-                            style: const TextStyle(
-                              color: muted,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        CircleAvatar(
-                          backgroundColor: background,
-                          child: Text(
-                            ranking[index].initials,
-                            style: const TextStyle(color: brand),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                ranking[index].name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                uiText(context, ranking[index].specialty),
-                                style: const TextStyle(
-                                  color: muted,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              LinearProgressIndicator(
-                                value: ranking[index].rating / 5,
-                                backgroundColor: background,
-                                color: brand,
-                                minHeight: 5,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Text(
-                          ranking[index].rating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            color: brand,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
               ],
-            ),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+        Text(
+          backendText(
+            context,
+            'Сводки сервера и экспорт — за период, заданный сервером.',
+            'Сервер жиынтықтары мен экспорт — сервер белгілеген кезең үшін.',
           ),
-        ],
-      );
-    },
-  );
+          style: const TextStyle(color: muted),
+        ),
+        const SizedBox(height: 16),
+        _report(
+          backendText(context, 'Отчёт по смене', 'Ауысым есебі'),
+          widget.api.reports.getShift,
+        ),
+        _report('Рейтинг исполнителей', widget.api.reports.getRatings),
+        _report(
+          backendText(context, 'Рейтинг бригад', 'Бригадалар рейтингі'),
+          widget.api.reports.getBrigadeRatings,
+        ),
+        _report(
+          backendText(context, 'Расход материалов', 'Материалдар шығыны'),
+          widget.api.reports.getMaterials,
+        ),
+        _report(
+          backendText(
+            context,
+            'Простой оборудования',
+            'Жабдықтың тоқтап тұруы',
+          ),
+          widget.api.reports.getDowntime,
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _ranking(BuildContext context, List<WorkOrderApiModel> orders) {
+    final byExecutor = <int, List<WorkOrderApiModel>>{};
+    for (final order in orders.where(
+      (o) => o.aiAssessment?.masterScore != null,
+    )) {
+      byExecutor.putIfAbsent(order.assigneeId, () => []).add(order);
+    }
+    double score(List<WorkOrderApiModel> orders) =>
+        orders.fold<double>(0, (sum, o) => sum + o.aiAssessment!.masterScore!) /
+        orders.length;
+    final groups = byExecutor.values.toList()
+      ..sort((a, b) => score(b).compareTo(score(a)));
+    return [
+      for (final group in groups)
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.person_outline, color: brand),
+          title: Text(group.first.assignee.fullName),
+          subtitle: LinearProgressIndicator(
+            value: (score(group) / 5).clamp(0, 1),
+            backgroundColor: background,
+          ),
+          trailing: Text(
+            score(group).toStringAsFixed(1),
+            style: const TextStyle(color: brand, fontWeight: FontWeight.w800),
+          ),
+        ),
+    ];
+  }
 }

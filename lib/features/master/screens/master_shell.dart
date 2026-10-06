@@ -1,21 +1,28 @@
-import 'package:mineral/features/auth/screens/change_password_screen.dart';
-import 'package:mineral/features/auth/widgets/auth_scope.dart';
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:mineral/l10n/ui_localization.dart';
-import 'package:mineral/l10n/language_switcher.dart';
-import 'package:mineral/features/master/screens/dashboard_screen.dart';
 
-import 'package:mineral/shared/data/demo_store.dart';
-import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/core/api/api_services.dart';
+
+import 'package:mineral/features/auth/widgets/auth_scope.dart';
+
+import 'package:mineral/features/master/screens/dashboard_screen.dart';
+import 'package:mineral/features/master/screens/master_profile_screen.dart';
+
+import 'package:mineral/features/orders/models/work_order_api_models.dart';
+import 'package:mineral/features/orders/screens/order_detail_screen.dart';
 import 'package:mineral/features/orders/screens/order_screens.dart';
+
+import 'package:mineral/l10n/language_switcher.dart';
+import 'package:mineral/l10n/ui_localization.dart';
+
+import 'package:mineral/shared/models/models.dart';
 import 'package:mineral/shared/widgets/ui.dart';
 
-class MasterShell extends StatefulWidget {
-  const MasterShell({super.key, required this.store});
+// MARK: - Master Shell
 
-  final DemoStore store;
+class MasterShell extends StatefulWidget {
+  const MasterShell({super.key, required this.api});
+
+  final ApiServices api;
 
   @override
   State<MasterShell> createState() => _MasterShellState();
@@ -23,39 +30,42 @@ class MasterShell extends StatefulWidget {
 
 class _MasterShellState extends State<MasterShell> {
   int page = 0;
+
   bool _loggingOut = false;
+
+  // MARK: - Logout
+
   Future<void> _logout() async {
     final session = AuthScope.maybeOf(context);
-    if (session == null || _loggingOut) return;
-    setState(() => _loggingOut = true);
+
+    if (session == null || _loggingOut) {
+      return;
+    }
+
+    setState(() {
+      _loggingOut = true;
+    });
+
     try {
       await session.logout();
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings(context).authNetworkError)),
-        );
+      if (!mounted) {
+        return;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings(context).authNetworkError)),
+      );
     } finally {
-      if (mounted) setState(() => _loggingOut = false);
+      if (mounted) {
+        setState(() {
+          _loggingOut = false;
+        });
+      }
     }
   }
 
-  Timer? refreshTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    refreshTimer = Timer.periodic(Duration(seconds: 5), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    refreshTimer?.cancel();
-    super.dispose();
-  }
+  // MARK: - Navigation
 
   static const labels = [
     'Обзор смены',
@@ -63,6 +73,7 @@ class _MasterShellState extends State<MasterShell> {
     'Команда',
     'ИИ-контроль',
     'Отчёты',
+    'Профиль',
   ];
 
   static const icons = [
@@ -71,141 +82,178 @@ class _MasterShellState extends State<MasterShell> {
     Icons.groups_outlined,
     Icons.auto_awesome,
     Icons.bar_chart_rounded,
+    Icons.person_outline,
   ];
 
-  void openOrder(WorkOrder order) {
-    Navigator.push(
+  // MARK: - Backend order
+
+  Future<void> openOrder(WorkOrderApiModel order) => openOrderId(order.id);
+
+  Future<void> openOrderId(int id) async {
+    await Navigator.push<void>(
       context,
       MaterialPageRoute<void>(
-        builder: (_) => OrderDetailScreen(store: widget.store, order: order),
+        builder: (_) => OrderDetailScreen(api: widget.api, orderId: id),
       ),
     );
+    if (mounted) widget.api.realtime.invalidate();
+  }
+  // MARK: - Create order
+
+  Future<void> createOrder() async {
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute<bool>(
+        builder: (_) => CreateOrderScreen(api: widget.api),
+      ),
+    );
+
+    if (!mounted || created != true) {
+      return;
+    }
+
+    widget.api.realtime.invalidate();
+    // После создания переходим в реальные наряды.
+    //
+    // OrdersScreen при следующем создании экземпляра
+    // выполнит GET /api/work-orders.
+    setState(() {
+      page = 1;
+    });
   }
 
-  void createOrder() {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => CreateOrderScreen(store: widget.store),
-      ),
-    );
-  }
+  // MARK: - Notifications
 
   void openNotifications() {
-    Navigator.push(
+    Navigator.push<void>(
       context,
       MaterialPageRoute<void>(
         builder: (_) => Scaffold(
           appBar: AppBar(title: Text(uiText(context, 'Уведомления'))),
-          body: ListenableBuilder(
-            listenable: widget.store,
-            builder: (context, _) => SingleChildScrollView(
-              padding: EdgeInsets.all(20),
-              child: NotificationsScreen(
-                store: widget.store,
-                onOrder: openOrder,
-              ),
-            ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: NotificationsScreen(api: widget.api, onOrder: openOrderId),
           ),
         ),
       ),
     );
   }
+  // MARK: - Build
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: widget.store,
-      builder: (context, _) {
+    return Builder(
+      builder: (context) {
         final desktop = MediaQuery.sizeOf(context).width >= 1000;
-        final visiblePage = !desktop && page == 3 ? 0 : page;
 
-        final content = switch (visiblePage) {
+        final content = switch (page) {
           0 => DashboardScreen(
-            store: widget.store,
+            api: widget.api,
             onOrder: openOrder,
             onCreate: createOrder,
-            onTeam: () => setState(() => page = 2),
+            onTeam: () {
+              setState(() {
+                page = 2;
+              });
+            },
           ),
+
           1 => OrdersScreen(
-            store: widget.store,
+            api: widget.api,
             onOrder: openOrder,
             onCreate: createOrder,
           ),
-          2 => TeamScreen(store: widget.store),
-          3 => AiScreen(store: widget.store, onOrder: openOrder),
-          _ => ReportsScreen(store: widget.store),
+
+          2 => TeamScreen(api: widget.api),
+
+          3 => AiScreen(api: widget.api, onOrder: openOrder),
+
+          4 => ReportsScreen(api: widget.api),
+
+          _ => MasterProfileScreen(
+            api: widget.api,
+            onLogout: _logout,
+            loggingOut: _loggingOut,
+          ),
         };
 
         return Scaffold(
+          // MARK: Mobile app bar
           appBar: desktop
               ? null
               : AppBar(
-                  title: Image.asset(
-                    'assets/logo_blue.png',
-                    width: 110,
-                    height: 48,
-                    fit: BoxFit.contain,
-                    semanticLabel: 'Костанайские минералы',
-                  ),
+                  title: page == 5
+                      ? Text(uiText(context, 'Профиль'))
+                      : Image.asset(
+                          'assets/logo_blue.png',
+                          width: 110,
+                          height: 48,
+                          fit: BoxFit.contain,
+                          semanticLabel: 'Костанайские минералы',
+                        ),
                   actions: [
                     const LanguageSwitcher(),
-                    if (AuthScope.maybeOf(context) != null)
-                      IconButton(
-                        tooltip: strings(context).changePasswordTitle,
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute<void>(
-                            builder: (_) => const ChangePasswordScreen(),
-                          ),
-                        ),
-                        icon: const Icon(Icons.lock_outline),
-                      ),
-                    if (AuthScope.maybeOf(context) != null)
-                      IconButton(
-                        tooltip: uiText(context, 'Выйти'),
-                        onPressed: _loggingOut ? null : _logout,
-                        icon: const Icon(Icons.logout),
-                      ),
+
                     IconButton(
                       tooltip: uiText(context, 'Уведомления'),
                       onPressed: openNotifications,
-                      icon: Icon(Icons.notifications_outlined),
+                      icon: const Icon(Icons.notifications_outlined),
                     ),
                   ],
                 ),
+
+          // MARK: Mobile navigation
           bottomNavigationBar: desktop
               ? null
               : NavigationBar(
-                  selectedIndex: visiblePage == 4 ? 3 : visiblePage,
+                  selectedIndex: page,
                   onDestinationSelected: (value) {
-                    setState(() => page = value == 3 ? 4 : value);
+                    setState(() {
+                      page = value;
+                    });
                   },
                   destinations: [
                     NavigationDestination(
-                      icon: Icon(Icons.grid_view_rounded),
+                      icon: const Icon(Icons.grid_view_rounded),
+                      selectedIcon: const Icon(Icons.grid_view_rounded),
                       label: uiText(context, 'Смена'),
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.assignment_outlined),
+                      icon: const Icon(Icons.assignment_outlined),
+                      selectedIcon: const Icon(Icons.assignment),
                       label: uiText(context, 'Наряды'),
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.groups_outlined),
+                      icon: const Icon(Icons.groups_outlined),
+                      selectedIcon: const Icon(Icons.groups),
                       label: uiText(context, 'Команда'),
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.bar_chart_rounded),
+                      icon: const Icon(Icons.auto_awesome_outlined),
+                      selectedIcon: const Icon(Icons.auto_awesome),
+                      label: uiText(context, 'ИИ'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.bar_chart_rounded),
+                      selectedIcon: const Icon(Icons.bar_chart_rounded),
                       label: uiText(context, 'Отчёты'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.person_outline),
+                      selectedIcon: const Icon(Icons.person),
+                      label: uiText(context, 'Профиль'),
                     ),
                   ],
                 ),
+
+          // MARK: Main layout
           body: Row(
             children: [
+              // MARK: Desktop sidebar
               if (desktop)
                 Container(
                   width: 240,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.white,
                     border: Border(right: BorderSide(color: border)),
                   ),
@@ -214,7 +262,7 @@ class _MasterShellState extends State<MasterShell> {
                     child: Column(
                       children: [
                         Padding(
-                          padding: EdgeInsets.fromLTRB(24, 32, 24, 8),
+                          padding: const EdgeInsets.fromLTRB(24, 32, 24, 8),
                           child: Image.asset(
                             'assets/logo_blue.png',
                             width: 192,
@@ -223,20 +271,22 @@ class _MasterShellState extends State<MasterShell> {
                             semanticLabel: 'Костанайские минералы',
                           ),
                         ),
+
                         Padding(
-                          padding: EdgeInsets.only(bottom: 32),
+                          padding: const EdgeInsets.only(bottom: 32),
                           child: Text(
                             uiText(context, 'УПРАВЛЕНИЕ СМЕНОЙ'),
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: muted,
                               fontSize: 10,
                               letterSpacing: 1.6,
                             ),
                           ),
                         ),
+
                         for (var index = 0; index < labels.length; index++)
                           Padding(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 14,
                               vertical: 4,
                             ),
@@ -250,94 +300,112 @@ class _MasterShellState extends State<MasterShell> {
                               leading: Icon(icons[index]),
                               title: Text(
                                 uiText(context, labels[index]),
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              onTap: () => setState(() => page = index),
+                              onTap: () {
+                                setState(() {
+                                  page = index;
+                                });
+                              },
                             ),
                           ),
-                        Spacer(),
+
+                        const Spacer(),
+
                         ListTile(
+                          onTap: () => setState(() => page = 5),
                           leading: CircleAvatar(
                             backgroundColor: background,
                             child: Text(
-                              uiText(context, 'СО'),
-                              style: TextStyle(color: brand),
+                              uiText(
+                                context,
+                                AuthScope.maybeOf(context)?.user?.fullName
+                                        .split(' ')
+                                        .where((p) => p.isNotEmpty)
+                                        .take(2)
+                                        .map((p) => p[0])
+                                        .join() ??
+                                    '',
+                              ),
+                              style: const TextStyle(color: brand),
                             ),
                           ),
-                          title: Text(uiText(context, 'Серик Омаров')),
+                          title: Text(
+                            uiText(
+                              context,
+                              AuthScope.maybeOf(context)?.user?.fullName ??
+                                  uiText(context, 'Мастер смены'),
+                            ),
+                          ),
                           subtitle: Text(uiText(context, 'Мастер смены')),
                         ),
-                        SizedBox(height: 20),
+
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
                 ),
+
+              // MARK: Content
               Expanded(
                 child: Column(
                   children: [
+                    // MARK: Desktop header
                     if (desktop)
                       Container(
                         color: Colors.white,
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 28,
                           vertical: 14,
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.factory_outlined, color: muted),
-                            SizedBox(width: 10),
+                            const Icon(Icons.factory_outlined, color: muted),
+
+                            const SizedBox(width: 10),
+
                             Text(
                               uiText(context, 'Минеральный комплекс'),
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                            SizedBox(width: 18),
-                            StatusTag(
-                              'Смена №1 · 08:00–20:00',
-                              color: Color(0xFF059669),
-                            ),
-                            Spacer(),
+
+                            const SizedBox(width: 18),
+
+                            Text(uiText(context, 'Мастер смены')),
+
+                            const Spacer(),
+
                             Text(
                               uiText(context, dateLabel(DateTime.now())),
-                              style: TextStyle(color: muted),
+                              style: const TextStyle(color: muted),
                             ),
-                            SizedBox(width: 14),
+
+                            const SizedBox(width: 14),
+
                             const LanguageSwitcher(),
-                            if (AuthScope.maybeOf(context) != null)
-                              IconButton(
-                                tooltip: strings(context).changePasswordTitle,
-                                onPressed: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute<void>(
-                                    builder: (_) =>
-                                        const ChangePasswordScreen(),
-                                  ),
-                                ),
-                                icon: const Icon(Icons.lock_outline),
-                              ),
-                            if (AuthScope.maybeOf(context) != null)
-                              IconButton(
-                                tooltip: uiText(context, 'Выйти'),
-                                onPressed: _loggingOut ? null : _logout,
-                                icon: const Icon(Icons.logout),
-                              ),
+
                             IconButton(
                               tooltip: uiText(context, 'Уведомления'),
                               onPressed: openNotifications,
-                              icon: Icon(Icons.notifications_outlined),
+                              icon: const Icon(Icons.notifications_outlined),
                             ),
                           ],
                         ),
                       ),
+
+                    // MARK: Page
                     Expanded(
                       child: SingleChildScrollView(
                         padding: EdgeInsets.all(desktop ? 28 : 18),
                         child: Align(
                           alignment: Alignment.topCenter,
                           child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: 1400),
+                            constraints: const BoxConstraints(maxWidth: 1400),
                             child: content,
                           ),
                         ),

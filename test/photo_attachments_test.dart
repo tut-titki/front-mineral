@@ -1,10 +1,9 @@
+import 'helpers/backend_api_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mineral/shared/data/demo_store.dart';
 import 'package:mineral/shared/models/models.dart';
 import 'package:mineral/features/orders/screens/order_screens.dart';
-import 'package:mineral/features/orders/widgets/photo_attachments.dart';
 import 'package:mineral/core/services/photo_picker_service.dart';
 import 'package:mineral/core/theme/app_theme.dart';
 
@@ -68,8 +67,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final fake = await picker();
-    final store = DemoStore();
-    addTearDown(store.dispose);
+    Map<String, dynamic>? submitted;
+    final api = createFormApi(onCreate: (input) => submitted = input);
+    addTearDown(api.dispose);
     await tester.pumpWidget(
       MaterialApp(
         key: const ValueKey('create'),
@@ -77,16 +77,14 @@ void main() {
         home: const Scaffold(body: Text('Главная')),
         initialRoute: '/create',
         routes: {
-          '/create': (_) => CreateOrderScreen(store: store, photoPicker: fake),
+          '/create': (_) => CreateOrderScreen(api: api, photoPicker: fake),
         },
       ),
     );
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).at(0), 'Ремонт насоса');
     await tester.enterText(find.byType(TextFormField).at(1), 'Устранить течь');
-    await tapVisible(tester, find.byType(DropdownButtonFormField<int>));
-    await tester.tap(find.textContaining('Данияр Садыков').last);
-    await tester.pumpAndSettle();
+
     await choosePhotoSource(tester, 'Камера');
     expect(find.text('1/5'), findsOneWidget);
     await choosePhotoSource(tester, 'Галерея');
@@ -103,22 +101,12 @@ void main() {
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     await tapVisible(tester, find.text('Выдать наряд'));
-    expect(store.orders.first.title, 'Ремонт насоса');
-    expect(store.orders.first.beforeImages, hasLength(4));
-    expect(store.orders.first.beforePhotos, 4);
-    expect(store.orders.first.beforeImages.first.bytes, fake.photo.bytes);
-    await tester.pumpWidget(
-      MaterialApp(
-        key: const ValueKey('detail'),
-        theme: buildAppTheme(),
-        home: OrderDetailScreen(store: store, order: store.orders.first),
-      ),
+    expect(submitted?['description'], 'Ремонт насоса');
+    expect(submitted?['beforePhotoUrls'], hasLength(4));
+    expect(
+      submitted?['beforePhotoUrls'],
+      everyElement('/uploads/photo?exp=123&sig=test'),
     );
-    await tester.pumpAndSettle();
-    final attachments = tester
-        .widgetList<PhotoAttachments>(find.byType(PhotoAttachments))
-        .toList();
-    expect(attachments.first.photos, hasLength(4));
     expect(tester.takeException(), isNull);
   });
 
@@ -128,12 +116,12 @@ void main() {
     addTearDown(() async => tester.pumpWidget(const SizedBox.shrink()));
     final fake = await picker();
     fake.cancel = true;
-    final store = DemoStore();
-    addTearDown(store.dispose);
+    final api = createFormApi();
+    addTearDown(api.dispose);
     await tester.pumpWidget(
       MaterialApp(
         theme: buildAppTheme(),
-        home: CreateOrderScreen(store: store, photoPicker: fake),
+        home: CreateOrderScreen(api: api, photoPicker: fake),
       ),
     );
     await tester.pumpAndSettle();
