@@ -3,4 +3,5 @@ import 'package:mineral/app/app.dart';
 
 export 'package:mineral/app/app.dart' show MainApp;
 
-void main() => runApp(const MainApp());
+void main() =>
+    runApp(const MainApp(demoMode: bool.fromEnvironment('DEMO_MODE')));

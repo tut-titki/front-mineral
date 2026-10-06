@@ -1446,4 +1446,17 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get statusMasterReview => 'Шебердің тексеруінде';
+
+  @override
+  String get checkingReport => 'Есеп тексерілуде…';
+
+  @override
+  String get orderUnavailable => 'Наряд қолжетімсіз';
+
+  @override
+  String get photoTooLarge => 'Фото көлемі 15 МБ-тан аспауы керек.';
+
+  @override
+  String get photoCaptureHint =>
+      'Жөндеу нәтижесі көрінуі үшін «дейін» және «кейін» фотоларын бір жерден түсіріңіз. 5 фотоға дейін, әрқайсысы 15 МБ-тан аспауы керек.';
 }

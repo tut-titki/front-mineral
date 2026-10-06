@@ -1,3 +1,4 @@
+import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../widgets/executor_greeting.dart';
@@ -34,11 +35,13 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
     try {
       await store.refreshExecutor(employeeId);
       if (mounted) setState(() => _refreshError = null);
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         setState(
-          () => _refreshError =
-              'Не удалось обновить данные. Потяните список вниз, чтобы повторить.',
+          () =>
+              _refreshError = error is ApiException && error.message.isNotEmpty
+              ? error.message
+              : strings(context).refreshFailed,
         );
       }
     }
@@ -143,7 +146,7 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(uiText(context, store.loadError!)),
+                  Text(_refreshError ?? store.loadError!),
                   TextButton(
                     onPressed: _refresh,
                     child: Text(uiText(context, 'Повторить')),
@@ -202,11 +205,11 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
                     ),
                   ),
                 const SizedBox(height: 16),
-                if (_refreshError != null)
+                if (store.loadError != null || _refreshError != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Text(
-                      uiText(context, _refreshError!),
+                      store.loadError ?? _refreshError!,
                       style: const TextStyle(color: Colors.red),
                     ),
                   ),

@@ -1442,4 +1442,17 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get statusMasterReview => 'На проверке у мастера';
+
+  @override
+  String get checkingReport => 'Проверяем отчёт…';
+
+  @override
+  String get orderUnavailable => 'Наряд недоступен';
+
+  @override
+  String get photoTooLarge => 'Фото должно быть не больше 15 МБ.';
+
+  @override
+  String get photoCaptureHint =>
+      'Снимайте «до» и «после» с одной точки, чтобы результат ремонта был виден. До 5 фото, каждое не больше 15 МБ.';
 }

@@ -13,6 +13,8 @@ import 'package:mineral/features/auth/screens/session_gate.dart';
 import 'package:mineral/features/auth/widgets/auth_scope.dart';
 
 import 'package:mineral/features/executor/data/execution_draft_storage.dart';
+import 'package:mineral/features/executor/data/api_executor_repository.dart';
+import 'package:mineral/features/executor/data/executor_api.dart';
 import 'package:mineral/features/executor/screens/executor_screen.dart';
 
 import 'package:mineral/features/master/screens/master_shell.dart';
@@ -52,8 +54,18 @@ class _MainAppState extends State<MainApp> {
   );
 
   bool _wasAuthenticated = false;
-
-  // MARK: - Session
+  ApiExecutorRepository? _executorStore;
+  int? _executorUserId;
+  ApiExecutorRepository _apiExecutorStore() {
+    final userId = _session.user!.id;
+    if (_executorStore != null && _executorUserId == userId) {
+      return _executorStore!;
+    }
+    _executorStore?.dispose();
+    _executorUserId = userId;
+    return _executorStore = ApiExecutorRepository(api: ExecutorApi(_session))
+      ..startRealtime();
+  }
 
   void _sessionChanged() {
     final authenticated = _session.authenticated;
@@ -70,9 +82,8 @@ class _MainAppState extends State<MainApp> {
       api.clearAccessToken();
     }
 
-    // Старый DemoStore пока нужен
-    // ExecutorScreen.
-    if (user != null) {
+    // DemoStore используется только в деморежиме.
+    if (widget.demoMode && user != null) {
       store.sessionEmployee = Employee(
         id: user.id,
         name: user.fullName,
@@ -88,6 +99,10 @@ class _MainAppState extends State<MainApp> {
     // но сессия закончилась — возвращаем
     // на страницу входа.
     if (_wasAuthenticated && !authenticated) {
+      final previous = _executorStore;
+      _executorStore = null;
+      _executorUserId = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) => previous?.dispose());
       _navigatorKey.currentState?.pushNamedAndRemoveUntil(
         '/login',
         (_) => false,
@@ -102,7 +117,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
-
+    if (widget.demoMode) store.addScreenshotOrders();
     _session.addListener(_sessionChanged);
 
     PhotoPickerService.instance.recoverLostPhotos();
@@ -122,6 +137,8 @@ class _MainAppState extends State<MainApp> {
     }
 
     api.dispose();
+
+    _executorStore?.dispose();
 
     store.dispose();
 
@@ -176,7 +193,7 @@ class _MainAppState extends State<MainApp> {
               }
 
               return ExecutorScreen(
-                store: store,
+                store: widget.demoMode ? store : _apiExecutorStore(),
                 employeeId: widget.demoMode
                     ? (ModalRoute.of(context)?.settings.arguments as int? ?? 1)
                     : _session.user!.id,

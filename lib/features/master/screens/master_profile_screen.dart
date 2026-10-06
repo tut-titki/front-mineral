@@ -130,11 +130,11 @@ class _MasterProfileScreenState extends State<MasterProfileScreen> {
                 ),
                 const Divider(height: 1),
               ],
-              if (user != null && user.grade > 0) ...[
+              if ((user?.grade ?? 0) > 0) ...[
                 _detail(
                   Icons.workspace_premium_outlined,
                   uiText(context, 'Разряд'),
-                  '${user.grade}',
+                  '${user!.grade}',
                 ),
                 const Divider(height: 1),
               ],

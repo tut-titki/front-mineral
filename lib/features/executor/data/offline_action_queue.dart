@@ -36,8 +36,10 @@ class OfflineActionQueue {
         if (result == SendResult.accepted) {
           await storage.remove(action.id);
         } else if (result == SendResult.needsReview) {
+          await storage.remove(action.id);
           onConflict(action);
-          break;
+        } else if (result == SendResult.rejected) {
+          await storage.remove(action.id);
         } else {
           break;
         }

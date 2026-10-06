@@ -68,18 +68,28 @@ class _ExecutorOrderLoaderState extends State<ExecutorOrderLoader> {
                       child: Text(
                         error is ApiException && error.message.isNotEmpty
                             ? error.message
+                            : error is ApiException &&
+                                  (error.status == 403 || error.status == 404)
+                            ? strings(context).orderUnavailable
                             : strings(context).authNetworkError,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () => setState(() {
-                        _order = widget.store.loadExecutorOrder(
-                          widget.employeeId,
-                          widget.order,
-                        );
-                      }),
-                      child: Text(uiText(context, 'Повторить')),
-                    ),
+                    if (error is ApiException &&
+                        (error.status == 403 || error.status == 404))
+                      TextButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        child: Text(strings(context).back),
+                      )
+                    else
+                      TextButton(
+                        onPressed: () => setState(() {
+                          _order = widget.store.loadExecutorOrder(
+                            widget.employeeId,
+                            widget.order,
+                          );
+                        }),
+                        child: Text(uiText(context, 'Повторить')),
+                      ),
                   ],
                 ),
         ),

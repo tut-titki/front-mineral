@@ -1,3 +1,13 @@
+import 'package:mineral/features/executor/data/pending_action_storage_io.dart';
+import 'package:mineral/features/executor/models/pending_action.dart';
+import 'package:mineral/features/executor/data/pending_action_storage.dart';
+import 'package:mineral/core/services/photo_upload_rules.dart';
+import 'package:mineral/features/executor/screens/executor_order_screen.dart';
+import 'package:mineral/features/executor/screens/executor_order_loader.dart';
+import 'package:mineral/features/executor/models/executor_order_actions.dart';
+import 'package:flutter/material.dart';
+import 'package:mineral/features/executor/screens/executor_screen.dart';
+import 'package:mineral/l10n/app_localizations.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -131,6 +141,7 @@ void main() {
     );
     await session.restore();
     repository = ApiExecutorRepository(
+      actionStorage: MemoryPendingActionStorage(),
       api: ExecutorApi(session),
       draftStorage: drafts,
     );
@@ -275,6 +286,134 @@ void main() {
       );
     },
   );
+  test(
+    'durable COMPLETE survives restart, keeps UUID and never uploads twice',
+    () async {
+      repository.dispose();
+      final storage = FilePendingActionStorage(
+        5,
+        directory: () async => directory,
+      );
+      repository = ApiExecutorRepository(
+        api: ExecutorApi(session),
+        draftStorage: drafts,
+        actionStorage: storage,
+      );
+      await repository.refreshExecutor(5);
+      final previous = handler;
+      final bodies = <Map>[];
+      var fail = true;
+      handler = (r) async {
+        if (r.url.path.endsWith('/action')) {
+          bodies.add(jsonDecode(r.body) as Map);
+          if (fail) return json({'error': 'Unavailable'}, 503);
+        }
+        return previous(r);
+      };
+      await expectLater(
+        repository.submitExecution(
+          5,
+          repository.activeOrders.single,
+          ExecutionDraft(
+            work: 'Done',
+            faultCode: repository.executorFaultCodes.single,
+            photos: [
+              OrderPhoto(
+                name: 'after.jpg',
+                bytes: Uint8List.fromList([1, 2, 3]),
+              ),
+            ],
+          ),
+        ),
+        throwsA(isA<ApiException>()),
+      );
+      final saved = (await storage.load()).single;
+      expect(saved.payload['afterPhotoUrls'], [
+        '/uploads/photo.jpg?signed=yes',
+      ]);
+      repository.dispose();
+      fail = false;
+      repository = ApiExecutorRepository(
+        api: ExecutorApi(session),
+        draftStorage: drafts,
+        actionStorage: FilePendingActionStorage(
+          5,
+          directory: () async => directory,
+        ),
+      );
+      await repository.syncPendingActions();
+      expect(bodies.map((b) => b['clientActionId']).toSet(), {saved.id});
+      expect(requests.where((r) => r.url.path == '/api/uploads').length, 1);
+      expect(await storage.load(), isEmpty);
+      expect(await drafts.load(5, 76), isNull);
+    },
+  );
+
+  test(
+    'FIFO stops on network error; replay and permanent errors are removed',
+    () async {
+      repository.dispose();
+      final storage = MemoryPendingActionStorage();
+      repository = ApiExecutorRepository(
+        api: ExecutorApi(session),
+        draftStorage: drafts,
+        actionStorage: storage,
+      );
+      await repository.refreshExecutor(5);
+      for (var i = 0; i < 4; i++) {
+        await storage.add(
+          PendingAction(
+            id: 'stable-uuid-$i',
+            employeeId: 5,
+            orderNumber: 76,
+            type: 'workOrderAction',
+            payload: {'action': 'PAUSE', 'comment': '$i'},
+            createdAt: DateTime.utc(2026, 10, 6),
+          ),
+        );
+      }
+      final previous = handler;
+      final sent = <String>[];
+      var networkDown = true;
+      handler = (r) async {
+        if (!r.url.path.endsWith('/action')) return previous(r);
+        final id = (jsonDecode(r.body) as Map)['clientActionId'] as String;
+        sent.add(id);
+        if (networkDown) {
+          throw const SocketException('offline');
+        }
+        if (id.endsWith('0')) {
+          return json({'order': order(76, 'IN_PROGRESS'), 'replayed': true});
+        }
+        if (id.endsWith('1')) return json({'error': 'Conflict'}, 409);
+        if (id.endsWith('2')) return json({'error': 'Invalid data'}, 400);
+        return json({'error': 'Forbidden'}, 403);
+      };
+      await expectLater(repository.syncPendingActions(), throwsA(anything));
+      expect(sent, ['stable-uuid-0']);
+      expect((await storage.load()).length, 4);
+      networkDown = false;
+      await expectLater(
+        repository.syncPendingActions(),
+        throwsA(isA<ApiException>()),
+      );
+      expect(sent.skip(1), [
+        'stable-uuid-0',
+        'stable-uuid-1',
+        'stable-uuid-2',
+        'stable-uuid-3',
+      ]);
+      expect(await storage.load(), isEmpty);
+      expect(repository.loadError, contains('Forbidden'));
+      expect(
+        requests.any(
+          (r) => r.method == 'GET' && r.url.path == '/api/work-orders/76',
+        ),
+        isTrue,
+      );
+    },
+  );
+
   test('pagination collects active orders and history independently', () async {
     final previous = handler;
     handler = (r) async {
@@ -321,6 +460,294 @@ void main() {
     );
     expect(repository.activeOrders, isEmpty);
   });
+  test(
+    'null values stay unfilled; explicit zero stays zero; removed norm clears',
+    () async {
+      await repository.refreshExecutor(5);
+      final work = repository.activeOrders.single;
+      final previous = handler;
+      var empty = false;
+      handler = (r) async {
+        if (r.url.path != '/api/work-orders/76') return previous(r);
+        return json({
+          ...order(76, 'IN_PROGRESS', full: true),
+          'normative': empty ? null : {'hours': '1.5'},
+          'actualDowntimeMinutes': empty ? null : 0,
+          'aiAssessment': empty
+              ? null
+              : {'verdict': 'ACCEPTED', 'score': '0', 'masterScore': null},
+        });
+      };
+      await repository.loadExecutorOrder(5, work);
+      expect(work.normHours, 1.5);
+      expect(work.aiScore, 0);
+      expect(work.downtimeMinutes, 0);
+      empty = true;
+      await repository.loadExecutorOrder(5, work);
+      expect(work.normHours, isNull);
+      expect(work.aiScore, isNull);
+      expect(work.finalScore, isNull);
+      expect(work.assessment, isNull);
+      expect(work.downtimeMinutes, isNull);
+      expect(repository.employee(5).grade, isNull);
+      expect(AuthUser.fromJson({...user, 'grade': 0}).grade, 0);
+    },
+  );
+  testWidgets('refresh preserves Russian server error in Kazakh interface', (
+    tester,
+  ) async {
+    await repository.refreshExecutor(5);
+    handler = (r) async => json({'error': 'Сервер временно недоступен'}, 503);
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('kk'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ExecutorScreen(store: repository, employeeId: 5),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Сервер временно недоступен'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  for (final code in [403, 404]) {
+    test('action $code removes order and prevents repeated requests', () async {
+      await repository.refreshExecutor(5);
+      final work = repository.activeOrders.single;
+      handler = (r) async => json({'error': 'Недоступный наряд'}, code);
+      await expectLater(
+        repository.executorAction(5, work, OrderStatus.paused, reason: 'Break'),
+        throwsA(isA<ApiException>()),
+      );
+      expect(repository.activeOrders, isEmpty);
+      expect(work.accessErrorStatus, code);
+      expect(availableExecutorActions(work, 5), isEmpty);
+      final count = requests.length;
+      await expectLater(
+        repository.executorAction(5, work, OrderStatus.paused, reason: 'Break'),
+        throwsA(isA<ApiException>()),
+      );
+      expect(requests.length, count);
+    });
+  }
+  test('failed detail refresh after 409 blocks stale action buttons', () async {
+    await repository.refreshExecutor(5);
+    final work = repository.activeOrders.single;
+    final previous = handler;
+    handler = (r) async => r.url.path.endsWith('/action')
+        ? json({'error': 'Статус изменился'}, 409)
+        : json({'error': 'Нет связи'}, 503);
+    await expectLater(
+      repository.executorAction(5, work, OrderStatus.paused, reason: 'Break'),
+      throwsA(isA<ApiException>()),
+    );
+    expect(availableExecutorActions(work, 5), isEmpty);
+    handler = previous;
+    await repository.loadExecutorOrder(5, work);
+    expect(work.accessErrorStatus, isNull);
+    expect(availableExecutorActions(work, 5), contains('PAUSE'));
+  });
+  testWidgets(
+    '400 keeps reason sheet open, preserves text and permits correction',
+    (tester) async {
+      await repository.refreshExecutor(5);
+      final work = repository.activeOrders.single;
+      final previous = handler;
+      var attempt = 0;
+      handler = (r) async {
+        if (!r.url.path.endsWith('/action')) return previous(r);
+        if (++attempt == 1) {
+          return json({
+            'error': 'Уточните причину',
+            'details': [
+              {
+                'path': ['comment'],
+                'message': 'Опишите причину подробнее',
+              },
+            ],
+          }, 400);
+        }
+        return json({'order': order(76, 'PAUSED', full: true)});
+      };
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ExecutorOrderScreen(
+            store: repository,
+            order: work,
+            employeeId: 5,
+          ),
+        ),
+      );
+      await tester.tap(find.text('Приостановить'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), 'Жду');
+      await tester.tap(find.text('Подтвердить'));
+      await tester.pumpAndSettle();
+      expect(find.text('Опишите причину подробнее'), findsOneWidget);
+      expect(find.byType(TextFormField), findsOneWidget);
+      expect(
+        tester
+            .widget<TextFormField>(find.byType(TextFormField))
+            .controller!
+            .text,
+        'Жду',
+      );
+      expect(work.status, OrderStatus.working);
+      await tester.enterText(
+        find.byType(TextFormField),
+        'Жду запчасти со склада',
+      );
+      await tester.tap(find.text('Подтвердить'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextFormField), findsNothing);
+      expect(work.status, OrderStatus.paused);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+  testWidgets('404 loader shows server error and removes retry button', (
+    tester,
+  ) async {
+    await repository.refreshExecutor(5);
+    final work = repository.activeOrders.single;
+    handler = (r) async => json({'error': 'Наряд не найден'}, 404);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ExecutorOrderLoader(
+          store: repository,
+          order: work,
+          employeeId: 5,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Наряд не найден'), findsOneWidget);
+    expect(find.text('Повторить'), findsNothing);
+    expect(find.text('Назад'), findsOneWidget);
+    expect(repository.activeOrders, isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  test(
+    'photo size limit accepts boundary and blocks oversized upload before HTTP',
+    () async {
+      validatePhotoSize(maxPhotoBytes);
+      final count = requests.length;
+      await expectLater(
+        session.uploadPhoto('large.jpg', Uint8List(maxPhotoBytes + 1)),
+        throwsA(isA<PhotoTooLargeException>()),
+      );
+      expect(requests.length, count);
+    },
+  );
+  test(
+    'signed images need no JWT; unsigned local images use JWT; external images never receive it',
+    () async {
+      handler = (r) async => http.Response.bytes([1, 2, 3], 200);
+      await session.downloadPhoto('/uploads/photo.jpg?exp=123&sig=original');
+      expect(requests.last.headers.containsKey('Authorization'), isFalse);
+      expect(requests.last.url.query, 'exp=123&sig=original');
+      await session.downloadPhoto('/uploads/private.jpg');
+      expect(requests.last.headers['Authorization'], 'Bearer jwt');
+      await session.downloadPhoto('https://example.com/photo.jpg');
+      expect(requests.last.headers.containsKey('Authorization'), isFalse);
+    },
+  );
+  test('expired photo signature refetches order and preserves login', () async {
+    await repository.refreshExecutor(5);
+    final work = repository.activeOrders.single;
+    final previous = handler;
+    var detailCalls = 0;
+    handler = (r) async {
+      if (r.url.path == '/api/work-orders/76') {
+        detailCalls++;
+        return json({
+          ...order(76, 'IN_PROGRESS', full: true),
+          'photos': [
+            {
+              'type': 'AFTER',
+              'fileUrl':
+                  '/uploads/after.jpg?exp=123&sig=${detailCalls == 1 ? 'old' : 'fresh'}',
+            },
+          ],
+        });
+      }
+      if (r.url.path == '/uploads/after.jpg') {
+        expect(r.headers.containsKey('Authorization'), isFalse);
+        return r.url.queryParameters['sig'] == 'old'
+            ? json({'error': 'Expired signature'}, 401)
+            : http.Response.bytes([1, 2, 3], 200);
+      }
+      return previous(r);
+    };
+    await repository.loadExecutorOrder(5, work);
+    expect(detailCalls, 2);
+    expect(work.afterImages.single.bytes, [1, 2, 3]);
+    expect(session.authenticated, isTrue);
+    expect(work.accessErrorStatus, isNull);
+  });
+  test(
+    'multipart uses file field and image MIME; upload errors preserve error/details',
+    () async {
+      final previous = handler;
+      handler = (r) async {
+        if (r.url.path != '/api/uploads') return previous(r);
+        expect(r.headers['Authorization'], 'Bearer jwt');
+        expect(
+          r.headers['content-type'],
+          startsWith('multipart/form-data; boundary='),
+        );
+        expect(r.body, contains('name="file"; filename="after.png"'));
+        expect(r.body.toLowerCase(), contains('content-type: image/png'));
+        return json({
+          'error': 'Ошибка загрузки фото',
+          'details': {'file': 'Файл повреждён'},
+        }, 400);
+      };
+      await expectLater(
+        session.uploadPhoto('after.png', Uint8List.fromList([1, 2, 3])),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.message, 'message', 'Ошибка загрузки фото')
+              .having(
+                (e) => e.fieldMessage('file'),
+                'details',
+                'Файл повреждён',
+              ),
+        ),
+      );
+    },
+  );
+  test(
+    'server authenticity REWORK verdict is displayed instead of assuming review',
+    () async {
+      await repository.refreshExecutor(5);
+      final work = repository.activeOrders.single;
+      final previous = handler;
+      handler = (r) async {
+        if (!r.url.path.endsWith('/action')) return previous(r);
+        return json({
+          'order': order(76, 'REWORK', full: true),
+          'assessment': {
+            'verdict': 'REWORK',
+            'score': 2,
+            'explanation': 'Фото повторяет снимок другого наряда',
+          },
+        });
+      };
+      await repository.submitExecution(
+        5,
+        work,
+        ExecutionDraft(
+          work: 'Работы выполнены',
+          faultCode: repository.executorFaultCodes.single,
+        ),
+      );
+      expect(work.status, OrderStatus.rework);
+      expect(
+        work.assessment!.explanation,
+        'Фото повторяет снимок другого наряда',
+      );
+    },
+  );
   test('protected 401 expires session; image 401 does not', () async {
     final previous = handler;
     handler = (r) async => r.url.path == '/uploads/old.jpg'

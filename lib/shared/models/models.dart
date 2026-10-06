@@ -36,7 +36,7 @@ class Employee {
   final int id;
   final String name;
   final String specialty;
-  final int grade;
+  final int? grade;
   final String brigade;
   final double rating;
   final bool onShift;
@@ -120,6 +120,8 @@ class WorkOrder {
   final int? apiId;
   final String? apiNumber;
   String? apiStatus;
+  int? accessErrorStatus;
+  String? accessErrorMessage;
   bool detailsLoaded;
   DateTime? finishedAt;
   String title;
@@ -140,17 +142,17 @@ class WorkOrder {
   String completedWork;
   String faultCode;
   String materials;
-  double aiScore;
+  double? aiScore;
   double? masterScore;
   ExecutionAssessment? assessment;
   String aiVerdict;
   String aiExplanation;
-  int downtimeMinutes;
+  int? downtimeMinutes;
   String? brigade;
   double? normHours;
   bool equipmentStopped;
 
-  double get finalScore => masterScore ?? aiScore;
+  double? get finalScore => masterScore ?? aiScore;
   String get displayNumber => apiNumber ?? '$number';
 
   final List<OrderEvent> history;
