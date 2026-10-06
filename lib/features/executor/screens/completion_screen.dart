@@ -688,14 +688,20 @@ class _CompletionScreenState extends State<CompletionScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: _busy || _sending || _restoring || _draftLoadError
+            onPressed:
+                _busy ||
+                    _sending ||
+                    _restoring ||
+                    _draftLoadError ||
+                    widget.order.accessErrorStatus != null ||
+                    widget.order.status != OrderStatus.working
                 ? null
                 : _submit,
             icon: const Icon(Icons.send_outlined),
             label: Text(
               _sending
-                  ? uiText(context, 'Отправка…')
-                  : uiText(context, 'Отправить на проверку'),
+                  ? strings(context).checkingReport
+                  : strings(context).submitForReview,
             ),
           ),
         ),

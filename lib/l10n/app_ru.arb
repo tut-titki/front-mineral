@@ -784,5 +784,7 @@
   "changePasswordButton": "Изменить пароль",
   "passwordResetHint": "Забытый пароль сбрасывает администратор.",
   "statusAiChecking": "Выполнен · идёт AI-проверка",
-  "statusMasterReview": "На проверке у мастера"
+  "statusMasterReview": "На проверке у мастера",
+  "checkingReport": "Проверяем отчёт…",
+  "orderUnavailable": "Наряд недоступен"
 }

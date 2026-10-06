@@ -1446,4 +1446,10 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get statusMasterReview => 'Шебердің тексеруінде';
+
+  @override
+  String get checkingReport => 'Есеп тексерілуде…';
+
+  @override
+  String get orderUnavailable => 'Наряд қолжетімсіз';
 }

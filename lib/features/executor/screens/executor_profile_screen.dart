@@ -73,7 +73,7 @@ class ExecutorProfileScreen extends StatelessWidget {
               _detail(
                 Icons.workspace_premium_outlined,
                 uiText(context, 'Разряд'),
-                '${employee.grade}',
+                employee.grade?.toString() ?? '—',
               ),
               const Divider(height: 1),
               _detail(

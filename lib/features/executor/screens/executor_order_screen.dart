@@ -8,6 +8,7 @@ import '../models/executor_order_queue.dart';
 import 'package:mineral/features/executor/data/executor_repository.dart';
 import 'package:mineral/shared/models/models.dart';
 import 'package:mineral/features/orders/widgets/photo_attachments.dart';
+import '../models/executor_order_actions.dart';
 
 class ExecutorOrderScreen extends StatefulWidget {
   const ExecutorOrderScreen({
@@ -31,16 +32,19 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
   bool _changing = false;
   bool _reasonOpen = false;
 
-  Future<void> _change(
+  Future<bool> _change(
     BuildContext context,
     OrderStatus status, {
     String reason = '',
+    bool reasonForm = false,
   }) async {
-    if (_changing) return;
+    if (_changing) return false;
     setState(() => _changing = true);
     try {
       await store.executorAction(employeeId, order, status, reason: reason);
+      return true;
     } catch (error) {
+      if (reasonForm && error is ApiException && error.status == 400) rethrow;
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -56,6 +60,29 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
           ),
         );
       }
+      return false;
+    } finally {
+      if (mounted) setState(() => _changing = false);
+    }
+  }
+
+  Future<void> _reload() async {
+    if (_changing) return;
+    setState(() => _changing = true);
+    try {
+      await store.loadExecutorOrder(employeeId, order);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error is ApiException && error.message.isNotEmpty
+                  ? error.message
+                  : strings(context).authNetworkError,
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _changing = false);
     }
@@ -66,74 +93,133 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
     _reasonOpen = true;
     final controller = TextEditingController();
     final key = GlobalKey<FormState>();
-    final reason = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  status == OrderStatus.rejected
-                      ? uiText(context, 'Причина отказа')
-                      : uiText(context, 'Причина приостановки'),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 20),
-                Form(
-                  key: key,
-                  child: TextFormField(
-                    controller: controller,
-                    autofocus: true,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      labelText: uiText(context, 'Причина'),
-                    ),
-                    validator: (value) => (value ?? '').trim().isEmpty
-                        ? uiText(context, 'Укажите причину')
-                        : null,
+    String? serverError;
+    var sending = false;
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        showDragHandle: true,
+        enableDrag: false,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (sheetContext, updateSheet) => PopScope(
+            canPop: !sending,
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        uiText(
+                          sheetContext,
+                          status == OrderStatus.rejected
+                              ? 'Причина отказа'
+                              : 'Причина приостановки',
+                        ),
+                        style: Theme.of(sheetContext).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 20),
+                      Form(
+                        key: key,
+                        child: TextFormField(
+                          controller: controller,
+                          autofocus: true,
+                          maxLines: 3,
+                          enabled: !sending,
+                          decoration: InputDecoration(
+                            labelText: uiText(sheetContext, 'Причина'),
+                            errorText: serverError,
+                          ),
+                          onChanged: (_) {
+                            if (serverError != null) {
+                              updateSheet(() => serverError = null);
+                            }
+                          },
+                          validator: (value) => (value ?? '').trim().isEmpty
+                              ? uiText(sheetContext, 'Укажите причину')
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      if (sending)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 12),
+                          child: LinearProgressIndicator(),
+                        ),
+                      FilledButton(
+                        onPressed: sending
+                            ? null
+                            : () async {
+                                if (!key.currentState!.validate()) return;
+                                updateSheet(() {
+                                  sending = true;
+                                  serverError = null;
+                                });
+                                try {
+                                  final success = await _change(
+                                    context,
+                                    status,
+                                    reason: controller.text.trim(),
+                                    reasonForm: true,
+                                  );
+                                  if (!sheetContext.mounted) return;
+                                  updateSheet(() => sending = false);
+                                  if (success ||
+                                      order.accessErrorStatus != null ||
+                                      !availableExecutorActions(
+                                        order,
+                                        employeeId,
+                                      ).contains(
+                                        status == OrderStatus.rejected
+                                            ? 'REJECT'
+                                            : 'PAUSE',
+                                      )) {
+                                    Navigator.pop(sheetContext);
+                                  }
+                                } on ApiException catch (error) {
+                                  if (sheetContext.mounted) {
+                                    updateSheet(() {
+                                      sending = false;
+                                      serverError =
+                                          error.fieldMessage('comment') ??
+                                          (error.message.isNotEmpty
+                                              ? error.message
+                                              : uiText(
+                                                  sheetContext,
+                                                  'Укажите причину',
+                                                ));
+                                    });
+                                  }
+                                }
+                              },
+                        child: Text(uiText(sheetContext, 'Подтвердить')),
+                      ),
+                      TextButton(
+                        onPressed: sending
+                            ? null
+                            : () => Navigator.pop(sheetContext),
+                        child: Text(uiText(sheetContext, 'Отмена')),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () {
-                    if (key.currentState!.validate()) {
-                      Navigator.pop(context, controller.text.trim());
-                    }
-                  },
-                  child: Text(uiText(context, 'Подтвердить')),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(uiText(context, 'Отмена')),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
-    );
-    // Wait for the closing sheet animation before disposing its controller.
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    controller.dispose();
-    _reasonOpen = false;
-    if (reason != null &&
-        context.mounted &&
-        order.status ==
-            (status == OrderStatus.rejected
-                ? OrderStatus.issued
-                : OrderStatus.working)) {
-      _change(context, status, reason: reason);
+      );
+    } finally {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      controller.dispose();
+      _reasonOpen = false;
     }
   }
 
@@ -148,6 +234,9 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
       final otherWorking = store
           .assignedTo(employeeId)
           .any((o) => o != order && o.status == OrderStatus.working);
+      final actions = assigned
+          ? availableExecutorActions(order, employeeId)
+          : const <String>{};
       return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -192,34 +281,40 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
                         style: const TextStyle(color: Color(0xFF687385)),
                       ),
                     ),
-                  if (!assigned)
+                  if (!assigned || order.accessErrorStatus != null)
                     Text(
-                      uiText(
-                        context,
-                        'Наряд переназначен другому исполнителю.',
-                      ),
+                      order.accessErrorStatus != null
+                          ? (order.accessErrorMessage?.isNotEmpty == true
+                                ? order.accessErrorMessage!
+                                : strings(context).orderUnavailable)
+                          : uiText(
+                              context,
+                              'Наряд переназначен другому исполнителю.',
+                            ),
                     ),
-                  if (assigned && order.status == OrderStatus.issued) ...[
+                  if (order.accessErrorStatus == 409)
+                    OutlinedButton(
+                      onPressed: _changing ? null : _reload,
+                      child: Text(strings(context).retry),
+                    ),
+                  if (actions.contains('ACCEPT'))
                     FilledButton(
                       onPressed: () => _change(context, OrderStatus.accepted),
                       child: Text(uiText(context, 'Принять в работу')),
                     ),
+
+                  if (actions.contains('QUEUE'))
                     OutlinedButton(
                       onPressed: () => _change(context, OrderStatus.queued),
                       child: Text(uiText(context, 'Поставить в очередь')),
                     ),
+
+                  if (actions.contains('REJECT'))
                     TextButton(
                       onPressed: () => _reason(context, OrderStatus.rejected),
                       child: Text(uiText(context, 'Отклонить')),
                     ),
-                  ],
-                  if (assigned &&
-                      {
-                        OrderStatus.accepted,
-                        OrderStatus.queued,
-                        OrderStatus.paused,
-                        OrderStatus.rework,
-                      }.contains(order.status))
+                  if (actions.contains('START') || actions.contains('RESUME'))
                     FilledButton(
                       onPressed: otherWorking
                           ? null
@@ -231,7 +326,8 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
                             : uiText(context, 'Начать исполнение'),
                       ),
                     ),
-                  if (assigned && order.status == OrderStatus.working) ...[
+                  if (actions.contains('PAUSE') &&
+                      actions.contains('COMPLETE')) ...[
                     Row(
                       children: [
                         Expanded(

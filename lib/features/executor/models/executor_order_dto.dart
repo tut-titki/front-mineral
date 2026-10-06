@@ -72,6 +72,8 @@ extension ExecutorOrderMapping on ExecutorOrderDto {
       apiId: id,
       apiNumber: number,
       apiStatus: status,
+      aiScore: null,
+      downtimeMinutes: null,
       detailsLoaded: details.containsKey('events'),
       number: id,
       title: description,

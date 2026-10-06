@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'executor_realtime.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:mineral/shared/models/models.dart';
@@ -8,6 +10,7 @@ import '../models/executor_order_dto.dart';
 import 'executor_api.dart';
 import 'executor_repository.dart';
 import 'execution_draft_storage.dart';
+import '../models/executor_order_actions.dart';
 
 class ApiExecutorRepository extends ChangeNotifier
     implements ExecutorRepository {
@@ -21,6 +24,83 @@ class ApiExecutorRepository extends ChangeNotifier
   final ExecutorApi api;
   final ExecutionDraftStorage draftStorage;
   final AuthUser _user;
+  ExecutorRealtime? _realtime;
+  final _notification = <Map<String, dynamic>>[];
+
+  List<Map<String, dynamic>> get notifications =>
+      List.unmodifiable(_notification);
+  bool get _sessionActive =>
+      !_disposed &&
+      api.session.authenticated &&
+      api.session.user?.id == _user.id;
+  void startRealtime() {
+    if (!_sessionActive || _realtime != null) return;
+
+    _realtime = ExecutorRealtime(
+      session: api.session,
+      onConnected: _refreshAfterConnection,
+      onOrderChanged: _onOrderChanged,
+      onNotification: _onNotification,
+    );
+    _realtime!.connect();
+  }
+
+  Future<void> _refreshAfterConnection() async {
+    while (_loading && _sessionActive) {
+      await Future<void>.delayed(Duration(milliseconds: 100));
+    }
+    if (!_sessionActive) return;
+    int revision;
+    do {
+      revision = _revision;
+      await refreshExecutor(_user.id);
+    } while (_sessionActive && revision != _revision);
+  }
+
+  Future<void> _onOrderChanged(Map<String, dynamic> data) async {
+    if (!_sessionActive) return;
+    try {
+      final id = data['id'] as int;
+      final existing = _active[id] ?? _history[id];
+
+      if (data['assigneeId'] != _user.id) {
+        if (existing != null) {
+          _removeUnavailable(
+            existing,
+            const ApiException(403, "Наряд переназначен другому испонителю."),
+          );
+        }
+        return;
+      }
+
+      final dto = ExecutorOrderDto.fromJson(data);
+
+      final order = _store(dto, existing: existing);
+      _revision++;
+      _notify();
+
+      if (existing?.detailsLoaded == true) {
+        await loadExecutorOrder(_user.id, order);
+      }
+    } catch (e) {
+      if (!_sessionActive) return;
+      _error = e is ApiException && e.message.isNotEmpty
+          ? e.message
+          : "Не удалось обновить данные. Потяните список вниз, чтобы обновить его.";
+      _notify();
+      rethrow;
+    }
+  }
+
+  void _onNotification(Map<String, dynamic> data) {
+    if (!_sessionActive) return;
+
+    final id = data['id'] as int;
+    _notification.removeWhere((item) => item['id'] == id);
+    _notification.insert(0, Map<String, dynamic>.unmodifiable(data));
+    _notify();
+  }
+
   final _active = <int, WorkOrder>{};
   final _history = <int, WorkOrder>{};
   final _drafts = <(int, int), ExecutionDraft>{};
@@ -58,9 +138,24 @@ class ApiExecutorRepository extends ChangeNotifier
 
   void _checkOrder(int id, WorkOrder order) {
     _checkUser(id);
+    if (order.accessErrorStatus == 403 || order.accessErrorStatus == 404) {
+      throw ApiException(
+        order.accessErrorStatus!,
+        order.accessErrorMessage ?? '',
+      );
+    }
     if (order.apiId == null || order.employeeId != id) {
       throw const ApiException(403, 'Недостаточно прав');
     }
+  }
+
+  void _removeUnavailable(WorkOrder order, ApiException error) {
+    order.accessErrorStatus = error.status;
+    order.accessErrorMessage = error.message;
+    _active.remove(order.apiId);
+    _history.remove(order.apiId);
+    _revision++;
+    _notify();
   }
 
   @override
@@ -153,6 +248,8 @@ class ApiExecutorRepository extends ChangeNotifier
   }) {
     final mapped = dto.toWorkOrder();
     final order = existing ?? _active[dto.id] ?? _history[dto.id] ?? mapped;
+    order.accessErrorStatus = null;
+    order.accessErrorMessage = null;
     order.title = mapped.title;
     order.description = mapped.description;
     order.area = mapped.area;
@@ -182,10 +279,13 @@ class ApiExecutorRepository extends ChangeNotifier
           )
           .join('\n');
     }
-    if (data['normative'] case final Map normative) {
-      order.normHours = _decimal(normative['hours']);
+    if (data.containsKey('normative')) {
+      final normative = data['normative'] as Map?;
+      order.normHours = _decimal(normative?['hours']);
+    } else if (data.containsKey('normativeId') && data['normativeId'] == null) {
+      order.normHours = null;
     }
-    order.downtimeMinutes = data['actualDowntimeMinutes'] as int? ?? 0;
+    order.downtimeMinutes = data['actualDowntimeMinutes'] as int?;
     if (data['events'] case final List events) {
       order.detailsLoaded = true;
       order.history.clear();
@@ -206,7 +306,7 @@ class ApiExecutorRepository extends ChangeNotifier
       }
     }
     if (data['aiAssessment'] case final Map a) {
-      order.aiScore = _decimal(a['score']) ?? 0;
+      order.aiScore = _decimal(a['score']);
       order.masterScore = _decimal(a['masterScore']);
       order.assessment = ExecutionAssessment(
         verdict: a['verdict'] as String? ?? '',
@@ -219,7 +319,9 @@ class ApiExecutorRepository extends ChangeNotifier
       order.aiExplanation = order.assessment!.explanation;
     } else {
       order.assessment = null;
-      order.aiScore = 0;
+      order.aiVerdict = 'Нет заключения';
+      order.aiExplanation = '';
+      order.aiScore = null;
       order.masterScore = null;
     }
     if (before != null) {
@@ -291,9 +393,7 @@ class ApiExecutorRepository extends ChangeNotifier
       return result;
     } on ApiException catch (e) {
       if (loadingMetadata && (e.status == 403 || e.status == 404)) {
-        _active.remove(order.apiId);
-        _history.remove(order.apiId);
-        _notify();
+        _removeUnavailable(order, e);
       }
       rethrow;
     }
@@ -342,13 +442,15 @@ class ApiExecutorRepository extends ChangeNotifier
         try {
           await loadExecutorOrder(employeeId, order);
         } catch (_) {
-          /* Preserve original error. */
+          if (order.accessErrorStatus == null) {
+            order.accessErrorStatus = 409;
+            order.accessErrorMessage = e.message;
+            _notify();
+          }
         }
       }
       if (e.status == 403 || e.status == 404) {
-        _active.remove(order.apiId);
-        _history.remove(order.apiId);
-        _notify();
+        _removeUnavailable(order, e);
       }
       rethrow;
     }
@@ -370,6 +472,10 @@ class ApiExecutorRepository extends ChangeNotifier
         order.status == OrderStatus.paused ? 'RESUME' : 'START',
       _ => throw StateError('Недоступное действие исполнителя'),
     };
+    _checkOrder(employeeId, order);
+    if (!availableExecutorActions(order, employeeId).contains(action)) {
+      throw StateError("Действие недоступно из текущего статуса");
+    }
     if ((action == 'PAUSE' || action == 'REJECT') && reason.trim().isEmpty) {
       throw StateError('Укажите причину');
     }
@@ -386,6 +492,9 @@ class ApiExecutorRepository extends ChangeNotifier
     ExecutionDraft report,
   ) async {
     _checkOrder(employeeId, order);
+    if (!availableExecutorActions(order, employeeId).contains('COMPLETE')) {
+      throw StateError('Наряд не в работе');
+    }
     if (order.status != OrderStatus.working) {
       throw StateError('Наряд не в работе');
     }
@@ -474,6 +583,7 @@ class ApiExecutorRepository extends ChangeNotifier
   @override
   void dispose() {
     _disposed = true;
+    _realtime?.dispose();
     super.dispose();
   }
 }

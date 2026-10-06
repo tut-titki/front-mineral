@@ -44,7 +44,7 @@ class AuthUser {
       phone = json['phone'] as String?,
       language = json['language'] as String? ?? 'ru',
       specialty = json['specialty'] as String? ?? '',
-      grade = json['grade'] as int? ?? 0,
+      grade = json['grade'] as int?,
       brigadeId = json['brigadeId'] as int?,
       isOnShift = json['isOnShift'] as bool? ?? false;
   final int id;
@@ -53,7 +53,7 @@ class AuthUser {
   final String? phone;
   final String language;
   final String specialty;
-  final int grade;
+  final int? grade;
   final int? brigadeId;
   final bool isOnShift;
   String? get mobileRoute => switch (role) {
@@ -129,6 +129,7 @@ class AuthSession extends ChangeNotifier {
   String? pushToken;
   DateTime? blockedUntil;
   bool get authenticated => _token != null && user != null;
+  String? get token => _token;
 
   Future<Object?> _requestJson(
     String method,

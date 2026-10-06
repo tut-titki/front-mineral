@@ -326,6 +326,71 @@ class DemoStore extends ChangeNotifier implements ExecutorRepository {
 
   late final List<WorkOrder> orders = _seed();
 
+  void addScreenshotOrders() {
+    final finished = now.subtract(const Duration(minutes: 10));
+    for (final (number, apiStatus, title, equipment, work) in [
+      (
+        151,
+        'COMPLETED',
+        'Замена подшипника привода',
+        'Дробилка КМД-1750',
+        'Подшипник заменён. Проверены крепления и выполнен контрольный запуск. Посторонний шум устранён.',
+      ),
+      (
+        152,
+        'AI_REVIEW',
+        'Плановая смазка и проверка узлов',
+        'Грохот ГИС-52',
+        'Выполнена смазка узлов. Проверены крепления и работа оборудования под нагрузкой.',
+      ),
+    ]) {
+      if (orders.any((order) => order.number == number)) continue;
+      orders.add(
+        WorkOrder(
+          number: number,
+          apiStatus: apiStatus,
+          title: title,
+          description: title,
+          equipment: equipment,
+          area: 'Дробление',
+          employeeId: 1,
+          priority: 'Плановый',
+          planned: true,
+          status: OrderStatus.review,
+          createdAt: finished.subtract(const Duration(minutes: 55)),
+          deadline: now.add(const Duration(minutes: 60)),
+          finishedAt: finished,
+          completedWork: work,
+          faultCode: faultCodes.first,
+          materials: '${executorMaterials.last}: 0.5',
+          assessment: apiStatus == 'AI_REVIEW'
+              ? const ExecutionAssessment(verdict: 'Принят', score: 4.8)
+              : null,
+          history: [
+            OrderEvent(
+              title: OrderStatus.issued.label,
+              status: OrderStatus.issued,
+              author: masterName,
+              time: finished.subtract(const Duration(minutes: 55)),
+            ),
+            OrderEvent(
+              title: OrderStatus.working.label,
+              status: OrderStatus.working,
+              author: employee(1).name,
+              time: finished.subtract(const Duration(minutes: 38)),
+            ),
+            OrderEvent(
+              title: OrderStatus.review.label,
+              status: OrderStatus.review,
+              author: employee(1).name,
+              time: finished,
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   List<WorkOrder> _seed() {
     final now = this.now;
 

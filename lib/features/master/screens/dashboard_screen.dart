@@ -349,7 +349,10 @@ class EmployeeCard extends StatelessWidget {
           ),
           SizedBox(height: 16),
           Text(
-            uiText(context, '${employee.specialty} · ${employee.grade} разряд'),
+            uiText(
+              context,
+              '${employee.specialty} · ${employee.grade ?? '—'} разряд',
+            ),
             style: TextStyle(color: muted, fontSize: 13),
           ),
           SizedBox(height: 6),

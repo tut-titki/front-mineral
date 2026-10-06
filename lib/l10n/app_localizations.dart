@@ -2713,6 +2713,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'На проверке у мастера'**
   String get statusMasterReview;
+
+  /// No description provided for @checkingReport.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверяем отчёт…'**
+  String get checkingReport;
+
+  /// No description provided for @orderUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд недоступен'**
+  String get orderUnavailable;
 }
 
 class _AppLocalizationsDelegate

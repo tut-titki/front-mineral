@@ -42,7 +42,8 @@ class _MainAppState extends State<MainApp> {
     }
     _executorStore?.dispose();
     _executorUserId = userId;
-    return _executorStore = ApiExecutorRepository(api: ExecutorApi(_session));
+    return _executorStore = ApiExecutorRepository(api: ExecutorApi(_session))
+      ..startRealtime();
   }
 
   void _sessionChanged() {
@@ -79,6 +80,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
+    if (widget.demoMode) store.addScreenshotOrders();
     _session.addListener(_sessionChanged);
     PhotoPickerService.instance.recoverLostPhotos();
   }

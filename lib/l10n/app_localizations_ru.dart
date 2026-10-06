@@ -1442,4 +1442,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get statusMasterReview => 'На проверке у мастера';
+
+  @override
+  String get checkingReport => 'Проверяем отчёт…';
+
+  @override
+  String get orderUnavailable => 'Наряд недоступен';
 }

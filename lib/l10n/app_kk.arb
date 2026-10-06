@@ -651,5 +651,7 @@
   "changePasswordButton": "Құпиясөзді өзгерту",
   "passwordResetHint": "Ұмытылған құпиясөзді әкімші қалпына келтіреді.",
   "statusAiChecking": "Орындалды · AI тексеруі жүріп жатыр",
-  "statusMasterReview": "Шебердің тексеруінде"
+  "statusMasterReview": "Шебердің тексеруінде",
+  "checkingReport": "Есеп тексерілуде…",
+  "orderUnavailable": "Наряд қолжетімсіз"
 }

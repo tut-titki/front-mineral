@@ -1155,8 +1155,8 @@ class OrderDetailScreen extends StatelessWidget {
                     uiText(
                       context,
                       '${order.aiExplanation}\n'
-                      'Оценка ИИ: ${order.aiScore.toStringAsFixed(1)} / 5.\n'
-                      'Итоговая оценка: ${order.finalScore.toStringAsFixed(1)} / 5.\n'
+                      'Оценка ИИ: ${order.aiScore?.toStringAsFixed(1) ?? '—'} / 5.\n'
+                      'Итоговая оценка: ${order.finalScore?.toStringAsFixed(1) ?? '—'} / 5.\n'
                       'Окончательное решение принимает мастер.',
                     ),
                     style: const TextStyle(color: muted, height: 1.6),

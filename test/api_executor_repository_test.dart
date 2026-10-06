@@ -1,3 +1,9 @@
+import 'package:mineral/features/executor/screens/executor_order_screen.dart';
+import 'package:mineral/features/executor/screens/executor_order_loader.dart';
+import 'package:mineral/features/executor/models/executor_order_actions.dart';
+import 'package:flutter/material.dart';
+import 'package:mineral/features/executor/screens/executor_screen.dart';
+import 'package:mineral/l10n/app_localizations.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -320,6 +326,172 @@ void main() {
       throwsA(isA<ApiException>()),
     );
     expect(repository.activeOrders, isEmpty);
+  });
+  test(
+    'null values stay unfilled; explicit zero stays zero; removed norm clears',
+    () async {
+      await repository.refreshExecutor(5);
+      final work = repository.activeOrders.single;
+      final previous = handler;
+      var empty = false;
+      handler = (r) async {
+        if (r.url.path != '/api/work-orders/76') return previous(r);
+        return json({
+          ...order(76, 'IN_PROGRESS', full: true),
+          'normative': empty ? null : {'hours': '1.5'},
+          'actualDowntimeMinutes': empty ? null : 0,
+          'aiAssessment': empty
+              ? null
+              : {'verdict': 'ACCEPTED', 'score': '0', 'masterScore': null},
+        });
+      };
+      await repository.loadExecutorOrder(5, work);
+      expect(work.normHours, 1.5);
+      expect(work.aiScore, 0);
+      expect(work.downtimeMinutes, 0);
+      empty = true;
+      await repository.loadExecutorOrder(5, work);
+      expect(work.normHours, isNull);
+      expect(work.aiScore, isNull);
+      expect(work.finalScore, isNull);
+      expect(work.assessment, isNull);
+      expect(work.downtimeMinutes, isNull);
+      expect(repository.employee(5).grade, isNull);
+      expect(AuthUser.fromJson({...user, 'grade': 0}).grade, 0);
+    },
+  );
+  testWidgets('refresh preserves Russian server error in Kazakh interface', (
+    tester,
+  ) async {
+    await repository.refreshExecutor(5);
+    handler = (r) async => json({'error': 'Сервер временно недоступен'}, 503);
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('kk'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ExecutorScreen(store: repository, employeeId: 5),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Сервер временно недоступен'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  for (final code in [403, 404]) {
+    test('action $code removes order and prevents repeated requests', () async {
+      await repository.refreshExecutor(5);
+      final work = repository.activeOrders.single;
+      handler = (r) async => json({'error': 'Недоступный наряд'}, code);
+      await expectLater(
+        repository.executorAction(5, work, OrderStatus.paused, reason: 'Break'),
+        throwsA(isA<ApiException>()),
+      );
+      expect(repository.activeOrders, isEmpty);
+      expect(work.accessErrorStatus, code);
+      expect(availableExecutorActions(work, 5), isEmpty);
+      final count = requests.length;
+      await expectLater(
+        repository.executorAction(5, work, OrderStatus.paused, reason: 'Break'),
+        throwsA(isA<ApiException>()),
+      );
+      expect(requests.length, count);
+    });
+  }
+  test('failed detail refresh after 409 blocks stale action buttons', () async {
+    await repository.refreshExecutor(5);
+    final work = repository.activeOrders.single;
+    final previous = handler;
+    handler = (r) async => r.url.path.endsWith('/action')
+        ? json({'error': 'Статус изменился'}, 409)
+        : json({'error': 'Нет связи'}, 503);
+    await expectLater(
+      repository.executorAction(5, work, OrderStatus.paused, reason: 'Break'),
+      throwsA(isA<ApiException>()),
+    );
+    expect(availableExecutorActions(work, 5), isEmpty);
+    handler = previous;
+    await repository.loadExecutorOrder(5, work);
+    expect(work.accessErrorStatus, isNull);
+    expect(availableExecutorActions(work, 5), contains('PAUSE'));
+  });
+  testWidgets(
+    '400 keeps reason sheet open, preserves text and permits correction',
+    (tester) async {
+      await repository.refreshExecutor(5);
+      final work = repository.activeOrders.single;
+      final previous = handler;
+      var attempt = 0;
+      handler = (r) async {
+        if (!r.url.path.endsWith('/action')) return previous(r);
+        if (++attempt == 1) {
+          return json({
+            'error': 'Уточните причину',
+            'details': [
+              {
+                'path': ['comment'],
+                'message': 'Опишите причину подробнее',
+              },
+            ],
+          }, 400);
+        }
+        return json({'order': order(76, 'PAUSED', full: true)});
+      };
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ExecutorOrderScreen(
+            store: repository,
+            order: work,
+            employeeId: 5,
+          ),
+        ),
+      );
+      await tester.tap(find.text('Приостановить'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), 'Жду');
+      await tester.tap(find.text('Подтвердить'));
+      await tester.pumpAndSettle();
+      expect(find.text('Опишите причину подробнее'), findsOneWidget);
+      expect(find.byType(TextFormField), findsOneWidget);
+      expect(
+        tester
+            .widget<TextFormField>(find.byType(TextFormField))
+            .controller!
+            .text,
+        'Жду',
+      );
+      expect(work.status, OrderStatus.working);
+      await tester.enterText(
+        find.byType(TextFormField),
+        'Жду запчасти со склада',
+      );
+      await tester.tap(find.text('Подтвердить'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextFormField), findsNothing);
+      expect(work.status, OrderStatus.paused);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+  testWidgets('404 loader shows server error and removes retry button', (
+    tester,
+  ) async {
+    await repository.refreshExecutor(5);
+    final work = repository.activeOrders.single;
+    handler = (r) async => json({'error': 'Наряд не найден'}, 404);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ExecutorOrderLoader(
+          store: repository,
+          order: work,
+          employeeId: 5,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Наряд не найден'), findsOneWidget);
+    expect(find.text('Повторить'), findsNothing);
+    expect(find.text('Назад'), findsOneWidget);
+    expect(repository.activeOrders, isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
   test('protected 401 expires session; image 401 does not', () async {
     final previous = handler;
