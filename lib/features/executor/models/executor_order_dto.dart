@@ -71,6 +71,7 @@ extension ExecutorOrderMapping on ExecutorOrderDto {
     return WorkOrder(
       apiId: id,
       apiNumber: number,
+      apiStatus: status,
       detailsLoaded: details.containsKey('events'),
       number: id,
       title: description,

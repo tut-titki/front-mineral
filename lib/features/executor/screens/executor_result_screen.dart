@@ -84,7 +84,7 @@ class ExecutorResultScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  uiText(context, order.status.label),
+                  executorStatusText(context, order),
                   style: TextStyle(
                     color: order.status.color,
                     fontWeight: FontWeight.w600,

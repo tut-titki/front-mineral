@@ -649,5 +649,7 @@
   "newPasswordLength": "Құпиясөз 6–128 таңбадан тұруы керек",
   "passwordChanged": "Құпиясөз өзгертілді",
   "changePasswordButton": "Құпиясөзді өзгерту",
-  "passwordResetHint": "Ұмытылған құпиясөзді әкімші қалпына келтіреді."
+  "passwordResetHint": "Ұмытылған құпиясөзді әкімші қалпына келтіреді.",
+  "statusAiChecking": "Орындалды · AI тексеруі жүріп жатыр",
+  "statusMasterReview": "Шебердің тексеруінде"
 }

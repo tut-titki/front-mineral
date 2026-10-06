@@ -88,6 +88,7 @@ class WorkOrder {
     required this.createdAt,
     this.apiId,
     this.apiNumber,
+    this.apiStatus,
     this.detailsLoaded = true,
     this.finishedAt,
     this.planned = false,
@@ -118,6 +119,7 @@ class WorkOrder {
   final DateTime createdAt;
   final int? apiId;
   final String? apiNumber;
+  String? apiStatus;
   bool detailsLoaded;
   DateTime? finishedAt;
   String title;
@@ -184,16 +186,16 @@ class WorkOrder {
 
   bool get emergency => priority == 'Аварийный';
 
-  bool get overdue {
+  bool isOverdue(DateTime now) {
     const finished = {
-      OrderStatus.review,
       OrderStatus.closed,
       OrderStatus.cancelled,
       OrderStatus.rejected,
     };
-
-    return !finished.contains(status) && deadline.isBefore(DateTime.now());
+    return !finished.contains(status) && deadline.isBefore(now);
   }
+
+  bool get overdue => isOverdue(DateTime.now());
 }
 
 String timeLabel(DateTime date) {

@@ -52,7 +52,6 @@ class ExecutorNotificationsScreen extends StatelessWidget {
             ));
           }
           if (!{
-            OrderStatus.review,
             OrderStatus.closed,
             OrderStatus.cancelled,
             OrderStatus.rejected,

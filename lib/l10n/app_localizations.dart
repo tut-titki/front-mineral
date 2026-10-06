@@ -2701,6 +2701,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Забытый пароль сбрасывает администратор.'**
   String get passwordResetHint;
+
+  /// No description provided for @statusAiChecking.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выполнен · идёт AI-проверка'**
+  String get statusAiChecking;
+
+  /// No description provided for @statusMasterReview.
+  ///
+  /// In ru, this message translates to:
+  /// **'На проверке у мастера'**
+  String get statusMasterReview;
 }
 
 class _AppLocalizationsDelegate

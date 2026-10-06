@@ -1440,4 +1440,10 @@ class AppLocalizationsKk extends AppLocalizations {
   @override
   String get passwordResetHint =>
       'Ұмытылған құпиясөзді әкімші қалпына келтіреді.';
+
+  @override
+  String get statusAiChecking => 'Орындалды · AI тексеруі жүріп жатыр';
+
+  @override
+  String get statusMasterReview => 'Шебердің тексеруінде';
 }

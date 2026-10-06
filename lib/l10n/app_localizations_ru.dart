@@ -1436,4 +1436,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get passwordResetHint => 'Забытый пароль сбрасывает администратор.';
+
+  @override
+  String get statusAiChecking => 'Выполнен · идёт AI-проверка';
+
+  @override
+  String get statusMasterReview => 'На проверке у мастера';
 }

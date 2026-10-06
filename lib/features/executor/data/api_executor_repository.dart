@@ -162,6 +162,7 @@ class ApiExecutorRepository extends ChangeNotifier
     order.deadline = mapped.deadline;
     order.planned = mapped.planned;
     order.status = mapped.status;
+    order.apiStatus = dto.status;
     order.comment = mapped.comment;
     final data = dto.details;
     final finished = data['closedAt'] ?? data['completedAt'];

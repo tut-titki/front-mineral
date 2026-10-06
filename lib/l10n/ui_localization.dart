@@ -765,6 +765,16 @@ String uiText(BuildContext context, String source) {
   return source;
 }
 
+String executorStatusText(BuildContext context, WorkOrder order) {
+  final s = strings(context);
+
+  return switch (order.apiStatus) {
+    'COMPLETED' => s.statusAiChecking,
+    'AI_REVIEW' => s.statusMasterReview,
+    _ => uiText(context, order.status.label),
+  };
+}
+
 String eventText(BuildContext context, OrderEvent event) {
   final s = strings(context);
   final value = event.value ?? '';

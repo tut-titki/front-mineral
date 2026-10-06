@@ -307,7 +307,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      uiText(context, order.status.label),
+                      executorStatusText(context, order),
                       style: const TextStyle(
                         color: Color(0xFF01408B),
                         fontWeight: FontWeight.w700,

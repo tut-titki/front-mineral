@@ -363,7 +363,7 @@ class _OrderTile extends StatelessWidget {
         ? const Color(0xFFDC2626)
         : const Color(0xFF01408B);
 
-    final overdue = order.deadline.isBefore(now);
+    final overdue = order.isOverdue(now);
     return Material(
       color: Colors.white,
       shape: RoundedRectangleBorder(
@@ -396,7 +396,7 @@ class _OrderTile extends StatelessWidget {
                   ),
                   Flexible(
                     child: Text(
-                      uiText(context, order.status.label),
+                      executorStatusText(context, order),
                       style: TextStyle(
                         fontSize: 12,
                         color: order.status.color,
