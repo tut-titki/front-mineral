@@ -1,3 +1,4 @@
+import 'package:mineral/core/services/photo_upload_rules.dart';
 import 'package:mineral/features/executor/screens/executor_order_screen.dart';
 import 'package:mineral/features/executor/screens/executor_order_loader.dart';
 import 'package:mineral/features/executor/models/executor_order_actions.dart';
@@ -493,6 +494,128 @@ void main() {
     expect(repository.activeOrders, isEmpty);
     await tester.pumpWidget(const SizedBox.shrink());
   });
+  test(
+    'photo size limit accepts boundary and blocks oversized upload before HTTP',
+    () async {
+      validatePhotoSize(maxPhotoBytes);
+      final count = requests.length;
+      await expectLater(
+        session.uploadPhoto('large.jpg', Uint8List(maxPhotoBytes + 1)),
+        throwsA(isA<PhotoTooLargeException>()),
+      );
+      expect(requests.length, count);
+    },
+  );
+  test(
+    'signed images need no JWT; unsigned local images use JWT; external images never receive it',
+    () async {
+      handler = (r) async => http.Response.bytes([1, 2, 3], 200);
+      await session.downloadPhoto('/uploads/photo.jpg?exp=123&sig=original');
+      expect(requests.last.headers.containsKey('Authorization'), isFalse);
+      expect(requests.last.url.query, 'exp=123&sig=original');
+      await session.downloadPhoto('/uploads/private.jpg');
+      expect(requests.last.headers['Authorization'], 'Bearer jwt');
+      await session.downloadPhoto('https://example.com/photo.jpg');
+      expect(requests.last.headers.containsKey('Authorization'), isFalse);
+    },
+  );
+  test('expired photo signature refetches order and preserves login', () async {
+    await repository.refreshExecutor(5);
+    final work = repository.activeOrders.single;
+    final previous = handler;
+    var detailCalls = 0;
+    handler = (r) async {
+      if (r.url.path == '/api/work-orders/76') {
+        detailCalls++;
+        return json({
+          ...order(76, 'IN_PROGRESS', full: true),
+          'photos': [
+            {
+              'type': 'AFTER',
+              'fileUrl':
+                  '/uploads/after.jpg?exp=123&sig=${detailCalls == 1 ? 'old' : 'fresh'}',
+            },
+          ],
+        });
+      }
+      if (r.url.path == '/uploads/after.jpg') {
+        expect(r.headers.containsKey('Authorization'), isFalse);
+        return r.url.queryParameters['sig'] == 'old'
+            ? json({'error': 'Expired signature'}, 401)
+            : http.Response.bytes([1, 2, 3], 200);
+      }
+      return previous(r);
+    };
+    await repository.loadExecutorOrder(5, work);
+    expect(detailCalls, 2);
+    expect(work.afterImages.single.bytes, [1, 2, 3]);
+    expect(session.authenticated, isTrue);
+    expect(work.accessErrorStatus, isNull);
+  });
+  test(
+    'multipart uses file field and image MIME; upload errors preserve error/details',
+    () async {
+      final previous = handler;
+      handler = (r) async {
+        if (r.url.path != '/api/uploads') return previous(r);
+        expect(r.headers['Authorization'], 'Bearer jwt');
+        expect(
+          r.headers['content-type'],
+          startsWith('multipart/form-data; boundary='),
+        );
+        expect(r.body, contains('name="file"; filename="after.png"'));
+        expect(r.body.toLowerCase(), contains('content-type: image/png'));
+        return json({
+          'error': 'Ошибка загрузки фото',
+          'details': {'file': 'Файл повреждён'},
+        }, 400);
+      };
+      await expectLater(
+        session.uploadPhoto('after.png', Uint8List.fromList([1, 2, 3])),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.message, 'message', 'Ошибка загрузки фото')
+              .having(
+                (e) => e.fieldMessage('file'),
+                'details',
+                'Файл повреждён',
+              ),
+        ),
+      );
+    },
+  );
+  test(
+    'server authenticity REWORK verdict is displayed instead of assuming review',
+    () async {
+      await repository.refreshExecutor(5);
+      final work = repository.activeOrders.single;
+      final previous = handler;
+      handler = (r) async {
+        if (!r.url.path.endsWith('/action')) return previous(r);
+        return json({
+          'order': order(76, 'REWORK', full: true),
+          'assessment': {
+            'verdict': 'REWORK',
+            'score': 2,
+            'explanation': 'Фото повторяет снимок другого наряда',
+          },
+        });
+      };
+      await repository.submitExecution(
+        5,
+        work,
+        ExecutionDraft(
+          work: 'Работы выполнены',
+          faultCode: repository.executorFaultCodes.single,
+        ),
+      );
+      expect(work.status, OrderStatus.rework);
+      expect(
+        work.assessment!.explanation,
+        'Фото повторяет снимок другого наряда',
+      );
+    },
+  );
   test('protected 401 expires session; image 401 does not', () async {
     final previous = handler;
     handler = (r) async => r.url.path == '/uploads/old.jpg'

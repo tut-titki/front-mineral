@@ -1,3 +1,4 @@
+import 'photo_upload_rules.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -76,7 +77,7 @@ class PhotoPickerService {
 
   Future<OrderPhoto> _read(XFile file) async {
     final bytes = await file.readAsBytes();
-    if (bytes.isEmpty) throw const FormatException('Пустой файл изображения');
+    validatePhotoSize(bytes.length);
     return OrderPhoto(name: file.name, bytes: bytes);
   }
 }

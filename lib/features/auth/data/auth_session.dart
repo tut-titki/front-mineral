@@ -1,3 +1,5 @@
+import 'package:http_parser/http_parser.dart';
+import 'package:mineral/core/services/photo_upload_rules.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -205,20 +207,45 @@ class AuthSession extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> uploadPhoto(String name, Uint8List bytes) async {
+    validatePhotoSize(bytes.length);
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/api/uploads'),
     );
     if (_token != null) request.headers['Authorization'] = 'Bearer $_token';
     request.files.add(
-      http.MultipartFile.fromBytes('file', bytes, filename: name),
+      http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: name,
+        contentType: MediaType('image', switch (name
+            .split('.')
+            .last
+            .toLowerCase()) {
+          'png' => 'png',
+          'webp' => 'webp',
+          'gif' => 'gif',
+          'heic' => 'heic',
+          'heif' => 'heif',
+          _ => 'jpeg',
+        }),
+      ),
     );
     final response = await http.Response.fromStream(
       await _client.send(request).timeout(const Duration(seconds: 60)),
     ).timeout(const Duration(seconds: 60));
     if (response.statusCode == 401) await expire();
-    final decoded =
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    Object? result;
+    try {
+      if (response.bodyBytes.isNotEmpty) {
+        result = jsonDecode(utf8.decode(response.bodyBytes));
+      }
+    } on FormatException {
+      /* Proxy errors can have a non-JSON body. */
+    }
+    final decoded = result is Map
+        ? Map<String, dynamic>.from(result)
+        : <String, dynamic>{};
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(
         response.statusCode,
@@ -226,13 +253,23 @@ class AuthSession extends ChangeNotifier {
         details: decoded['details'],
       );
     }
+    if (decoded['url'] is! String || (decoded['url'] as String).isEmpty) {
+      throw const FormatException('Ответ загрузки не содержит URL фото');
+    }
     return decoded;
   }
 
   Future<Uint8List> downloadPhoto(String url) async {
     final uri = Uri.parse(baseUrl).resolve(url);
+    final base = Uri.parse(baseUrl);
+    final headers = <String, String>{};
+    if (!uri.queryParameters.containsKey('sig') &&
+        uri.origin == base.origin &&
+        _token != null) {
+      headers['Authorization'] = 'Bearer $_token';
+    }
     final response = await _client
-        .get(uri)
+        .get(uri, headers: headers)
         .timeout(const Duration(seconds: 30));
     // Signed image URLs are independent of the application session.
     if (response.statusCode != 200) throw ApiException(response.statusCode, '');

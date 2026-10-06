@@ -2725,6 +2725,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Наряд недоступен'**
   String get orderUnavailable;
+
+  /// No description provided for @photoTooLarge.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фото должно быть не больше 15 МБ.'**
+  String get photoTooLarge;
+
+  /// No description provided for @photoCaptureHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снимайте «до» и «после» с одной точки, чтобы результат ремонта был виден. До 5 фото, каждое не больше 15 МБ.'**
+  String get photoCaptureHint;
 }
 
 class _AppLocalizationsDelegate

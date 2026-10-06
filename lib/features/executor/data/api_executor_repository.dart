@@ -1,3 +1,4 @@
+import 'package:mineral/core/services/photo_upload_rules.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -516,12 +517,12 @@ class ApiExecutorRepository extends ChangeNotifier
       }
       materials.add({'materialId': id, 'quantity': e.value});
     }
+    for (final photo in report.photos) {
+      validatePhotoSize(photo.bytes.length);
+    }
     await saveExecutionDraft(employeeId, order.number, report);
     final urls = <String>[];
     for (final photo in report.photos) {
-      if (photo.bytes.length > 15 * 1024 * 1024) {
-        throw StateError('Фото больше 15 МБ');
-      }
       final url = _uploaded[photo] ?? await api.upload(photo);
       _uploaded[photo] = url;
       urls.add(url);

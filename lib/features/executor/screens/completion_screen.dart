@@ -1,3 +1,4 @@
+import 'package:mineral/core/services/photo_upload_rules.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/material.dart';
@@ -228,15 +229,17 @@ class _CompletionScreenState extends State<CompletionScreen> {
         _photos.addAll(photos.take(5 - _photos.length));
         if (_photos.isNotEmpty) _photoError = null;
       });
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              uiText(
-                context,
-                'Не удалось добавить фото. Проверьте разрешения.',
-              ),
+              error is PhotoTooLargeException
+                  ? strings(context).photoTooLarge
+                  : uiText(
+                      context,
+                      'Не удалось добавить фото. Проверьте разрешения.',
+                    ),
             ),
           ),
         );
@@ -290,7 +293,9 @@ class _CompletionScreenState extends State<CompletionScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              error is ApiException && error.message.isNotEmpty
+              error is PhotoTooLargeException
+                  ? strings(context).photoTooLarge
+                  : error is ApiException && error.message.isNotEmpty
                   ? error.message
                   : strings(context).submitReportFailed,
             ),
@@ -927,6 +932,15 @@ class _CompletionScreenState extends State<CompletionScreen> {
                           Icons.camera_alt_outlined,
                           uiText(context, 'Фото после выполнения работ'),
                           required: !widget.order.planned,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          strings(context).photoCaptureHint,
+                          style: const TextStyle(
+                            color: Color(0xFF65748B),
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         Wrap(
