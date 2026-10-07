@@ -130,6 +130,7 @@ class AuthSession extends ChangeNotifier {
   AuthUser? user;
   String? pushToken;
   DateTime? blockedUntil;
+  String? get accessToken => _token;
   bool get authenticated => _token != null && user != null;
   String? get token => _token;
 

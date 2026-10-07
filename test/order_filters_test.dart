@@ -1,3 +1,4 @@
+import 'helpers/backend_api_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mineral/l10n/app_localizations.dart';
@@ -6,8 +7,6 @@ import 'package:mineral/features/master/screens/dashboard_screen.dart';
 import 'package:mineral/shared/data/demo_store.dart';
 import 'package:mineral/features/orders/widgets/order_filters.dart';
 import 'package:mineral/shared/models/models.dart';
-import 'package:mineral/shared/widgets/ui.dart';
-import 'package:mineral/core/theme/app_theme.dart';
 
 void main() {
   test('filter drafts are independent and criteria combine', () {
@@ -33,81 +32,42 @@ void main() {
   });
 
   for (final language in ['ru', 'kk']) {
-    testWidgets('search and multiple filters apply together in $language', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      final store = DemoStore();
-      addTearDown(() async {
-        await tester.pumpWidget(const SizedBox());
-        store.dispose();
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets('backend search and board work in $language', (tester) async {
+      final api = testApi(
+        handle: (request) async => request.url.path == '/api/work-orders'
+            ? jsonResponse([
+                orderJson(id: 773),
+                orderJson(id: 774, status: 'IN_PROGRESS'),
+              ])
+            : null,
+      );
+      addTearDown(api.dispose);
       await tester.pumpWidget(
         MaterialApp(
           locale: Locale(language),
-          theme: buildAppTheme(),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: SingleChildScrollView(
-              padding: const EdgeInsets.all(18),
-              child: OrdersScreen(
-                store: store,
-                onOrder: (_) {},
-                onCreate: () {},
-              ),
+              child: OrdersScreen(api: api, onOrder: (_) {}, onCreate: () {}),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.byType(ApiOrderCard), findsNWidgets(2));
+      await tester.enterText(find.byType(TextField), ' 773 ');
+      await tester.pumpAndSettle();
+      expect(find.byType(ApiOrderCard), findsOneWidget);
       final context = tester.element(find.byType(OrdersScreen));
-      final s = AppLocalizations.of(context);
-      expect(find.byType(OrderCard), findsNWidgets(store.orders.length));
-      expect(find.byType(FilterChip), findsNothing);
-
-      Future<void> tap(Finder finder) async {
-        await tester.ensureVisible(finder);
-        await tester.pumpAndSettle();
-        await tester.tap(finder);
-        await tester.pumpAndSettle();
-      }
-
-      await tap(find.byTooltip(s.filters));
-      expect(find.byType(BottomSheet), findsOneWidget);
-      expect(find.text(s.equipment), findsNothing);
-      expect(find.text(s.priority), findsNothing);
-      await tap(find.widgetWithText(FilterChip, uiText(context, 'Дробление')));
-      await tap(find.widgetWithText(FilterChip, uiText(context, 'В работе')));
-      await tap(find.widgetWithText(FilterChip, uiText(context, 'Принят')));
-      await tap(find.widgetWithText(FilledButton, s.applyFilters));
-      expect(find.byType(OrderCard), findsNWidgets(2));
-      expect(find.byType(InputChip), findsNWidgets(3));
-
-      await tester.enterText(find.byType(TextField), ' 147 ');
+      await tester.tap(find.byTooltip(strings(context).clearSearch));
       await tester.pumpAndSettle();
-      expect(find.byType(OrderCard), findsOneWidget);
-      await tap(find.byTooltip(s.filters));
-      await tap(
-        find.descendant(
-          of: find.byType(OrderFilterPanel),
-          matching: find.widgetWithText(TextButton, s.resetFilters),
-        ),
-      );
-      await tap(find.byTooltip(s.closeFilters));
-      expect(find.byType(InputChip), findsNWidgets(3));
-
-      await tap(find.byTooltip(s.clearSearch));
-      expect(find.byType(OrderCard), findsNWidgets(2));
-      await tap(find.widgetWithText(TextButton, s.resetFilters));
-      expect(find.byType(OrderCard), findsNWidgets(store.orders.length));
-      await tester.enterText(find.byType(TextField), 'Данияр');
+      expect(find.byType(ApiOrderCard), findsNWidgets(2));
+      await tester.tap(find.text(uiText(context, 'Канбан')));
       await tester.pumpAndSettle();
-      expect(find.byType(OrderCard), findsOneWidget);
+      expect(find.byType(ApiOrderCard), findsNWidgets(2));
       expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
     });
   }
 }

@@ -1,29 +1,38 @@
-import 'package:mineral/features/executor/data/api_executor_repository.dart';
-import 'package:mineral/features/executor/data/executor_api.dart';
-import 'package:mineral/shared/models/models.dart';
-import 'package:mineral/features/auth/data/auth_session.dart';
-import 'package:mineral/features/auth/widgets/auth_scope.dart';
-import 'package:mineral/features/auth/screens/session_gate.dart';
-import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:mineral/core/services/push_notification_service.dart';
 import 'package:mineral/features/executor/screens/executor_order_loader.dart';
 import 'package:mineral/features/executor/models/executor_order_dto.dart';
 
-import 'package:mineral/features/auth/screens/login_screen.dart';
-import 'package:mineral/features/splash/screens/splash_screen.dart';
-import 'package:mineral/shared/data/demo_store.dart';
-import 'package:mineral/features/master/screens/master_shell.dart';
-import 'package:mineral/core/services/photo_picker_service.dart';
+import 'package:flutter/material.dart';
+
+import 'package:mineral/core/api/api_services.dart';
 import 'package:mineral/core/services/notification_sound.dart';
+import 'package:mineral/core/services/photo_picker_service.dart';
 import 'package:mineral/core/theme/app_theme.dart';
+
+import 'package:mineral/features/auth/data/auth_session.dart';
+import 'package:mineral/features/auth/screens/login_screen.dart';
+import 'package:mineral/features/auth/screens/session_gate.dart';
+import 'package:mineral/features/auth/widgets/auth_scope.dart';
+
+import 'package:mineral/features/executor/data/execution_draft_storage.dart';
+import 'package:mineral/features/executor/data/api_executor_repository.dart';
+import 'package:mineral/features/executor/data/executor_api.dart';
+import 'package:mineral/features/executor/screens/executor_screen.dart';
+
+import 'package:mineral/features/master/screens/master_shell.dart';
+
+import 'package:mineral/features/splash/screens/splash_screen.dart';
+
 import 'package:mineral/l10n/app_locale.dart';
 import 'package:mineral/l10n/app_localizations.dart';
-import 'package:mineral/features/executor/screens/executor_screen.dart';
-import 'package:mineral/features/executor/data/execution_draft_storage.dart';
+
+import 'package:mineral/shared/data/demo_store.dart';
+import 'package:mineral/shared/models/models.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key, this.demoMode = false, this.session});
+
   final bool demoMode;
   final AuthSession? session;
 
@@ -32,9 +41,21 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
+  // MARK: - Services
+
   final notificationSound = NotificationSound();
+
   final _navigatorKey = GlobalKey<NavigatorState>();
+
   late final AuthSession _session = widget.session ?? AuthSession();
+
+  late final ApiServices api = ApiServices(baseUrl: _session.baseUrl);
+
+  late final store = DemoStore(
+    onOrderChanged: notificationSound.play,
+    draftStorage: createExecutionDraftStorage(),
+  );
+
   bool _wasAuthenticated = false;
   ApiExecutorRepository? _executorStore;
   int? _executorUserId;
@@ -120,8 +141,21 @@ class _MainAppState extends State<MainApp> {
 
   void _sessionChanged() {
     final authenticated = _session.authenticated;
+
     final user = _session.user;
-    if (user != null) {
+
+    // Синхронизируем JWT существующей
+    // AuthSession с новым ApiClient.
+    final token = _session.accessToken;
+
+    if (authenticated && token != null && token.trim().isNotEmpty) {
+      api.setAccessToken(token);
+    } else {
+      api.clearAccessToken();
+    }
+
+    // DemoStore используется только в деморежиме.
+    if (widget.demoMode && user != null) {
       store.sessionEmployee = Employee(
         id: user.id,
         name: user.fullName,
@@ -132,25 +166,28 @@ class _MainAppState extends State<MainApp> {
         onShift: user.isOnShift,
       );
     }
+
+    // Если пользователь был авторизован,
+    // но сессия закончилась — возвращаем
+    // на страницу входа.
     if (_wasAuthenticated && !authenticated) {
       final previous = _executorStore;
       _executorStore = null;
+      _executorUserId = null;
       WidgetsBinding.instance.addPostFrameCallback((_) => previous?.dispose());
       _navigatorKey.currentState?.pushNamedAndRemoveUntil(
         '/login',
         (_) => false,
       );
     }
+
     _wasAuthenticated = authenticated;
     if (authenticated && _pendingPushOrderId != null) {
       unawaited(_openPushOrder());
     }
   }
 
-  late final store = DemoStore(
-    onOrderChanged: notificationSound.play,
-    draftStorage: createExecutionDraftStorage(),
-  );
+  // MARK: - Lifecycle
 
   @override
   void initState() {
@@ -165,18 +202,34 @@ class _MainAppState extends State<MainApp> {
       unawaited(_push!.initialize());
     }
     PhotoPickerService.instance.recoverLostPhotos();
+
+    // Важно для случая, когда MainApp
+    // получил уже восстановленную/готовую
+    // AuthSession.
+    _sessionChanged();
   }
 
   @override
   void dispose() {
     _session.removeListener(_sessionChanged);
     _push?.dispose();
-    if (widget.session == null) _session.dispose();
+
+    if (widget.session == null) {
+      _session.dispose();
+    }
+
+    api.dispose();
+
     _executorStore?.dispose();
+
     store.dispose();
+
     unawaited(notificationSound.dispose());
+
     super.dispose();
   }
+
+  // MARK: - Build
 
   @override
   Widget build(BuildContext context) {
@@ -185,39 +238,64 @@ class _MainAppState extends State<MainApp> {
       builder: (context, locale, _) {
         final app = MaterialApp(
           navigatorKey: _navigatorKey,
+
           locale: locale ?? const Locale('ru'),
+
           localizationsDelegates: AppLocalizations.localizationsDelegates,
+
           supportedLocales: AppLocalizations.supportedLocales,
+
           debugShowCheckedModeBanner: false,
+
           onGenerateTitle: (context) => 'Костанайские минералы',
+
           theme: buildAppTheme(),
+
+          // MARK: Routes
           routes: {
             '/login': (_) => const LoginScreen(),
-            '/master': (_) =>
-                !widget.demoMode &&
-                    (!_session.authenticated || _session.user?.role != 'MASTER')
-                ? const LoginScreen()
-                : MasterShell(store: store),
-            '/executor': (context) =>
-                !widget.demoMode &&
-                    (!_session.authenticated ||
-                        _session.user?.role != 'EXECUTOR')
-                ? const LoginScreen()
-                : ExecutorScreen(
-                    store: widget.demoMode ? store : _apiExecutorStore(),
-                    employeeId: widget.demoMode
-                        ? (ModalRoute.of(context)?.settings.arguments as int? ??
-                              1)
-                        : _session.user!.id,
-                  ),
+
+            // MARK: Master
+            '/master': (_) {
+              if (!widget.demoMode &&
+                  (!_session.authenticated ||
+                      _session.user?.role != 'MASTER')) {
+                return const LoginScreen();
+              }
+
+              return MasterShell(api: api);
+            },
+
+            // MARK: Executor
+            '/executor': (context) {
+              if (!widget.demoMode &&
+                  (!_session.authenticated ||
+                      _session.user?.role != 'EXECUTOR')) {
+                return const LoginScreen();
+              }
+
+              return ExecutorScreen(
+                store: widget.demoMode ? store : _apiExecutorStore(),
+                employeeId: widget.demoMode
+                    ? (ModalRoute.of(context)?.settings.arguments as int? ?? 1)
+                    : _session.user!.id,
+              );
+            },
           },
+
+          // MARK: Initial screen
           home: SplashScreen(
             nextScreen: widget.demoMode
                 ? const LoginScreen()
                 : SessionGate(session: _session),
           ),
         );
-        return widget.demoMode ? app : AuthScope(session: _session, child: app);
+
+        if (widget.demoMode) {
+          return app;
+        }
+
+        return AuthScope(session: _session, child: app);
       },
     );
   }

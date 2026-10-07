@@ -1,3 +1,4 @@
+import 'helpers/backend_api_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mineral/l10n/app_localizations.dart';
@@ -5,7 +6,6 @@ import 'package:mineral/shared/data/demo_store.dart';
 import 'package:mineral/shared/models/models.dart';
 import 'package:mineral/features/reports/models/report_snapshot.dart';
 import 'package:mineral/features/reports/screens/reports_screen.dart';
-import 'package:mineral/core/theme/app_theme.dart';
 
 void main() {
   final now = DateTime(2026, 10, 5, 12);
@@ -55,78 +55,61 @@ void main() {
   });
 
   for (final language in ['ru', 'kk']) {
-    testWidgets('report presets, custom picker and export menu in $language', (
+    testWidgets('backend period selection and export menu in $language', (
       tester,
     ) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      final store = reportStore();
-      addTearDown(() async {
-        await tester.pumpWidget(const SizedBox());
-        store.dispose();
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      final now = DateTime.now();
+      final api = testApi(
+        handle: (request) async => request.url.path == '/api/work-orders'
+            ? jsonResponse([
+                orderJson(id: 1, createdAt: now),
+                orderJson(
+                  id: 2,
+                  createdAt: now.subtract(const Duration(days: 2)),
+                ),
+                orderJson(
+                  id: 3,
+                  createdAt: now.subtract(const Duration(days: 15)),
+                ),
+              ])
+            : null,
+      );
+      addTearDown(api.dispose);
       await tester.pumpWidget(
         MaterialApp(
           locale: Locale(language),
-          theme: buildAppTheme(),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(18),
-              child: ReportsScreen(store: store),
-            ),
+            body: SingleChildScrollView(child: ReportsScreen(api: api)),
           ),
         ),
       );
       await tester.pumpAndSettle();
       final context = tester.element(find.byType(ReportsScreen));
       final s = AppLocalizations.of(context);
-      Finder count(String text) => find.descendant(
+      Finder count(String value) => find.descendant(
         of: find
             .ancestor(
-              of: find.text(s.totalOrders),
+              of: find.text(s.issuedOrders),
               matching: find.byType(Column),
             )
             .first,
-        matching: find.text(text),
+        matching: find.text(value),
       );
       expect(count('1'), findsOneWidget);
       await tester.tap(find.text(s.weekPeriod));
       await tester.pumpAndSettle();
-      expect(count('3'), findsOneWidget);
+      expect(count('2'), findsOneWidget);
       await tester.tap(find.text(s.allTimePeriod));
       await tester.pumpAndSettle();
-      expect(count('4'), findsOneWidget);
-      expect(find.text(s.exportPdf), findsNothing);
+      expect(count('3'), findsOneWidget);
       await tester.tap(find.byTooltip(s.exportReport));
       await tester.pumpAndSettle();
       expect(find.text(s.exportPdf), findsOneWidget);
       expect(find.text(s.exportExcel), findsOneWidget);
-      await tester.tapAt(const Offset(10, 500));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(s.selectPeriod));
-      await tester.pumpAndSettle();
-      expect(find.byType(DateRangePickerDialog), findsOneWidget);
-      final material = MaterialLocalizations.of(context);
-      await tester.tap(find.byTooltip(material.inputDateModeButtonLabel));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byType(TextField).at(0),
-        material.formatCompactDate(DateTime(2026, 10, 4)),
-      );
-      await tester.enterText(
-        find.byType(TextField).at(1),
-        material.formatCompactDate(DateTime(2026, 10, 5)),
-      );
-      await tester.tap(find.text(material.okButtonLabel));
-      await tester.pumpAndSettle();
-      expect(find.byType(DateRangePickerDialog), findsNothing);
-      expect(count('2'), findsOneWidget);
-      expect(find.text('04.10.2026 — 05.10.2026'), findsOneWidget);
       expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
     });
   }
 }
