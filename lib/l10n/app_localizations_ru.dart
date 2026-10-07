@@ -1455,4 +1455,243 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get photoCaptureHint =>
       'Снимайте «до» и «после» с одной точки, чтобы результат ремонта был виден. До 5 фото, каждое не больше 15 МБ.';
+
+  @override
+  String get reassignOrderTitle => 'Переназначить наряд';
+
+  @override
+  String get reassignOrderQuestion => 'Переназначить наряд?';
+
+  @override
+  String get reassignOrderExplanation =>
+      'После переназначения наряд вернётся в статус «Выдан». Новый исполнитель получит уведомление.';
+
+  @override
+  String get orderCancelledMessage => 'Наряд отменён';
+
+  @override
+  String get orderReworkMessage => 'Наряд отправлен на доработку';
+
+  @override
+  String get orderClosedMessage => 'Наряд закрыт';
+
+  @override
+  String get orderUpdatedMessage => 'Наряд обновлён';
+
+  @override
+  String get closeActionLabel => 'Закрыть';
+
+  @override
+  String get orderNotFoundMessage => 'Наряд не найден';
+
+  @override
+  String get notYourOrderMessage => 'Это не ваш наряд';
+
+  @override
+  String get aiWorkCheckTitle => 'ИИ-проверка выполнения';
+
+  @override
+  String get workStrengthsTitle => 'Что выполнено хорошо';
+
+  @override
+  String get acceptWorkAction => 'Принять работу';
+
+  @override
+  String get closeWorkOrderAction => 'Закрыть наряд';
+
+  @override
+  String get orderAcceptedMessage => 'Наряд принят';
+
+  @override
+  String get orderRejectedMessage => 'Наряд отклонён';
+
+  @override
+  String get workStartedMessage => 'Работа начата';
+
+  @override
+  String get workPausedMessage => 'Работа приостановлена';
+
+  @override
+  String get workCompletedMessage => 'Работа выполнена';
+
+  @override
+  String get chooseEquipmentFirst => 'Сначала выберите оборудование.';
+
+  @override
+  String get describeFaultFirst => 'Сначала опишите неисправность.';
+
+  @override
+  String get recommendationAppliedMessage => 'Рекомендация применена.';
+
+  @override
+  String get photoSelectionFailedMessage => 'Не удалось выбрать фотографию.';
+
+  @override
+  String get chooseAreaValidation => 'Выберите участок.';
+
+  @override
+  String get chooseEquipmentValidation => 'Выберите оборудование.';
+
+  @override
+  String get chooseExecutorValidation => 'Выберите исполнителя.';
+
+  @override
+  String get chooseNormativeValidation => 'Выберите норматив.';
+
+  @override
+  String get creatingOrderLabel => 'Создание...';
+
+  @override
+  String get voiceNextStageMessage =>
+      'Голосовой ввод подключим следующим этапом.';
+
+  @override
+  String get descriptionMinimumLabel => 'Описание — минимум 3 символа';
+
+  @override
+  String get getAiRecommendationLabel => 'Получить AI-рекомендацию';
+
+  @override
+  String get chooseAreaLabel => 'Выберите участок';
+
+  @override
+  String get estimatedTimeLabel => 'Оценка времени';
+
+  @override
+  String get queueLabel => 'Очередь';
+
+  @override
+  String get ratingLabel => 'Рейтинг';
+
+  @override
+  String get confidenceLabel => 'Уверенность';
+
+  @override
+  String get aiScoreLabel => 'Оценка ИИ';
+
+  @override
+  String get orderStatusChangedMessage =>
+      'Статус наряда изменился. Обновите данные';
+
+  @override
+  String get orderNotWorkingMessage => 'Наряд уже не в работе';
+
+  @override
+  String get workAndFaultRequiredMessage =>
+      'Заполните работы и шифр неисправности';
+
+  @override
+  String get checkMaterialsPhotosMessage => 'Проверьте материалы и фотографии';
+
+  @override
+  String get orderFinishedMessage => 'Наряд завершён';
+
+  @override
+  String get mockSealMaterial => 'Уплотнение 40×60';
+
+  @override
+  String get mockOilMaterial => 'Масло И-40';
+
+  @override
+  String get mockBearingShort => 'Подшипник';
+
+  @override
+  String get mockLubricantShort => 'Смазка';
+
+  @override
+  String get mockMasterReworkReason => 'Нет фото после выполненных работ';
+
+  @override
+  String get pieceUnit => 'шт.';
+
+  @override
+  String get hourUnit => 'ч.';
+
+  @override
+  String get piecesShortUnit => 'шт';
+
+  @override
+  String get meterUnit => 'м';
+
+  @override
+  String get kilogramUnit => 'кг';
+
+  @override
+  String get literUnit => 'л';
+
+  @override
+  String executorCurrentOrderQueue(String number, String count) {
+    return 'выполняет наряд №$number, в очереди $count';
+  }
+
+  @override
+  String executorQueuedOrders(String count) {
+    return 'в очереди $count наряда';
+  }
+
+  @override
+  String get aiVerdictAcceptedLabel => 'Принято';
+
+  @override
+  String get aiVerdictCommentsLabel => 'Принято с замечаниями';
+
+  @override
+  String get aiVerdictReworkLabel => 'Требуется доработка';
+
+  @override
+  String get historyMonthSummary => 'За 30 дней';
+
+  @override
+  String get historyAverageScore => 'Средняя оценка';
+
+  @override
+  String get historyEarlier => 'Ранее';
+
+  @override
+  String get ratingCalculation => 'Как считается рейтинг';
+
+  @override
+  String get ratingOnTimeOrders => 'Выполнено в срок';
+
+  @override
+  String get ratingReworkedOrders => 'Вернулись на доработку';
+
+  @override
+  String ratingQualityExplanation(String quality, String points) {
+    return 'Средняя оценка ваших работ — $quality из 5. Баллы за качество: $points из 45.';
+  }
+
+  @override
+  String ratingTimingExplanation(String percent, String points) {
+    return 'В срок выполнено $percent% нарядов. Баллы за соблюдение сроков: $points из 25.';
+  }
+
+  @override
+  String get ratingReliability => 'Надёжность ремонта';
+
+  @override
+  String ratingReliabilityExplanation(String percent, String points) {
+    return '$percent% нарядов обошлись без доработок и повторных поломок в течение 7 дней. Баллы за надёжность ремонта: $points из 15.';
+  }
+
+  @override
+  String ratingVolumeExplanation(String count, String points) {
+    return 'Вы закрыли $count нарядов. Баллы за объём работы: $points из 10.';
+  }
+
+  @override
+  String get ratingComplexity => 'Сложные работы';
+
+  @override
+  String ratingComplexityExplanation(String points) {
+    return 'За аварийные наряды и наряды с высоким приоритетом начислено ещё $points из 5 баллов.';
+  }
+
+  @override
+  String get ratingRejects => 'Необоснованные отказы';
+
+  @override
+  String ratingRejectsExplanation(String count, String points) {
+    return 'Отказов без уважительной причины: $count. За них снято $points баллов.';
+  }
 }

@@ -11,9 +11,11 @@ abstract interface class ExecutorRepository implements Listenable {
   List<String> get executorMaterials;
   Employee employee(int id);
   ExecutorRating? executorRating(int employeeId);
+  Future<ExecutorRating?> loadExecutorRating(int employeeId);
   List<WorkOrder> assignedTo(int employeeId);
   Future<void> refreshExecutor(int employeeId);
   Future<WorkOrder> loadExecutorOrder(int employeeId, WorkOrder order);
+  Future<WorkOrder> loadExecutorOrderTime(int employeeId, WorkOrder order);
   Future<void> executorAction(
     int employeeId,
     WorkOrder order,

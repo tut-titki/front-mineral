@@ -19,6 +19,57 @@ Widget host(Widget child) => MaterialApp(
 );
 
 void main() {
+  testWidgets('master changes AI score and sends it with CLOSE', (
+    tester,
+  ) async {
+    Map<String, dynamic>? sent;
+    final api = testApi(
+      handle: (request) async {
+        if (request.url.path == '/api/work-orders/773/action') {
+          sent = jsonDecode(request.body) as Map<String, dynamic>;
+          return jsonResponse({'order': orderJson(status: 'CLOSED')});
+        }
+        if (request.url.path == '/api/work-orders/773') {
+          return jsonResponse(
+            orderJson(status: 'AI_REVIEW')
+              ..['aiAssessment'] = {
+                'verdict': 'ACCEPTED_WITH_COMMENTS',
+                'score': 3,
+                'masterScore': null,
+              },
+          );
+        }
+        return null;
+      },
+    );
+    addTearDown(api.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: OrderDetailScreen(api: api, orderId: 773),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Принять и закрыть'));
+    await tester.tap(find.text('Принять и закрыть'));
+    await tester.pumpAndSettle();
+    final dialog = find.byType(AlertDialog);
+    expect(
+      find.descendant(of: dialog, matching: find.byIcon(Icons.star)),
+      findsNWidgets(3),
+    );
+    await tester.tap(find.byTooltip('2'));
+    await tester.tap(
+      find.descendant(of: dialog, matching: find.text('Закрыть наряд')),
+    );
+    await tester.pumpAndSettle();
+    expect(sent!['action'], 'CLOSE');
+    expect(sent!['masterScore'], 2);
+    expect(sent!['clientActionId'], isNotEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
   test(
     'binary report export and failed upload use shared client without retries',
     () async {

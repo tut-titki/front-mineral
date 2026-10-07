@@ -13,6 +13,9 @@ class DemoStore extends ChangeNotifier implements ExecutorRepository {
   @override
   ExecutorRating? executorRating(int employeeId) => null;
   @override
+  Future<ExecutorRating?> loadExecutorRating(int employeeId) async =>
+      executorRating(employeeId);
+  @override
   bool get isLoading => false;
   @override
   String? get loadError => null;
@@ -63,6 +66,10 @@ class DemoStore extends ChangeNotifier implements ExecutorRepository {
     employee(employeeId);
     notifyListeners();
   }
+
+  @override
+  Future<WorkOrder> loadExecutorOrderTime(int employeeId, WorkOrder order) =>
+      loadExecutorOrder(employeeId, order);
 
   @override
   Future<WorkOrder> loadExecutorOrder(int employeeId, WorkOrder order) async {

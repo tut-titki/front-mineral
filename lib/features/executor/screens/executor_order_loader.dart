@@ -67,7 +67,7 @@ class _ExecutorOrderLoaderState extends State<ExecutorOrderLoader> {
                       padding: const EdgeInsets.all(24),
                       child: Text(
                         error is ApiException && error.message.isNotEmpty
-                            ? error.message
+                            ? uiText(context, error.message)
                             : error is ApiException &&
                                   (error.status == 403 || error.status == 404)
                             ? strings(context).orderUnavailable

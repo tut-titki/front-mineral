@@ -1,3 +1,4 @@
+import '../../../l10n/language_switcher.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/api/api_services.dart';
@@ -150,6 +151,16 @@ class _MasterProfileScreenState extends State<MasterProfileScreen> {
               ),
             ],
           ),
+        ),
+        const SizedBox(height: 16),
+        Material(
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: Color(0xFFDCE4EE)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: const ProfileLanguageTile(),
         ),
         if (session != null) ...[
           const SizedBox(height: 16),

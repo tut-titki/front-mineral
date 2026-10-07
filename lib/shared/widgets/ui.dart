@@ -390,7 +390,7 @@ class OrderCard extends StatelessWidget {
                     SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        store.assignmentLabel(order),
+                        uiText(context, store.assignmentLabel(order)),
                         style: TextStyle(color: muted, fontSize: 12),
                       ),
                     ),

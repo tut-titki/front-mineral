@@ -2737,6 +2737,444 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Снимайте «до» и «после» с одной точки, чтобы результат ремонта был виден. До 5 фото, каждое не больше 15 МБ.'**
   String get photoCaptureHint;
+
+  /// No description provided for @reassignOrderTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Переназначить наряд'**
+  String get reassignOrderTitle;
+
+  /// No description provided for @reassignOrderQuestion.
+  ///
+  /// In ru, this message translates to:
+  /// **'Переназначить наряд?'**
+  String get reassignOrderQuestion;
+
+  /// No description provided for @reassignOrderExplanation.
+  ///
+  /// In ru, this message translates to:
+  /// **'После переназначения наряд вернётся в статус «Выдан». Новый исполнитель получит уведомление.'**
+  String get reassignOrderExplanation;
+
+  /// No description provided for @orderCancelledMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд отменён'**
+  String get orderCancelledMessage;
+
+  /// No description provided for @orderReworkMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд отправлен на доработку'**
+  String get orderReworkMessage;
+
+  /// No description provided for @orderClosedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд закрыт'**
+  String get orderClosedMessage;
+
+  /// No description provided for @orderUpdatedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд обновлён'**
+  String get orderUpdatedMessage;
+
+  /// No description provided for @closeActionLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыть'**
+  String get closeActionLabel;
+
+  /// No description provided for @orderNotFoundMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд не найден'**
+  String get orderNotFoundMessage;
+
+  /// No description provided for @notYourOrderMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это не ваш наряд'**
+  String get notYourOrderMessage;
+
+  /// No description provided for @aiWorkCheckTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'ИИ-проверка выполнения'**
+  String get aiWorkCheckTitle;
+
+  /// No description provided for @workStrengthsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что выполнено хорошо'**
+  String get workStrengthsTitle;
+
+  /// No description provided for @acceptWorkAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Принять работу'**
+  String get acceptWorkAction;
+
+  /// No description provided for @closeWorkOrderAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Закрыть наряд'**
+  String get closeWorkOrderAction;
+
+  /// No description provided for @orderAcceptedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд принят'**
+  String get orderAcceptedMessage;
+
+  /// No description provided for @orderRejectedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд отклонён'**
+  String get orderRejectedMessage;
+
+  /// No description provided for @workStartedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Работа начата'**
+  String get workStartedMessage;
+
+  /// No description provided for @workPausedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Работа приостановлена'**
+  String get workPausedMessage;
+
+  /// No description provided for @workCompletedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Работа выполнена'**
+  String get workCompletedMessage;
+
+  /// No description provided for @chooseEquipmentFirst.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала выберите оборудование.'**
+  String get chooseEquipmentFirst;
+
+  /// No description provided for @describeFaultFirst.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сначала опишите неисправность.'**
+  String get describeFaultFirst;
+
+  /// No description provided for @recommendationAppliedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рекомендация применена.'**
+  String get recommendationAppliedMessage;
+
+  /// No description provided for @photoSelectionFailedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось выбрать фотографию.'**
+  String get photoSelectionFailedMessage;
+
+  /// No description provided for @chooseAreaValidation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите участок.'**
+  String get chooseAreaValidation;
+
+  /// No description provided for @chooseEquipmentValidation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите оборудование.'**
+  String get chooseEquipmentValidation;
+
+  /// No description provided for @chooseExecutorValidation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите исполнителя.'**
+  String get chooseExecutorValidation;
+
+  /// No description provided for @chooseNormativeValidation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите норматив.'**
+  String get chooseNormativeValidation;
+
+  /// No description provided for @creatingOrderLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Создание...'**
+  String get creatingOrderLabel;
+
+  /// No description provided for @voiceNextStageMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Голосовой ввод подключим следующим этапом.'**
+  String get voiceNextStageMessage;
+
+  /// No description provided for @descriptionMinimumLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Описание — минимум 3 символа'**
+  String get descriptionMinimumLabel;
+
+  /// No description provided for @getAiRecommendationLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Получить AI-рекомендацию'**
+  String get getAiRecommendationLabel;
+
+  /// No description provided for @chooseAreaLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите участок'**
+  String get chooseAreaLabel;
+
+  /// No description provided for @estimatedTimeLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оценка времени'**
+  String get estimatedTimeLabel;
+
+  /// No description provided for @queueLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Очередь'**
+  String get queueLabel;
+
+  /// No description provided for @ratingLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Рейтинг'**
+  String get ratingLabel;
+
+  /// No description provided for @confidenceLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уверенность'**
+  String get confidenceLabel;
+
+  /// No description provided for @aiScoreLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Оценка ИИ'**
+  String get aiScoreLabel;
+
+  /// No description provided for @orderStatusChangedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Статус наряда изменился. Обновите данные'**
+  String get orderStatusChangedMessage;
+
+  /// No description provided for @orderNotWorkingMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд уже не в работе'**
+  String get orderNotWorkingMessage;
+
+  /// No description provided for @workAndFaultRequiredMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заполните работы и шифр неисправности'**
+  String get workAndFaultRequiredMessage;
+
+  /// No description provided for @checkMaterialsPhotosMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверьте материалы и фотографии'**
+  String get checkMaterialsPhotosMessage;
+
+  /// No description provided for @orderFinishedMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд завершён'**
+  String get orderFinishedMessage;
+
+  /// No description provided for @mockSealMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уплотнение 40×60'**
+  String get mockSealMaterial;
+
+  /// No description provided for @mockOilMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Масло И-40'**
+  String get mockOilMaterial;
+
+  /// No description provided for @mockBearingShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подшипник'**
+  String get mockBearingShort;
+
+  /// No description provided for @mockLubricantShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Смазка'**
+  String get mockLubricantShort;
+
+  /// No description provided for @mockMasterReworkReason.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет фото после выполненных работ'**
+  String get mockMasterReworkReason;
+
+  /// No description provided for @pieceUnit.
+  ///
+  /// In ru, this message translates to:
+  /// **'шт.'**
+  String get pieceUnit;
+
+  /// No description provided for @hourUnit.
+  ///
+  /// In ru, this message translates to:
+  /// **'ч.'**
+  String get hourUnit;
+
+  /// No description provided for @piecesShortUnit.
+  ///
+  /// In ru, this message translates to:
+  /// **'шт'**
+  String get piecesShortUnit;
+
+  /// No description provided for @meterUnit.
+  ///
+  /// In ru, this message translates to:
+  /// **'м'**
+  String get meterUnit;
+
+  /// No description provided for @kilogramUnit.
+  ///
+  /// In ru, this message translates to:
+  /// **'кг'**
+  String get kilogramUnit;
+
+  /// No description provided for @literUnit.
+  ///
+  /// In ru, this message translates to:
+  /// **'л'**
+  String get literUnit;
+
+  /// No description provided for @executorCurrentOrderQueue.
+  ///
+  /// In ru, this message translates to:
+  /// **'выполняет наряд №{number}, в очереди {count}'**
+  String executorCurrentOrderQueue(String number, String count);
+
+  /// No description provided for @executorQueuedOrders.
+  ///
+  /// In ru, this message translates to:
+  /// **'в очереди {count} наряда'**
+  String executorQueuedOrders(String count);
+
+  /// No description provided for @aiVerdictAcceptedLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Принято'**
+  String get aiVerdictAcceptedLabel;
+
+  /// No description provided for @aiVerdictCommentsLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Принято с замечаниями'**
+  String get aiVerdictCommentsLabel;
+
+  /// No description provided for @aiVerdictReworkLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Требуется доработка'**
+  String get aiVerdictReworkLabel;
+
+  /// No description provided for @historyMonthSummary.
+  ///
+  /// In ru, this message translates to:
+  /// **'За 30 дней'**
+  String get historyMonthSummary;
+
+  /// No description provided for @historyAverageScore.
+  ///
+  /// In ru, this message translates to:
+  /// **'Средняя оценка'**
+  String get historyAverageScore;
+
+  /// No description provided for @historyEarlier.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ранее'**
+  String get historyEarlier;
+
+  /// No description provided for @ratingCalculation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Как считается рейтинг'**
+  String get ratingCalculation;
+
+  /// No description provided for @ratingOnTimeOrders.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выполнено в срок'**
+  String get ratingOnTimeOrders;
+
+  /// No description provided for @ratingReworkedOrders.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вернулись на доработку'**
+  String get ratingReworkedOrders;
+
+  /// No description provided for @ratingQualityExplanation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Средняя оценка ваших работ — {quality} из 5. Баллы за качество: {points} из 45.'**
+  String ratingQualityExplanation(String quality, String points);
+
+  /// No description provided for @ratingTimingExplanation.
+  ///
+  /// In ru, this message translates to:
+  /// **'В срок выполнено {percent}% нарядов. Баллы за соблюдение сроков: {points} из 25.'**
+  String ratingTimingExplanation(String percent, String points);
+
+  /// No description provided for @ratingReliability.
+  ///
+  /// In ru, this message translates to:
+  /// **'Надёжность ремонта'**
+  String get ratingReliability;
+
+  /// No description provided for @ratingReliabilityExplanation.
+  ///
+  /// In ru, this message translates to:
+  /// **'{percent}% нарядов обошлись без доработок и повторных поломок в течение 7 дней. Баллы за надёжность ремонта: {points} из 15.'**
+  String ratingReliabilityExplanation(String percent, String points);
+
+  /// No description provided for @ratingVolumeExplanation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вы закрыли {count} нарядов. Баллы за объём работы: {points} из 10.'**
+  String ratingVolumeExplanation(String count, String points);
+
+  /// No description provided for @ratingComplexity.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сложные работы'**
+  String get ratingComplexity;
+
+  /// No description provided for @ratingComplexityExplanation.
+  ///
+  /// In ru, this message translates to:
+  /// **'За аварийные наряды и наряды с высоким приоритетом начислено ещё {points} из 5 баллов.'**
+  String ratingComplexityExplanation(String points);
+
+  /// No description provided for @ratingRejects.
+  ///
+  /// In ru, this message translates to:
+  /// **'Необоснованные отказы'**
+  String get ratingRejects;
+
+  /// No description provided for @ratingRejectsExplanation.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отказов без уважительной причины: {count}. За них снято {points} баллов.'**
+  String ratingRejectsExplanation(String count, String points);
 }
 
 class _AppLocalizationsDelegate

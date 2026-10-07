@@ -86,6 +86,40 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('read all updates every card before the first network response', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final reads = <int>[];
+    await tester.pumpWidget(
+      host(
+        NotificationsScreen(
+          standalone: true,
+          load: () async => [notice(1), notice(2)],
+          markRead: (id) async {
+            reads.add(id);
+            if (id == 2) await pending.future;
+          },
+          onOrder: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Барлығын оқу'));
+    await tester.pump();
+    expect(reads, [2]);
+    for (final id in [1, 2]) {
+      expect(
+        tester.widget<Text>(find.text('Наряд $id')).style?.fontWeight,
+        FontWeight.w500,
+      );
+    }
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(reads, [2, 1]);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('read all preserves unread items on failure', (tester) async {
     await tester.pumpWidget(
       host(

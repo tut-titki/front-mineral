@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:mineral/features/executor/screens/executor_profile_screen.dart';
 import 'package:mineral/features/references/data/reference_storage_stub.dart';
 import 'package:mineral/features/executor/data/pending_action_storage_io.dart';
 import 'package:mineral/features/executor/models/pending_action.dart';
@@ -153,6 +155,158 @@ void main() {
     await directory.delete(recursive: true);
   });
   test(
+    'own monthly rating loads once and retains last result on failure',
+    () async {
+      final pending = Completer<http.Response>();
+      handler = (request) async {
+        expect(request.url.path, '/api/reports/my-rating');
+        expect(request.url.queryParameters, {'period': 'month'});
+        expect(request.headers['authorization'], 'Bearer jwt');
+        return pending.future;
+      };
+      final first = repository.loadExecutorRating(5);
+      final second = repository.loadExecutorRating(5);
+      pending.complete(
+        json({
+          'id': 5,
+          'score': 79,
+          'quality': '4.5',
+          'onTimeRate': 0.8,
+          'reworkRate': 0.1,
+          'closed': 12,
+          'explanation': 'Качество 4.5 из 5. Итого 79 из 100.',
+        }),
+      );
+      final rating = await first;
+      expect(await second, same(rating));
+      expect(rating!.score, 79);
+      expect(rating.quality, 4.5);
+      expect(rating.onTimePercent, 80);
+      expect(rating.reworkPercent, 10);
+      expect(rating.completedCount, 12);
+      expect(rating.explanation, contains('79 из 100'));
+      expect(
+        requests.where((r) => r.url.path.endsWith('/my-rating')),
+        hasLength(1),
+      );
+      handler = (_) async => json({'error': 'Сервис временно недоступен'}, 500);
+      await expectLater(
+        repository.loadExecutorRating(5),
+        throwsA(isA<ApiException>()),
+      );
+      expect(repository.executorRating(5), same(rating));
+      expect(
+        () => repository.loadExecutorRating(6),
+        throwsA(isA<ApiException>()),
+      );
+    },
+  );
+
+  test('rating rejects another executor and invalid server score', () async {
+    handler = (_) async => json({'id': 6, 'score': 80, 'closed': 1});
+    await expectLater(
+      repository.loadExecutorRating(5),
+      throwsA(isA<ApiException>()),
+    );
+    expect(repository.executorRating(5), isNull);
+    handler = (_) async => json({'id': 5, 'score': 101, 'closed': 1});
+    await expectLater(repository.loadExecutorRating(5), throwsFormatException);
+    expect(repository.executorRating(5), isNull);
+  });
+  testWidgets('profile displays server rating and retains it on refresh failure', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    handler = (_) async => json({
+      'id': 5,
+      'score': 79,
+      'quality': 4.5,
+      'onTimeRate': 0.8,
+      'reworkRate': 0.1,
+      'closed': 12,
+      'explanation': 'Итого 79 из 100.',
+      'returnRate': 0.3,
+      'unjustifiedRejects': 0,
+      'points': {
+        'quality': 40.5,
+        'onTime': 20,
+        'noReturns': 10.5,
+        'volume': 6,
+        'complexity': 2,
+        'rejects': 0,
+      },
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ExecutorProfileScreen(store: repository, employeeId: 5),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('79.0'), findsOneWidget);
+    expect(tester.takeException(), isNull, reason: 'compact rating');
+    expect(find.text('4.5 / 5'), findsNothing);
+    expect(find.text('80%'), findsNothing);
+    expect(find.text('10%'), findsNothing);
+    expect(find.text('Итого 79 из 100.'), findsNothing);
+    await tester.ensureVisible(find.text('79.0'));
+    await tester.tap(find.text('79.0'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget);
+    expect(tester.takeException(), isNull, reason: 'rating sheet');
+    expect(find.text('Как считается рейтинг'), findsOneWidget);
+    expect(find.text('4.5 / 5'), findsOneWidget);
+    expect(find.text('80%'), findsOneWidget);
+    expect(find.text('10%'), findsOneWidget);
+    expect(find.text('Итого 79 из 100.'), findsNothing);
+    expect(
+      find.text(
+        'Средняя оценка ваших работ — 4.5 из 5. Баллы за качество: 40.5 из 45.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'В срок выполнено 80% нарядов. Баллы за соблюдение сроков: 20 из 25.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        '70% нарядов обошлись без доработок и повторных поломок в течение 7 дней. Баллы за надёжность ремонта: 10.5 из 15.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Вы закрыли 12 нарядов. Баллы за объём работы: 6 из 10.'),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find
+          .descendant(
+            of: find.byType(BottomSheet),
+            matching: find.byType(IconButton),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsNothing);
+    handler = (_) async => json({'error': 'Сервис временно недоступен'}, 500);
+    await tester
+        .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+        .onRefresh();
+    await tester.pumpAndSettle();
+    expect(find.text('79.0'), findsOneWidget);
+    expect(find.text('Сервис временно недоступен'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  test(
     'active and archive stay separate; failed refresh preserves both',
     () async {
       await repository.refreshExecutor(5);
@@ -189,6 +343,51 @@ void main() {
       expect(requests.last.url.path, '/api/work-orders/76');
     },
   );
+  test(
+    'closed card loads pause-aware work time without downloading photos',
+    () async {
+      await repository.refreshExecutor(5);
+      final previous = handler;
+      handler = (request) async {
+        if (request.url.path == '/api/work-orders/77') {
+          final data = order(77, 'CLOSED', full: true);
+          (data['events'] as List).add({
+            'action': 'COMPLETE',
+            'toStatus': 'AI_REVIEW',
+            'createdAt': '2026-10-06T10:00:00Z',
+            'actor': {'fullName': 'Worker'},
+            'comment': null,
+          });
+          data['photos'] = [
+            {'type': 'AFTER', 'fileUrl': '/uploads/not-downloaded.jpg'},
+          ];
+          return json(data);
+        }
+        return previous(request);
+      };
+      final compact = repository.historyOrders.single;
+      final results = await Future.wait([
+        repository.loadExecutorOrderTime(5, compact),
+        repository.loadExecutorOrderTime(5, compact),
+      ]);
+      expect(results.first.detailsLoaded, isTrue);
+      expect(
+        results.first.workDuration(DateTime.parse('2026-10-07T10:00:00Z')),
+        const Duration(minutes: 40),
+      );
+      expect(
+        requests.where((r) => r.url.path == '/api/work-orders/77'),
+        hasLength(1),
+      );
+      expect(requests.where((r) => r.url.path.startsWith('/uploads')), isEmpty);
+      await repository.loadExecutorOrderTime(5, compact);
+      expect(
+        requests.where((r) => r.url.path == '/api/work-orders/77'),
+        hasLength(1),
+      );
+    },
+  );
+
   test(
     'pause uses server ID, UUID and comment; errors never change status',
     () async {

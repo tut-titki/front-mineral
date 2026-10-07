@@ -1,3 +1,6 @@
+import 'executor_history_screen.dart';
+import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -8,7 +11,6 @@ import 'executor_order_loader.dart';
 import 'executor_profile_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import 'package:mineral/l10n/ui_localization.dart';
-import 'package:mineral/l10n/language_switcher.dart';
 import 'package:mineral/features/executor/data/executor_repository.dart';
 import 'package:mineral/shared/models/models.dart';
 
@@ -40,7 +42,7 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
         setState(
           () =>
               _refreshError = error is ApiException && error.message.isNotEmpty
-              ? error.message
+              ? uiText(context, error.message)
               : strings(context).refreshFailed,
         );
       }
@@ -86,7 +88,26 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: _page != 0 ? const Color(0xFF01408B) : Colors.white,
+        flexibleSpace: _page != 0
+            ? const SizedBox.expand(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [Color(0xFF01408B), Color(0xFF0A57A3)],
+                    ),
+                  ),
+                ),
+              )
+            : null,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: _page != 0
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
+        titleSpacing: _page == 2 ? 24 : null,
         scrolledUnderElevation: 0,
         title: Text(
           [
@@ -94,12 +115,19 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
             uiText(context, 'История нарядов'),
             uiText(context, 'Профиль'),
           ][_page],
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: _page != 0 ? Colors.white : const Color(0xFF172033),
+          ),
         ),
         actions: [
-          const LanguageSwitcher(),
           IconButton(
             tooltip: uiText(context, 'Уведомления'),
-            icon: const Icon(Icons.notifications_outlined),
+            icon: Icon(
+              LucideIcons.bell,
+              color: _page != 0 ? Colors.white : null,
+            ),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (context) => NotificationsScreen.forUser(
@@ -120,15 +148,15 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
         onDestinationSelected: (p) => setState(() => _page = p),
         destinations: [
           NavigationDestination(
-            icon: const Icon(Icons.assignment_outlined),
+            icon: const Icon(LucideIcons.clipboardList),
             label: uiText(context, 'Наряды'),
           ),
           NavigationDestination(
-            icon: const Icon(Icons.history),
+            icon: const Icon(LucideIcons.history),
             label: uiText(context, 'История'),
           ),
           NavigationDestination(
-            icon: const Icon(Icons.person_outline),
+            icon: const Icon(LucideIcons.userRound),
             label: uiText(context, 'Профиль'),
           ),
         ],
@@ -154,6 +182,17 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
                   ),
                 ],
               ),
+            );
+          }
+          if (_page == 1) {
+            return ExecutorHistoryScreen(
+              orders: store.assignedTo(employeeId),
+              now: store.now,
+              onRefresh: _refresh,
+              onOpen: _openOrder,
+              loadTime: (order) =>
+                  store.loadExecutorOrderTime(employeeId, order),
+              error: _refreshError ?? store.loadError,
             );
           }
           final orders = store.assignedTo(employeeId).where((order) {
@@ -186,7 +225,7 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
             onRefresh: _refresh,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
                 if (_page == 0)
                   ExecutorGreeting(
@@ -230,7 +269,15 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
                       context,
                       'Поиск по номеру или оборудованию',
                     ),
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(
+                      LucideIcons.search,
+                      size: 19,
+                      color: Color(0xFF637B9E),
+                    ),
+                    hintStyle: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF637B9E),
+                    ),
                   ),
                   onChanged: (v) => setState(() => _query = v),
                 ),
@@ -303,6 +350,9 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
                               ))
                             .take(2)) ...[
                       ExecutorHistoryTile(
+                        compact: true,
+                        loadTime: () =>
+                            store.loadExecutorOrderTime(employeeId, order),
                         order: order,
                         now: store.now,
                         onTap: () => _openOrder(order),
@@ -323,15 +373,6 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
     padding: const EdgeInsets.only(top: 4, bottom: 10),
     child: Row(
       children: [
-        Container(
-          width: 3,
-          height: 18,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
-        const SizedBox(width: 8),
         Expanded(
           child: Text(
             title,
@@ -339,10 +380,15 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
           ),
         ),
         if (onTap != null)
-          IconButton(
-            tooltip: uiText(context, 'История'),
+          TextButton(
             onPressed: onTap,
-            icon: const Icon(Icons.arrow_forward, size: 20),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF01408B),
+            ),
+            child: Text(
+              strings(context).all,
+              style: const TextStyle(fontSize: 12),
+            ),
           ),
       ],
     ),
@@ -363,155 +409,200 @@ class _OrderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = order.emergency
-        ? const Color(0xFFDC2626)
-        : const Color(0xFF01408B);
-
     final overdue = order.isOverdue(now);
+    final alert = overdue || order.emergency;
+    final accent = alert ? const Color(0xFFDC2626) : const Color(0xFF01408B);
+    final statusColor = order.status == OrderStatus.paused
+        ? const Color(0xFFB86A08)
+        : order.status.color;
     return Material(
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(
-          color: order.emergency
-              ? const Color(0xFFF3C4C4)
-              : const Color(0xFFE6EBF2),
+          color: alert ? const Color(0xFFFFE7EA) : const Color(0xFFE6EDF5),
         ),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      strings(context).orderNumber(order.displayNumber),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF687385),
+        child: Ink(
+          decoration: BoxDecoration(
+            border: overdue
+                ? const Border(
+                    left: BorderSide(width: 3, color: Color(0xFFDC2626)),
+                  )
+                : null,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: .10),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (order.status == OrderStatus.paused) ...[
+                              Icon(
+                                LucideIcons.pause,
+                                size: 13,
+                                color: statusColor,
+                              ),
+                              const SizedBox(width: 5),
+                            ],
+                            Flexible(
+                              child: Text(
+                                executorStatusText(context, order),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  Flexible(
-                    child: Text(
-                      executorStatusText(context, order),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: order.status.color,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.chevron_right,
-                    size: 18,
-                    color: Color(0xFF98A2B3),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          uiText(context, order.title),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            height: 1.25,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF172B4D),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '${uiText(context, order.equipment)} · ${uiText(context, order.area)}',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF687385),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (order.beforeImages.isNotEmpty) ...[
-                    const SizedBox(width: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.memory(
-                        order.beforeImages.first.bytes,
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const SizedBox(
-                          width: 56,
-                          height: 56,
-                          child: Icon(Icons.image_not_supported_outlined),
+
+                    const SizedBox(width: 10),
+                    Flexible(
+                      flex: 2,
+                      child: Text(
+                        strings(context).orderNumber(order.displayNumber),
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF344866),
                         ),
                       ),
                     ),
                   ],
-                ],
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 12,
-                runSpacing: 4,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(
-                    uiText(context, order.priority),
-                    style: TextStyle(
-                      color: accent,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  uiText(context, order.title),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    height: 1.25,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF172B4D),
                   ),
-                  Text(
-                    '${dateLabel(order.deadline)} · ${timeLabel(order.deadline)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: overdue
-                          ? const Color(0xFFDC2626)
-                          : const Color(0xFF687385),
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${uiText(context, order.equipment)} · ${uiText(context, order.area)}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.3,
+                    color: Color(0xFF7A8597),
                   ),
-                  if (overdue)
-                    Text(
-                      strings(context).overdueByMinutes(
-                        '${(now.difference(order.deadline).inSeconds + 59) ~/ 60}',
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
                       ),
-                      style: const TextStyle(
-                        color: Color(0xFFDC2626),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: .07),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        uiText(context, order.priority),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: accent,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  if (queuePosition != null)
-                    Text(
-                      strings(context).queuePosition('$queuePosition'),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF01408B),
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          LucideIcons.calendarDays,
+                          size: 14,
+                          color: Color(0xFF01408B),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${dateLabel(order.deadline)} · ${timeLabel(order.deadline)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: overdue ? accent : const Color(0xFF637B9E),
+                          ),
+                        ),
+                      ],
                     ),
-                ],
-              ),
-            ],
+                    if (queuePosition != null)
+                      Text(
+                        strings(context).queuePosition('$queuePosition'),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF01408B),
+                        ),
+                      ),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(top: 8, bottom: 7),
+                  child: Divider(height: 1, color: Color(0xFFE8EDF4)),
+                ),
+                Row(
+                  children: [
+                    if (overdue) ...[
+                      Icon(LucideIcons.timer, size: 15, color: accent),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Text(
+                          strings(context).overdueByMinutes(
+                            '${(now.difference(order.deadline).inSeconds + 59) ~/ 60}',
+                          ),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: accent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ] else
+                      Expanded(
+                        child: Text(
+                          strings(context).openOrder,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF637B9E),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

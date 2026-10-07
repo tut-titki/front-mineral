@@ -542,7 +542,7 @@ class ApiOrderCard extends StatelessWidget {
                   runSpacing: 8,
                   children: [
                     Text(
-                      'НАРЯД №${order.number}',
+                      uiText(context, 'НАРЯД №${order.number}'),
                       style: const TextStyle(
                         color: muted,
                         fontSize: 11,
@@ -606,8 +606,10 @@ class ApiOrderCard extends StatelessWidget {
                     ),
 
                     Text(
-                      'До ${dateLabel(order.deadline.toLocal())} '
-                      '${timeLabel(order.deadline.toLocal())}',
+                      uiText(
+                        context,
+                        'До ${dateLabel(order.deadline)} ${timeLabel(order.deadline)}',
+                      ),
                       style: TextStyle(
                         fontSize: 12,
                         color: order.isOverdue ? Colors.red : muted,

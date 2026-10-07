@@ -50,7 +50,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
           SnackBar(
             content: Text(
               error is ApiException && error.message.isNotEmpty
-                  ? error.message
+                  ? uiText(context, error.message)
                   : error is StateError &&
                         error.message ==
                             'Сначала приостановите или завершите текущий наряд'
@@ -77,7 +77,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
           SnackBar(
             content: Text(
               error is ApiException && error.message.isNotEmpty
-                  ? error.message
+                  ? uiText(context, error.message)
                   : strings(context).authNetworkError,
             ),
           ),
@@ -191,7 +191,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
                                       serverError =
                                           error.fieldMessage('comment') ??
                                           (error.message.isNotEmpty
-                                              ? error.message
+                                              ? uiText(context, error.message)
                                               : uiText(
                                                   sheetContext,
                                                   'Укажите причину',

@@ -296,7 +296,7 @@ class _CompletionScreenState extends State<CompletionScreen> {
               error is PhotoTooLargeException
                   ? strings(context).photoTooLarge
                   : error is ApiException && error.message.isNotEmpty
-                  ? error.message
+                  ? uiText(context, error.message)
                   : strings(context).submitReportFailed,
             ),
           ),

@@ -684,7 +684,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               FilledButton.icon(
                 onPressed: loadInitialData,
                 icon: const Icon(Icons.refresh),
-                label: Text('Повторить'),
+                label: Text(uiText(context, 'Повторить')),
               ),
             ],
           ),
@@ -878,7 +878,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             decoration: InputDecoration(labelText: uiText(context, 'Участок')),
             items: [
               for (final area in areas)
-                DropdownMenuItem(value: area.id, child: Text(area.name)),
+                DropdownMenuItem(
+                  value: area.id,
+                  child: Text(uiText(context, area.name)),
+                ),
             ],
             onChanged: creating
                 ? null
@@ -887,7 +890,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       changeArea(value);
                     }
                   },
-            validator: (value) => value == null ? 'Выберите участок' : null,
+            validator: (value) =>
+                value == null ? uiText(context, 'Выберите участок') : null,
           ),
           const SizedBox(height: 16),
 
@@ -908,8 +912,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   value: item.id,
                   child: Text(
                     item.inventoryNumber?.trim().isNotEmpty == true
-                        ? '${item.name} · ${item.inventoryNumber}'
-                        : item.name,
+                        ? '${uiText(context, item.name)} · ${item.inventoryNumber}'
+                        : uiText(context, item.name),
                   ),
                 ),
             ],
@@ -921,7 +925,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     }
                   },
             validator: (value) =>
-                value == null ? 'Выберите оборудование' : null,
+                value == null ? uiText(context, 'Выберите оборудование') : null,
           ),
 
           const SizedBox(height: 16),
@@ -964,8 +968,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             Text(
                               [
                                 if (executor.specialty != null)
-                                  executor.specialty!,
-                                employeeStatusLabel(executor.employeeStatus),
+                                  uiText(context, executor.specialty!),
+                                uiText(
+                                  context,
+                                  employeeStatusLabel(executor.employeeStatus),
+                                ),
                               ].join(' · '),
                               style: const TextStyle(
                                 fontSize: 12,
@@ -986,7 +993,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       executorId = value;
                     });
                   },
-            validator: (value) => value == null ? 'Выберите исполнителя' : null,
+            validator: (value) =>
+                value == null ? uiText(context, 'Выберите исполнителя') : null,
           ),
 
           if (recommendedExecutors.isNotEmpty) ...[
@@ -1021,7 +1029,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             ),
             items: [
               for (final value in WorkOrderPriority.values)
-                DropdownMenuItem(value: value, child: Text(value.label)),
+                DropdownMenuItem(
+                  value: value,
+                  child: Text(uiText(context, value.label)),
+                ),
             ],
             onChanged: (value) {
               if (value == null) {
@@ -1082,7 +1093,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                 for (final normative in normatives)
                   DropdownMenuItem(
                     value: normative.id,
-                    child: Text('${normative.name} · ${normative.hours} ч.'),
+                    child: Text(
+                      uiText(
+                        context,
+                        '${normative.name} · ${normative.hours} ч.',
+                      ),
+                    ),
                   ),
               ],
               onChanged: loadingNormatives
@@ -1097,7 +1113,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   return null;
                 }
 
-                return value == null ? 'Выберите норматив' : null;
+                return value == null
+                    ? uiText(context, 'Выберите норматив')
+                    : null;
               },
             ),
           ] else
@@ -1122,9 +1140,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               labelText: uiText(context, 'Шифр неисправности (необязательно)'),
             ),
             items: [
-              const DropdownMenuItem<int>(
+              DropdownMenuItem<int>(
                 value: null,
-                child: Text('Не указан'),
+                child: Text(uiText(context, 'Не указан')),
               ),
               for (final fault in faultCodes)
                 DropdownMenuItem(
@@ -1192,8 +1210,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             if (recommendation.estimatedHoursLabel != null) ...[
               const SizedBox(height: 10),
               Text(
-                'Оценка времени: '
-                '${recommendation.estimatedHoursLabel}',
+                uiText(
+                  context,
+                  'Оценка времени: ${recommendation.estimatedHoursLabel}',
+                ),
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ],
@@ -1205,7 +1225,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               child: FilledButton.icon(
                 onPressed: applyWorkRecommendation,
                 icon: const Icon(Icons.check),
-                label: Text('Применить'),
+                label: Text(uiText(context, 'Применить')),
               ),
             ),
           ],
@@ -1264,28 +1284,32 @@ class _ExecutorRecommendation extends StatelessWidget {
             const SizedBox(height: 10),
 
             for (final item in visible)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                leading: Radio<int>(value: item.id),
-                title: Text(item.fullName),
-                subtitle: Text(
-                  [
-                    if (item.specialty != null) item.specialty!,
-                    item.statusLabel,
-                    'Очередь: ${item.queue}',
-                    if (item.equipmentRating != null)
-                      'Рейтинг: ${item.ratingLabel}',
-                  ].join(' · '),
-                ),
-                trailing: Text(
-                  item.score.toStringAsFixed(0),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: brand,
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  leading: Radio<int>(value: item.id),
+                  title: Text(item.fullName),
+                  subtitle: Text(
+                    [
+                      if (item.specialty != null)
+                        uiText(context, item.specialty!),
+                      uiText(context, item.statusLabel),
+                      uiText(context, 'Очередь: ${item.queue}'),
+                      if (item.equipmentRating != null)
+                        uiText(context, 'Рейтинг: ${item.ratingLabel}'),
+                    ].join(' · '),
                   ),
+                  trailing: Text(
+                    item.score.toStringAsFixed(0),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: brand,
+                    ),
+                  ),
+                  onTap: () => onSelect(item.id),
                 ),
-                onTap: () => onSelect(item.id),
               ),
           ],
         ),

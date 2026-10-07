@@ -13,6 +13,227 @@ AppLocalizations strings(BuildContext context) =>
 String uiText(BuildContext context, String source) {
   final s = strings(context);
   switch (source) {
+    case 'ACCEPTED':
+    case 'Принято':
+      return s.aiVerdictAcceptedLabel;
+    case 'ACCEPTED_WITH_COMMENTS':
+    case 'Принято с замечаниями':
+      return s.aiVerdictCommentsLabel;
+    case 'REWORK_REQUIRED':
+    case 'Требуется доработка':
+      return s.aiVerdictReworkLabel;
+    case "Экспорт":
+      return s.exportReport;
+    case "Наряды, выданные за выбранный период":
+      return s.reportPeriodHint;
+    case "Сегодня":
+      return s.todayPeriod;
+    case "7 дней":
+      return s.weekPeriod;
+    case "30 дней":
+      return s.monthPeriod;
+    case "Всё время":
+      return s.allTimePeriod;
+    case "За этот период нет исполнителей с нарядами":
+      return s.noPeriodEmployees;
+    case "Редактирование наряда":
+      return s.editOrder;
+    case "Изменить срок выполнения":
+      return s.changeDeadline;
+    case "Состав бригады":
+      return s.brigadeMembers;
+    case "Бригады":
+      return s.brigades;
+    case "Бригада, имя или специальность":
+      return s.teamBrigadeSearch;
+    case "Фильтры":
+      return s.filters;
+    case "Применить":
+      return s.applyFilters;
+    case "Сбросить":
+      return s.resetFilters;
+    case "Закрыть фильтры":
+      return s.closeFilters;
+    case "Статус":
+      return s.statusFilter;
+    case "Только просроченные":
+      return s.onlyOverdue;
+    case "Очистить поиск":
+      return s.clearSearch;
+    case "Прикрепить фото":
+      return s.attachPhoto;
+    case "Выберите источник фото":
+      return s.choosePhotoSource;
+    case "Сначала приостановите или завершите текущий наряд":
+      return s.finishCurrentFirst;
+    case "Для штучного материала укажите целое количество":
+      return s.wholePieceQuantity;
+    case "Удалить материал":
+      return s.removeMaterial;
+    case "Удалить материал из отчёта?":
+      return s.removeMaterialQuestion;
+    case "Черновик сохранён":
+      return s.draftSaved;
+    case "Не удалось восстановить черновик. Повторите попытку — сохранённые данные не изменены.":
+      return s.draftLoadFailed;
+    case "Черновик не сохранён. Нажмите, чтобы повторить.":
+      return s.draftSaveFailed;
+    case "Результат проверки":
+      return s.executionResult;
+    case "Логин":
+      return s.authLoginLabel;
+    case "ПИН":
+      return s.authPinLabel;
+    case "Введите логин":
+      return s.authEnterLogin;
+    case "ПИН должен содержать от 4 до 12 символов":
+      return s.authPinLength;
+    case "Введите номер телефона и пароль.":
+      return s.authSubtitle;
+    case "Учётную запись выдаёт администратор.":
+      return s.authAccountHint;
+    case "Не удалось подключиться. Проверьте связь и повторите.":
+      return s.authNetworkError;
+    case "Эта роль доступна в веб-панели.":
+      return s.authMobileRole;
+    case "Слишком много попыток. Повторите позже.":
+      return s.authRateLimited;
+    case "Демонстрационные данные":
+      return s.demoDataNotice;
+    case "Введите номер от 10 до 15 цифр":
+      return s.authInvalidPhone;
+    case "Смена пароля":
+      return s.changePasswordTitle;
+    case "Текущий пароль":
+      return s.currentPasswordLabel;
+    case "Новый пароль":
+      return s.newPasswordLabel;
+    case "Пароль должен содержать от 6 до 128 символов":
+      return s.newPasswordLength;
+    case "Пароль изменён":
+      return s.passwordChanged;
+    case "Изменить пароль":
+      return s.changePasswordButton;
+    case "Забытый пароль сбрасывает администратор.":
+      return s.passwordResetHint;
+    case "Выполнен · идёт AI-проверка":
+      return s.statusAiChecking;
+    case "На проверке у мастера":
+      return s.statusMasterReview;
+    case "Проверяем отчёт…":
+      return s.checkingReport;
+    case "Наряд недоступен":
+      return s.orderUnavailable;
+    case "Фото должно быть не больше 15 МБ.":
+      return s.photoTooLarge;
+    case "Снимайте «до» и «после» с одной точки, чтобы результат ремонта был виден. До 5 фото, каждое не больше 15 МБ.":
+      return s.photoCaptureHint;
+    case "Переназначить наряд":
+      return s.reassignOrderTitle;
+    case "Переназначить наряд?":
+      return s.reassignOrderQuestion;
+    case "После переназначения наряд вернётся в статус «Выдан». Новый исполнитель получит уведомление.":
+      return s.reassignOrderExplanation;
+    case "Наряд отменён":
+      return s.orderCancelledMessage;
+    case "Наряд отправлен на доработку":
+      return s.orderReworkMessage;
+    case "Наряд закрыт":
+      return s.orderClosedMessage;
+    case "Наряд обновлён":
+      return s.orderUpdatedMessage;
+    case "Закрыть":
+      return s.closeActionLabel;
+    case "Наряд не найден":
+      return s.orderNotFoundMessage;
+    case "Это не ваш наряд":
+      return s.notYourOrderMessage;
+    case "ИИ-проверка выполнения":
+      return s.aiWorkCheckTitle;
+    case "Что выполнено хорошо":
+      return s.workStrengthsTitle;
+    case "Принять работу":
+      return s.acceptWorkAction;
+    case "Закрыть наряд":
+      return s.closeWorkOrderAction;
+    case "Наряд принят":
+      return s.orderAcceptedMessage;
+    case "Наряд отклонён":
+      return s.orderRejectedMessage;
+    case "Работа начата":
+      return s.workStartedMessage;
+    case "Работа приостановлена":
+      return s.workPausedMessage;
+    case "Работа выполнена":
+      return s.workCompletedMessage;
+    case "Сначала выберите оборудование.":
+      return s.chooseEquipmentFirst;
+    case "Сначала опишите неисправность.":
+      return s.describeFaultFirst;
+    case "Рекомендация применена.":
+      return s.recommendationAppliedMessage;
+    case "Не удалось выбрать фотографию.":
+      return s.photoSelectionFailedMessage;
+    case "Выберите участок.":
+      return s.chooseAreaValidation;
+    case "Выберите оборудование.":
+      return s.chooseEquipmentValidation;
+    case "Выберите исполнителя.":
+      return s.chooseExecutorValidation;
+    case "Выберите норматив.":
+      return s.chooseNormativeValidation;
+    case "Создание...":
+      return s.creatingOrderLabel;
+    case "Голосовой ввод подключим следующим этапом.":
+      return s.voiceNextStageMessage;
+    case "Описание — минимум 3 символа":
+      return s.descriptionMinimumLabel;
+    case "Получить AI-рекомендацию":
+      return s.getAiRecommendationLabel;
+    case "Выберите участок":
+      return s.chooseAreaLabel;
+    case "Оценка времени":
+      return s.estimatedTimeLabel;
+    case "Очередь":
+      return s.queueLabel;
+    case "Рейтинг":
+      return s.ratingLabel;
+    case "Уверенность":
+      return s.confidenceLabel;
+    case "Оценка ИИ":
+      return s.aiScoreLabel;
+    case "Статус наряда изменился. Обновите данные":
+      return s.orderStatusChangedMessage;
+    case "Наряд уже не в работе":
+      return s.orderNotWorkingMessage;
+    case "Заполните работы и шифр неисправности":
+      return s.workAndFaultRequiredMessage;
+    case "Проверьте материалы и фотографии":
+      return s.checkMaterialsPhotosMessage;
+    case "Наряд завершён":
+      return s.orderFinishedMessage;
+    case "Уплотнение 40×60":
+      return s.mockSealMaterial;
+    case "Масло И-40":
+      return s.mockOilMaterial;
+    case "Подшипник":
+      return s.mockBearingShort;
+    case "Смазка":
+      return s.mockLubricantShort;
+    case "Нет фото после выполненных работ":
+      return s.mockMasterReworkReason;
+    case "шт.":
+      return s.pieceUnit;
+    case "ч.":
+      return s.hourUnit;
+    case "шт":
+      return s.piecesShortUnit;
+    case "м":
+      return s.meterUnit;
+    case "кг":
+      return s.kilogramUnit;
+    case "л":
+      return s.literUnit;
     case "Вход":
       return s.loginTitle;
     case "Введите телефон и пароль вашего аккаунта.":
@@ -696,7 +917,15 @@ String uiText(BuildContext context, String source) {
     case "Отчёт отправлен. Проверка ИИ ещё не выполнена.":
       return s.reportAiPending;
   }
+  if (source == 'свободен') return s.available;
+  if (source == 'не на смене') return uiText(context, 'Не на смене');
   RegExpMatch? match;
+  match = RegExp(
+    r'^выполняет наряд №(.+), в очереди (\d+)$',
+  ).firstMatch(source);
+  if (match != null) return s.executorCurrentOrderQueue(match[1]!, match[2]!);
+  match = RegExp(r'^в очереди (\d+) наряд(?:а|ов)?$').firstMatch(source);
+  if (match != null) return s.executorQueuedOrders(match[1]!);
   match = RegExp(r'^Наряд №(\d+)$').firstMatch(source);
   if (match != null) return s.orderNumber(match[1]!);
   match = RegExp(r'^НАРЯД №(\d+)$').firstMatch(source);
@@ -756,6 +985,20 @@ String uiText(BuildContext context, String source) {
   if (match != null) return s.masterDemoAnswer(match[1]!);
   match = RegExp(r'^(.+): ([\d.,]+)$').firstMatch(source);
   if (match != null) return '${uiText(context, match[1]!)}: ${match[2]}';
+  match = RegExp(r'^(.+) — ([\d.,]+) (шт\.|кг|л|м)$').firstMatch(source);
+  if (match != null) {
+    return '${uiText(context, match[1]!)} — ${match[2]} ${uiText(context, match[3]!)}';
+  }
+  match = RegExp(r'^(.+) ч\.$').firstMatch(source);
+  if (match != null) return '${uiText(context, match[1]!)} ${s.hourUnit}';
+  match = RegExp(
+    r'^(Оценка ИИ|Оценка мастера|Уверенность|Оценка времени|Очередь|Рейтинг): (.+)$',
+  ).firstMatch(source);
+  if (match != null) {
+    return '${uiText(context, match[1]!)}: ${uiText(context, match[2]!)}';
+  }
+  match = RegExp(r'^Материал #(\d+)$').firstMatch(source);
+  if (match != null) return '${s.material} #${match[1]}';
   // Translate catalog labels within composed display values without changing IDs.
   if (source.contains('\n')) {
     return source.split('\n').map((line) => uiText(context, line)).join('\n');
@@ -796,7 +1039,7 @@ String eventText(BuildContext context, OrderEvent event) {
       final label = uiText(context, event.status!.label);
       final reason = event.reason == 'Работы приняты мастером'
           ? s.acceptedByMaster
-          : event.reason;
+          : uiText(context, event.reason);
       return reason.isEmpty ? label : s.eventReason(label, reason);
     case null:
       return event.status != null
@@ -806,7 +1049,7 @@ String eventText(BuildContext context, OrderEvent event) {
 }
 
 String eventAuthor(BuildContext context, OrderEvent event) {
-  if (event.kind == null) return event.author;
+  if (event.kind == null) return uiText(context, event.author);
   return event.author.replaceFirst(
     'Мастер · ',
     '${strings(context).master} · ',

@@ -1,3 +1,4 @@
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:mineral/features/executor/data/executor_repository.dart';
@@ -39,14 +40,28 @@ class ExecutorResultScreen extends StatelessWidget {
           ?.reason;
       return Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(title: Text(s.resultOrderNumber(order.displayNumber))),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          surfaceTintColor: Colors.transparent,
+          title: Text(
+            s.resultOrderNumber(order.displayNumber),
+            style: const TextStyle(fontSize: 16, color: Color(0xFF172033)),
+          ),
+        ),
         bottomNavigationBar: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(60),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(54),
+                backgroundColor: const Color(0xFF01408B),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () => _open(context),
               child: Text(
@@ -56,12 +71,12 @@ class ExecutorResultScreen extends StatelessWidget {
           ),
         ),
         body: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 20),
           children: [
             Text(
               uiText(context, order.title),
               style: const TextStyle(
-                fontSize: 23,
+                fontSize: 19,
                 fontWeight: FontWeight.w700,
                 height: 1.3,
               ),
@@ -69,26 +84,46 @@ class ExecutorResultScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '${uiText(context, order.equipment)} · ${uiText(context, order.area)}',
-              style: const TextStyle(color: Color(0xFF687385), height: 1.5),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF687385),
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerLeft,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 10,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
                   color: order.status.color.withValues(alpha: .08),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text(
-                  executorStatusText(context, order),
-                  style: TextStyle(
-                    color: order.status.color,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      order.status == OrderStatus.closed
+                          ? LucideIcons.circleCheck
+                          : LucideIcons.clock,
+                      size: 15,
+                      color: order.status.color,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        executorStatusText(context, order),
+                        style: TextStyle(
+                          color: order.status.color,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -96,7 +131,11 @@ class ExecutorResultScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 s.reportAwaitingMaster,
-                style: const TextStyle(color: Color(0xFF687385), height: 1.5),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF687385),
+                  height: 1.5,
+                ),
               ),
             ],
             if (order.status == OrderStatus.rework) ...[
@@ -111,107 +150,225 @@ class ExecutorResultScreen extends StatelessWidget {
                   s.reworkReasonValue(
                     reason == null || reason.isEmpty
                         ? s.askMasterRemarks
-                        : reason,
+                        : uiText(context, reason),
                   ),
                   style: const TextStyle(color: Color(0xFF8F5100), height: 1.5),
                 ),
               ),
             ],
-            const SizedBox(height: 24),
-            _section(Icons.star_outline, s.executionResult, [
-              Text(
+            const SizedBox(height: 16),
+            _section(LucideIcons.star, s.executionResult, [
+              _notice(
+                LucideIcons.info,
                 order.masterScore == null
                     ? s.masterScorePending
                     : s.eventScore('${order.masterScore}'),
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                const Color(0xFFEAF3FF),
+                const Color(0xFF637B9E),
               ),
               const SizedBox(height: 14),
               if (assessment == null)
                 Text(
                   s.assessmentPending,
-                  style: const TextStyle(color: Color(0xFF687385), height: 1.5),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF687385),
+                    height: 1.5,
+                  ),
                 )
               else ...[
-                Text(
+                _notice(
+                  LucideIcons.shieldCheck,
                   s.assessmentVerdict(uiText(context, assessment.verdict)),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  const Color(0xFFF4F7FB),
+                  const Color(0xFF172B4D),
                 ),
                 if (assessment.score != null) ...[
                   const SizedBox(height: 8),
-                  Text(s.assessmentScore('${assessment.score}')),
+                  _notice(
+                    LucideIcons.star,
+                    s.assessmentScore('${assessment.score}'),
+                    const Color(0xFFF4F7FB),
+                    const Color(0xFF172B4D),
+                  ),
                 ],
                 if (assessment.explanation.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(
-                    assessment.explanation,
+                    uiText(context, assessment.explanation),
                     style: const TextStyle(height: 1.5),
                   ),
                 ],
                 if (assessment.strengths.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  Text(
-                    s.assessmentStrengths(assessment.strengths),
-                    style: const TextStyle(height: 1.5),
+                  _notice(
+                    LucideIcons.thumbsUp,
+                    s.assessmentStrengths(
+                      uiText(context, assessment.strengths),
+                    ),
+                    const Color(0xFFEAF8F3),
+                    const Color(0xFF167C63),
                   ),
                 ],
                 if (assessment.improvements.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  Text(
-                    s.assessmentImprovements(assessment.improvements),
-                    style: const TextStyle(height: 1.5),
+                  _notice(
+                    LucideIcons.messageSquare,
+                    s.assessmentImprovements(
+                      uiText(context, assessment.improvements),
+                    ),
+                    const Color(0xFFFFF5E5),
+                    const Color(0xFF8F5100),
                   ),
                 ],
               ],
-              const Divider(height: 32),
-              Text(
-                s.workMinutesValue(
-                  '${order.workDuration(store.now).inMinutes}',
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F6FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final items = [
+                      _fact(
+                        LucideIcons.clock,
+                        s.workMinutesValue(
+                          order.detailsLoaded
+                              ? '${order.workDuration(store.now).inMinutes}'
+                              : '—',
+                        ),
+                      ),
+                      if (order.normHours != null)
+                        _fact(
+                          LucideIcons.chartNoAxesColumnIncreasing,
+                          s.normHoursValue('${order.normHours}'),
+                        ),
+                    ];
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: items
+                          .map(
+                            (item) => SizedBox(
+                              width:
+                                  constraints.maxWidth < 260 ||
+                                      items.length == 1
+                                  ? constraints.maxWidth
+                                  : (constraints.maxWidth - 12) / 2,
+                              child: item,
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
                 ),
               ),
-              if (order.normHours != null) ...[
-                const SizedBox(height: 8),
-                Text(s.normHoursValue('${order.normHours}')),
-              ],
             ]),
             const SizedBox(height: 16),
-            _section(Icons.assignment_outlined, s.yourReport, [
-              Text(
-                order.completedWork.isEmpty
-                    ? s.workNotSpecified
-                    : uiText(context, order.completedWork),
-                style: const TextStyle(height: 1.5),
-              ),
-              const Divider(height: 32),
-              Text(
-                s.faultCodeValue(
-                  order.faultCode.isEmpty
-                      ? s.notSpecified
-                      : uiText(context, order.faultCode),
+            _section(LucideIcons.clipboardList, s.yourReport, [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F6FF),
+                  borderRadius: BorderRadius.circular(10),
+                  border: const Border(
+                    left: BorderSide(width: 3, color: Color(0xFF01408B)),
+                  ),
                 ),
-                style: const TextStyle(height: 1.5),
+                child: Text(
+                  order.completedWork.isEmpty
+                      ? s.workNotSpecified
+                      : uiText(context, order.completedWork),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF172B4D),
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                s.usedExecutorMaterials,
-                style: const TextStyle(fontWeight: FontWeight.w600),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    LucideIcons.tag,
+                    size: 17,
+                    color: Color(0xFF637B9E),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      s.faultCodeValue(
+                        order.faultCode.isEmpty
+                            ? s.notSpecified
+                            : uiText(context, order.faultCode),
+                      ),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: Color(0xFF637B9E),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 28, color: Color(0xFFE8EDF4)),
+              Row(
+                children: [
+                  const Icon(
+                    LucideIcons.package,
+                    size: 18,
+                    color: Color(0xFF01408B),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      s.usedExecutorMaterials,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF172B4D),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
-              Text(
-                order.materials.isEmpty
-                    ? s.noMaterialsUsed
-                    : uiText(context, order.materials),
-                style: const TextStyle(height: 1.5),
-              ),
+              if (order.materials.isEmpty)
+                Text(
+                  s.noMaterialsUsed,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF7A8597),
+                  ),
+                )
+              else
+                for (final material in uiText(
+                  context,
+                  order.materials,
+                ).split('\n').where((line) => line.trim().isNotEmpty))
+                  _materialRow(material.trim()),
               if (order.comment.isNotEmpty) ...[
-                const SizedBox(height: 16),
+                const Divider(height: 24, color: Color(0xFFE8EDF4)),
                 Text(
                   s.comment,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF637B9E),
+                  ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   uiText(context, order.comment),
-                  style: const TextStyle(height: 1.5),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: Color(0xFF172B4D),
+                  ),
                 ),
               ],
             ]),
@@ -228,32 +385,129 @@ class ExecutorResultScreen extends StatelessWidget {
     },
   );
 
+  Widget _materialRow(String material) {
+    final separator = material.lastIndexOf(':');
+    final hasQuantity =
+        separator > 0 &&
+        RegExp(
+          r'^\d+(?:[.,]\d+)?$',
+        ).hasMatch(material.substring(separator + 1).trim());
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              hasQuantity ? material.substring(0, separator).trim() : material,
+              style: const TextStyle(
+                fontSize: 13,
+                height: 1.4,
+                color: Color(0xFF637B9E),
+              ),
+            ),
+          ),
+          if (hasQuantity) ...[
+            const SizedBox(width: 12),
+            Text(
+              material.substring(separator + 1).trim(),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF172B4D),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _notice(
+    IconData icon,
+    String text,
+    Color background,
+    Color foreground,
+  ) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: background,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: foreground),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(fontSize: 12, height: 1.45, color: foreground),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _fact(IconData icon, String text) => Row(
+    children: [
+      Icon(icon, size: 23, color: const Color(0xFF01408B)),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 12,
+            height: 1.4,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF172B4D),
+          ),
+        ),
+      ),
+    ],
+  );
+
   Widget _section(IconData icon, String title, List<Widget> children) =>
       Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFE5E8ED)),
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE5EEFC)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0801408B),
+              blurRadius: 12,
+              offset: Offset(0, 3),
+            ),
+          ],
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
-                Icon(icon, color: const Color(0xFF01408B), size: 22),
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE1EFFF),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: Icon(icon, color: const Color(0xFF01408B), size: 20),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
             ...children,
           ],
         ),

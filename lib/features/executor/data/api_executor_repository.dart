@@ -108,6 +108,12 @@ class ApiExecutorRepository extends ChangeNotifier
       _revision++;
       _notify();
 
+      if (order.status == OrderStatus.closed) {
+        unawaited(
+          loadExecutorRating(_user.id).catchError((Object _) => _rating),
+        );
+      }
+
       if (existing?.detailsLoaded == true) {
         await loadExecutorOrder(_user.id, order);
       }
@@ -261,7 +267,33 @@ class ApiExecutorRepository extends ChangeNotifier
   }
 
   @override
-  ExecutorRating? executorRating(int employeeId) => null;
+  ExecutorRating? executorRating(int employeeId) {
+    _checkUser(employeeId);
+    return _rating;
+  }
+
+  ExecutorRating? _rating;
+  Future<ExecutorRating?>? _ratingLoading;
+
+  @override
+  Future<ExecutorRating?> loadExecutorRating(int employeeId) {
+    _checkUser(employeeId);
+    return _ratingLoading ??= _loadRating(employeeId).whenComplete(() {
+      _ratingLoading = null;
+    });
+  }
+
+  Future<ExecutorRating?> _loadRating(int employeeId) async {
+    final data = await api.loadRating();
+    _checkUser(employeeId);
+    if (data['id'] != employeeId) {
+      throw const ApiException(403, 'Недостаточно прав');
+    }
+    _rating = ExecutorRating.fromJson(data);
+    _notify();
+    return _rating;
+  }
+
   @override
   List<WorkOrder> assignedTo(int employeeId) => [
     ..._active.values,
@@ -433,6 +465,42 @@ class ApiExecutorRepository extends ChangeNotifier
     }.contains(order.status);
     (archived ? _history : _active)[dto.id] = order;
     return order;
+  }
+
+  final _timeLoads = <int, Future<WorkOrder>>{};
+
+  @override
+  Future<WorkOrder> loadExecutorOrderTime(int employeeId, WorkOrder order) {
+    _checkOrder(employeeId, order);
+    if (order.detailsLoaded) return Future.value(order);
+    final id = order.apiId!;
+    return _timeLoads.putIfAbsent(
+      id,
+      () => _loadOrderTime(employeeId, order).whenComplete(() {
+        _timeLoads.remove(id);
+      }),
+    );
+  }
+
+  Future<WorkOrder> _loadOrderTime(int employeeId, WorkOrder order) async {
+    try {
+      final dto = await api.loadOrder(order.apiId!);
+      _checkUser(employeeId);
+      if (dto.assigneeId != employeeId) {
+        throw const ApiException(403, 'Недостаточно прав');
+      }
+      if (dto.details['events'] is! List) {
+        throw const FormatException('Order events missing');
+      }
+      final result = _store(dto, existing: order);
+      _notify();
+      return result;
+    } on ApiException catch (error) {
+      if (error.status == 403 || error.status == 404) {
+        _removeUnavailable(order, error);
+      }
+      rethrow;
+    }
   }
 
   @override

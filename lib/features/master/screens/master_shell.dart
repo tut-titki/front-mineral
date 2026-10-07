@@ -11,7 +11,6 @@ import 'package:mineral/features/orders/models/work_order_api_models.dart';
 import 'package:mineral/features/orders/screens/order_detail_screen.dart';
 import 'package:mineral/features/orders/screens/order_screens.dart';
 
-import 'package:mineral/l10n/language_switcher.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 
 import 'package:mineral/shared/models/models.dart';
@@ -190,8 +189,6 @@ class _MasterShellState extends State<MasterShell> {
                           semanticLabel: 'Костанайские минералы',
                         ),
                   actions: [
-                    const LanguageSwitcher(),
-
                     IconButton(
                       tooltip: uiText(context, 'Уведомления'),
                       onPressed: openNotifications,
@@ -384,8 +381,6 @@ class _MasterShellState extends State<MasterShell> {
                             ),
 
                             const SizedBox(width: 14),
-
-                            const LanguageSwitcher(),
 
                             IconButton(
                               tooltip: uiText(context, 'Уведомления'),

@@ -120,6 +120,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   final _expanded = <int>{};
   bool _readingAll = false;
   final _read = <int>{};
+  final _optimisticRead = <int>{};
   List<NotificationApiModel> _items = [];
   StreamSubscription<void>? _subscription;
   int _generation = 0;
@@ -156,6 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       oldWidget.source?.removeListener(_sourceChanged);
       unawaited(_subscription?.cancel());
       _read.clear();
+      _optimisticRead.clear();
       _items = [];
       _subscribe();
       unawaited(_refresh());
@@ -179,8 +181,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() => _items = _normalize(snapshot()));
   }
 
-  String _errorText(Object error) =>
-      error is auth.ApiException ? error.message : backendError(context, error);
+  String _errorText(Object error) => error is auth.ApiException
+      ? uiText(context, error.message)
+      : backendError(context, error);
 
   Future<void> _refresh() async {
     if (!mounted) return;
@@ -209,7 +212,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (_readingAll || _pending.isNotEmpty) return;
     final unread = _items.where((item) => !item.isRead).toList();
     if (unread.isEmpty) return;
-    setState(() => _readingAll = true);
+    setState(() {
+      _readingAll = true;
+      _optimisticRead.addAll(unread.map((item) => item.id));
+    });
     Object? failure;
     try {
       for (final item in unread) {
@@ -217,9 +223,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           await widget.markRead(item.id);
           if (!mounted) return;
           _read.add(item.id);
-          setState(() => _items = _normalize(_items));
+          setState(() {
+            _optimisticRead.remove(item.id);
+            _items = _normalize(_items);
+          });
         } catch (error) {
           failure = error;
+          if (mounted) setState(() => _optimisticRead.remove(item.id));
         }
       }
       if (!mounted) return;
@@ -230,7 +240,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ).showSnackBar(SnackBar(content: Text(_errorText(failure))));
       }
     } finally {
-      if (mounted) setState(() => _readingAll = false);
+      if (mounted) {
+        setState(() {
+          _readingAll = false;
+          _optimisticRead.removeAll(unread.map((item) => item.id));
+        });
+      }
     }
   }
 
@@ -280,6 +295,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _tile(NotificationApiModel item) {
+    final isRead = item.isRead || _optimisticRead.contains(item.id);
     final color = item.isOverdue ? const Color(0xFFDC2626) : brand;
     final busy = _pending.contains(item.id);
     return Padding(
@@ -327,7 +343,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           color: const Color(0xFF172033),
                           fontSize: 13,
                           height: 1.3,
-                          fontWeight: item.isRead
+                          fontWeight: isRead
                               ? FontWeight.w500
                               : FontWeight.w700,
                         ),
@@ -368,7 +384,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 const SizedBox(width: 8),
                 Column(
                   children: [
-                    if (!item.isRead)
+                    if (!isRead)
                       Container(
                         width: 6,
                         height: 6,
@@ -420,13 +436,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        icon: _readingAll
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.done_all_rounded, size: 18),
+        icon: const Icon(Icons.done_all_rounded, size: 18),
         label: Text(
           backendText(context, 'Прочитать все', 'Барлығын оқу'),
           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),

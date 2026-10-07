@@ -280,13 +280,13 @@ class AppLocalizationsKk extends AppLocalizations {
   String get overdueOrders => 'Мерзімі өткен нарядтар';
 
   @override
-  String get demoRating => 'Демо-рейтинг';
+  String get demoRating => 'Демонстрациялық рейтинг';
 
   @override
   String get available => 'Бос';
 
   @override
-  String get team => 'Команда';
+  String get team => 'Топ';
 
   @override
   String get teamSubtitle =>
@@ -543,7 +543,7 @@ class AppLocalizationsKk extends AppLocalizations {
   String get orderPriority => 'Наряд басымдығы';
 
   @override
-  String get masterScore => 'Шебер бағасы';
+  String get masterScore => 'Шебердің бағасы';
 
   @override
   String get overdueSingular => 'Мерзімі өткен';
@@ -754,7 +754,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String employeeGrade(String specialty, String grade) {
-    return '$specialty · $grade разряд';
+    return '$specialty · $grade дәреже';
   }
 
   @override
@@ -891,7 +891,7 @@ class AppLocalizationsKk extends AppLocalizations {
   String get onShift => 'Ауысымда';
 
   @override
-  String get grade => 'Разряд';
+  String get grade => 'Дәреже';
 
   @override
   String get myRating => 'Менің рейтингім';
@@ -1112,10 +1112,10 @@ class AppLocalizationsKk extends AppLocalizations {
   String get orderIssuedLabel => 'Наряд берілді';
 
   @override
-  String get mechanicSpecialty => 'Слесарь';
+  String get mechanicSpecialty => 'Жөндеуші';
 
   @override
-  String get electricianSpecialty => 'Электрик';
+  String get electricianSpecialty => 'Электрші';
 
   @override
   String get welderSpecialty => 'Дәнекерлеуші';
@@ -1459,4 +1459,247 @@ class AppLocalizationsKk extends AppLocalizations {
   @override
   String get photoCaptureHint =>
       'Жөндеу нәтижесі көрінуі үшін «дейін» және «кейін» фотоларын бір жерден түсіріңіз. 5 фотоға дейін, әрқайсысы 15 МБ-тан аспауы керек.';
+
+  @override
+  String get reassignOrderTitle => 'Нарядты қайта тағайындау';
+
+  @override
+  String get reassignOrderQuestion => 'Нарядты қайта тағайындау керек пе?';
+
+  @override
+  String get reassignOrderExplanation =>
+      'Қайта тағайындағаннан кейін наряд «Берілді» мәртебесіне өтеді. Жаңа орындаушы хабарландыру алады.';
+
+  @override
+  String get orderCancelledMessage => 'Наряд тоқтатылды';
+
+  @override
+  String get orderReworkMessage => 'Наряд қайта өңдеуге жіберілді';
+
+  @override
+  String get orderClosedMessage => 'Наряд жабылды';
+
+  @override
+  String get orderUpdatedMessage => 'Наряд жаңартылды';
+
+  @override
+  String get closeActionLabel => 'Жабу';
+
+  @override
+  String get orderNotFoundMessage => 'Наряд табылмады';
+
+  @override
+  String get notYourOrderMessage => 'Бұл сіздің нарядыңыз емес';
+
+  @override
+  String get aiWorkCheckTitle => 'Жұмыстың орындалуын ЖИ арқылы тексеру';
+
+  @override
+  String get workStrengthsTitle => 'Жақсы орындалған жұмыстар';
+
+  @override
+  String get acceptWorkAction => 'Жұмысты қабылдау';
+
+  @override
+  String get closeWorkOrderAction => 'Нарядты жабу';
+
+  @override
+  String get orderAcceptedMessage => 'Наряд қабылданды';
+
+  @override
+  String get orderRejectedMessage => 'Наряд қабылданбады';
+
+  @override
+  String get workStartedMessage => 'Жұмыс басталды';
+
+  @override
+  String get workPausedMessage => 'Жұмыс тоқтатыла тұрды';
+
+  @override
+  String get workCompletedMessage => 'Жұмыс орындалды';
+
+  @override
+  String get chooseEquipmentFirst => 'Алдымен жабдықты таңдаңыз.';
+
+  @override
+  String get describeFaultFirst => 'Алдымен ақауды сипаттаңыз.';
+
+  @override
+  String get recommendationAppliedMessage => 'Ұсыныс қолданылды.';
+
+  @override
+  String get photoSelectionFailedMessage =>
+      'Фотосуретті таңдау мүмкін болмады.';
+
+  @override
+  String get chooseAreaValidation => 'Учаскені таңдаңыз.';
+
+  @override
+  String get chooseEquipmentValidation => 'Жабдықты таңдаңыз.';
+
+  @override
+  String get chooseExecutorValidation => 'Орындаушыны таңдаңыз.';
+
+  @override
+  String get chooseNormativeValidation => 'Нормативті таңдаңыз.';
+
+  @override
+  String get creatingOrderLabel => 'Жасалуда...';
+
+  @override
+  String get voiceNextStageMessage =>
+      'Дауыспен енгізуді келесі кезеңде қосамыз.';
+
+  @override
+  String get descriptionMinimumLabel => 'Сипаттама — кемінде 3 таңба';
+
+  @override
+  String get getAiRecommendationLabel => 'ЖИ ұсынысын алу';
+
+  @override
+  String get chooseAreaLabel => 'Учаскені таңдаңыз';
+
+  @override
+  String get estimatedTimeLabel => 'Болжамды уақыт';
+
+  @override
+  String get queueLabel => 'Кезек';
+
+  @override
+  String get ratingLabel => 'Рейтинг';
+
+  @override
+  String get confidenceLabel => 'Сенімділік';
+
+  @override
+  String get aiScoreLabel => 'ЖИ бағасы';
+
+  @override
+  String get orderStatusChangedMessage =>
+      'Наряд мәртебесі өзгерді. Деректерді жаңартыңыз';
+
+  @override
+  String get orderNotWorkingMessage =>
+      'Наряд бойынша жұмыс қазір жүргізілмейді';
+
+  @override
+  String get workAndFaultRequiredMessage =>
+      'Жұмыстар мен ақау кодын толтырыңыз';
+
+  @override
+  String get checkMaterialsPhotosMessage =>
+      'Материалдар мен фотосуреттерді тексеріңіз';
+
+  @override
+  String get orderFinishedMessage => 'Наряд аяқталды';
+
+  @override
+  String get mockSealMaterial => '40×60 тығыздағыш';
+
+  @override
+  String get mockOilMaterial => 'И-40 майы';
+
+  @override
+  String get mockBearingShort => 'Мойынтірек';
+
+  @override
+  String get mockLubricantShort => 'Майлау материалы';
+
+  @override
+  String get mockMasterReworkReason =>
+      'Орындалған жұмыстан кейінгі фотосурет жоқ';
+
+  @override
+  String get pieceUnit => 'дана';
+
+  @override
+  String get hourUnit => 'сағ.';
+
+  @override
+  String get piecesShortUnit => 'дана';
+
+  @override
+  String get meterUnit => 'м';
+
+  @override
+  String get kilogramUnit => 'кг';
+
+  @override
+  String get literUnit => 'л';
+
+  @override
+  String executorCurrentOrderQueue(String number, String count) {
+    return '№$number нарядын орындауда, кезекте $count';
+  }
+
+  @override
+  String executorQueuedOrders(String count) {
+    return 'кезекте $count наряд';
+  }
+
+  @override
+  String get aiVerdictAcceptedLabel => 'Қабылданды';
+
+  @override
+  String get aiVerdictCommentsLabel => 'Ескертулермен қабылданды';
+
+  @override
+  String get aiVerdictReworkLabel => 'Қайта өңдеу қажет';
+
+  @override
+  String get historyMonthSummary => 'Соңғы 30 күн';
+
+  @override
+  String get historyAverageScore => 'Орташа баға';
+
+  @override
+  String get historyEarlier => 'Бұрын';
+
+  @override
+  String get ratingCalculation => 'Рейтинг қалай есептеледі';
+
+  @override
+  String get ratingOnTimeOrders => 'Мерзімінде орындалған';
+
+  @override
+  String get ratingReworkedOrders => 'Қайта орындауға қайтарылған';
+
+  @override
+  String ratingQualityExplanation(String quality, String points) {
+    return 'Жұмыстарыңыздың орташа бағасы — 5-тен $quality. Сапа үшін берілген ұпай: 45-тен $points.';
+  }
+
+  @override
+  String ratingTimingExplanation(String percent, String points) {
+    return 'Нарядтардың $percent%-ы мерзімінде орындалды. Мерзімді сақтау үшін берілген ұпай: 25-тен $points.';
+  }
+
+  @override
+  String get ratingReliability => 'Жөндеу сенімділігі';
+
+  @override
+  String ratingReliabilityExplanation(String percent, String points) {
+    return 'Нарядтардың $percent%-ы қайта орындауды қажет етпеді және 7 күн ішінде қайта бұзылмады. Жөндеу сенімділігі үшін берілген ұпай: 15-тен $points.';
+  }
+
+  @override
+  String ratingVolumeExplanation(String count, String points) {
+    return 'Сіз $count нарядты жаптыңыз. Жұмыс көлемі үшін берілген ұпай: 10-нан $points.';
+  }
+
+  @override
+  String get ratingComplexity => 'Күрделі жұмыстар';
+
+  @override
+  String ratingComplexityExplanation(String points) {
+    return 'Апаттық және басымдығы жоғары нарядтар үшін қосымша 5-тен $points ұпай берілді.';
+  }
+
+  @override
+  String get ratingRejects => 'Негізсіз бас тартулар';
+
+  @override
+  String ratingRejectsExplanation(String count, String points) {
+    return 'Дәлелді себепсіз бас тартулар саны: $count. Олар үшін $points ұпай шегерілді.';
+  }
 }

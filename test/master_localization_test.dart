@@ -1,3 +1,6 @@
+import 'package:mineral/core/services/photo_picker_service.dart';
+import 'package:mineral/shared/models/models.dart';
+import 'package:mineral/features/orders/screens/order_screens.dart';
 import 'helpers/backend_api_fixture.dart';
 import 'package:flutter/material.dart';
 import 'helpers/localization_assertions.dart';
@@ -6,6 +9,11 @@ import 'package:mineral/l10n/app_localizations.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:mineral/features/master/screens/master_shell.dart';
 import 'package:mineral/core/theme/app_theme.dart';
+
+class LocalizationPhotoPicker extends PhotoPickerService {
+  @override
+  Future<List<OrderPhoto>> takeRecoveredPhotos() async => [];
+}
 
 void main() {
   testWidgets('all ARB-backed labels and composed values translate to Kazakh', (
@@ -32,6 +40,14 @@ void main() {
       }
     }
     final s = strings(context);
+    expect(uiText(context, 'ACCEPTED'), s.aiVerdictAcceptedLabel);
+    expect(uiText(context, 'ACCEPTED_WITH_COMMENTS'), s.aiVerdictCommentsLabel);
+    expect(uiText(context, 'REWORK_REQUIRED'), s.aiVerdictReworkLabel);
+    expect(
+      uiText(context, 'выполняет наряд №Н-00147, в очереди 1'),
+      s.executorCurrentOrderQueue('Н-00147', '1'),
+    );
+    expect(uiText(context, 'в очереди 2 наряда'), s.executorQueuedOrders('2'));
     expect(uiText(context, 'Бригада №1'), s.brigadeNumber('1'));
     expect(
       uiText(context, 'Сварщик · 5 разряд'),
@@ -51,6 +67,82 @@ void main() {
     );
     expect(uiText(context, 'Пользовательский текст'), 'Пользовательский текст');
   });
+
+  testWidgets(
+    'populated creation form, catalogs and live language switch localize',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = testApi(
+        handle: (request) async {
+          return switch (request.url.path) {
+            '/api/references/areas' => jsonResponse([
+              {'id': 1, 'name': 'Дробление'},
+            ]),
+            '/api/references/equipment' => jsonResponse([
+              {
+                'id': 2,
+                'name': 'Дробилка КМД-1750',
+                'areaId': 1,
+                'inventoryNumber': 'Д-2',
+              },
+            ]),
+            '/api/references/executors' => jsonResponse([
+              {
+                ...executorJson(),
+                'specialty': 'Сварщик',
+                'employeeStatus': 'BUSY',
+              },
+            ]),
+            '/api/references/fault-codes' => jsonResponse([
+              {'id': 1, 'code': 'М-02', 'name': 'Подшипник'},
+            ]),
+            '/api/references/normatives' => jsonResponse([
+              {'id': 1, 'name': 'Замена подшипника привода', 'hours': '2'},
+            ]),
+            _ => null,
+          };
+        },
+      );
+      addTearDown(api.dispose);
+      final locale = ValueNotifier(const Locale('kk'));
+      addTearDown(locale.dispose);
+      await tester.pumpWidget(
+        ValueListenableBuilder<Locale>(
+          valueListenable: locale,
+          builder: (_, language, _) => MaterialApp(
+            locale: language,
+            theme: buildAppTheme(),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: CreateOrderScreen(
+              api: api,
+              photoPicker: LocalizationPhotoPicker(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (var scroll = 0; scroll < 5; scroll++) {
+        checkNoRussianLabels(tester);
+        expect(tester.takeException(), isNull);
+        await tester.drag(
+          find.byType(SingleChildScrollView),
+          const Offset(0, -350),
+        );
+        await tester.pumpAndSettle();
+      }
+      locale.value = const Locale('ru');
+      await tester.pumpAndSettle();
+      expect(find.text('Выдать наряд'), findsOneWidget);
+      locale.value = const Locale('kk');
+      await tester.pumpAndSettle();
+      checkNoRussianLabels(tester);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   for (final width in [390.0, 1400.0]) {
     testWidgets('backend master pages localize at width $width', (

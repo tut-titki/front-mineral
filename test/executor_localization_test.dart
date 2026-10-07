@@ -50,6 +50,58 @@ void main() {
     }
   });
 
+  testWidgets(
+    'all seeded catalog and work report values localize without mutating mocks',
+    (tester) async {
+      final store = DemoStore()..addScreenshotOrders();
+      addTearDown(store.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('kk'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const Scaffold(body: SizedBox()),
+        ),
+      );
+      final context = tester.element(find.byType(Scaffold));
+      final unchangedAllowed = _ru.entries
+          .where((e) => !e.key.startsWith('@') && e.value == _kk[e.key])
+          .map((e) => e.value)
+          .toSet();
+      final sources = <String>[
+        ...DemoStore.areas.keys,
+        ...DemoStore.areas.values.expand((items) => items),
+        ...DemoStore.priorities,
+        ...DemoStore.priorityLabels.values,
+        ...DemoStore.faultCodes,
+        ...store.executorMaterials,
+        ...store.brigades,
+        for (final employee in store.employees) employee.specialty,
+        for (final order in store.orders) ...[
+          order.title,
+          order.description,
+          order.equipment,
+          order.area,
+          order.priority,
+          order.completedWork,
+          order.faultCode,
+          order.materials,
+          order.comment,
+        ],
+      ];
+      final before = sources.toList();
+      for (final source in sources.where((value) => value.isNotEmpty)) {
+        if (unchangedAllowed.contains(source)) continue;
+        expect(
+          uiText(context, source),
+          isNot(source),
+          reason: 'Untranslated mock: $source',
+        );
+      }
+      expect(sources, before);
+    },
+  );
+
   for (final width in [320.0, 390.0]) {
     testWidgets('executor tabs, history and live language switch at $width', (
       tester,
@@ -88,8 +140,26 @@ void main() {
       expect(find.text(s.myRating), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'profile');
       checkNoRussianLabels(tester);
-      appLocale.value = const Locale('ru');
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(PopupMenuButton<Locale>),
+        ),
+        findsNothing,
+      );
+      await tester.scrollUntilVisible(
+        find.byTooltip(s.language).hitTestable(),
+        160,
+        scrollable: find.descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.tap(find.byTooltip(s.language));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Русский').last);
+      await tester.pumpAndSettle();
+      expect(appLocale.value, const Locale('ru'));
       expect(find.text('Мой рейтинг'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

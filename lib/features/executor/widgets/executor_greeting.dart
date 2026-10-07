@@ -1,3 +1,4 @@
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/utils/enterprise_time.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/material.dart';
@@ -37,19 +38,22 @@ class ExecutorGreeting extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE5EEFC)),
+          ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.all(12),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: const Color(0xFFEAF1FA),
+                  backgroundColor: const Color(0xFF3488FF),
                   child: Text(
                     employee.initials,
                     style: const TextStyle(
-                      color: blue,
+                      color: Colors.white,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -62,7 +66,7 @@ class ExecutorGreeting extends StatelessWidget {
                       Text(
                         employee.name,
                         style: const TextStyle(
-                          fontSize: 19,
+                          fontSize: 14,
                           color: Color(0xFF17243B),
                           fontWeight: FontWeight.w700,
                         ),
@@ -109,28 +113,28 @@ class ExecutorGreeting extends StatelessWidget {
                 _count(
                   uiText(context, 'Активных'),
                   active,
-                  Icons.assignment,
+                  LucideIcons.clipboardList,
                   blue,
                   width,
                 ),
                 _count(
                   uiText(context, 'В работе'),
                   orders.where((o) => o.status == OrderStatus.working).length,
-                  Icons.play_arrow,
+                  LucideIcons.play,
                   const Color(0xFFD97706),
                   width,
                 ),
                 _count(
                   uiText(context, 'В очереди'),
                   orders.where((o) => o.status == OrderStatus.queued).length,
-                  Icons.format_list_numbered,
+                  LucideIcons.listOrdered,
                   const Color(0xFF2563EB),
                   width,
                 ),
                 _count(
                   uiText(context, 'Завершено'),
                   orders.where((o) => o.status == OrderStatus.closed).length,
-                  Icons.check_circle,
+                  LucideIcons.circleCheck,
                   const Color(0xFF059669),
                   width,
                 ),
@@ -150,10 +154,11 @@ class ExecutorGreeting extends StatelessWidget {
     double width,
   ) => Container(
     width: width,
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFEAF0F9)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,7 +172,7 @@ class ExecutorGreeting extends StatelessWidget {
                 '$count',
                 style: TextStyle(
                   color: color,
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -184,7 +189,7 @@ class ExecutorGreeting extends StatelessWidget {
             softWrap: false,
             style: const TextStyle(
               color: Color(0xFF687385),
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
           ),

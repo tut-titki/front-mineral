@@ -330,7 +330,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final result = await showDialog<_CloseResult>(
       context: context,
       builder: (dialogContext) {
-        return const _CloseOrderDialog();
+        return _CloseOrderDialog(
+          initialScore:
+              (current.aiAssessment?.masterScore ??
+                      current.aiAssessment?.score ??
+                      5)
+                  .round()
+                  .clamp(1, 5),
+        );
       },
     );
 
@@ -980,7 +987,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             const Divider(),
             const SizedBox(height: 12),
             Text(
-              'Оценка мастера: ${assessment.masterScore}/5',
+              uiText(context, 'Оценка мастера: ${assessment.masterScore}/5'),
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
             if (assessment.masterComment != null &&
@@ -1127,7 +1134,9 @@ class _CloseResult {
 }
 
 class _CloseOrderDialog extends StatefulWidget {
-  const _CloseOrderDialog();
+  const _CloseOrderDialog({required this.initialScore});
+
+  final int initialScore;
 
   @override
   State<_CloseOrderDialog> createState() => _CloseOrderDialogState();
@@ -1138,7 +1147,13 @@ class _CloseOrderDialogState extends State<_CloseOrderDialog> {
 
   final downtimeController = TextEditingController();
 
-  int score = 5;
+  late int score;
+
+  @override
+  void initState() {
+    super.initState();
+    score = widget.initialScore;
+  }
 
   @override
   void dispose() {
@@ -1223,14 +1238,20 @@ class _CloseOrderDialogState extends State<_CloseOrderDialog> {
 
             if (downtimeText.isNotEmpty && downtime == null) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Введите простой в минутах')),
+                SnackBar(
+                  content: Text(uiText(context, 'Введите простой в минутах')),
+                ),
               );
               return;
             }
 
             if (downtime != null && downtime < 0) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Простой не может быть отрицательным')),
+                SnackBar(
+                  content: Text(
+                    uiText(context, 'Простой не может быть отрицательным'),
+                  ),
+                ),
               );
               return;
             }
@@ -1429,7 +1450,12 @@ class _EditOrderDialogState extends State<_EditOrderDialog> {
             if (description.length < 3) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Описание должно содержать минимум 3 символа'),
+                  content: Text(
+                    uiText(
+                      context,
+                      'Описание должно содержать минимум 3 символа',
+                    ),
+                  ),
                 ),
               );
               return;
@@ -1702,14 +1728,17 @@ class _MaterialRow extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              material?.name ?? 'Материал #${usage.materialId}',
+              uiText(
+                context,
+                material?.name ?? 'Материал #${usage.materialId}',
+              ),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
           Text(
             [
               usage.quantity.toString(),
-              if (material != null) material.unit,
+              if (material != null) uiText(context, material.unit),
             ].join(' '),
             style: const TextStyle(fontWeight: FontWeight.w700, color: ink),
           ),
@@ -1822,7 +1851,12 @@ class _BulletText extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: color),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(height: 1.4))),
+          Expanded(
+            child: Text(
+              uiText(context, text),
+              style: const TextStyle(height: 1.4),
+            ),
+          ),
         ],
       ),
     );
