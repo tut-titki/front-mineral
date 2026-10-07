@@ -34,4 +34,17 @@ class ExecutorApi {
       );
   Future<String> upload(OrderPhoto photo) async =>
       (await session.uploadPhoto(photo.name, photo.bytes))['url'] as String;
+  Future<List<Map<String, dynamic>>> loadNotification() =>
+      session.requestList('/api/notifications');
+  Future<void> markNotificationRead(int id) async {
+    final result = await session.request(
+      'PATCH',
+      '/api/notifications/$id/read',
+    );
+    if (result['updated'] != 1) {
+      throw const FormatException(
+        "Не удалось отметить уведомление прочитанным",
+      );
+    }
+  }
 }

@@ -128,12 +128,10 @@ class _MasterShellState extends State<MasterShell> {
     Navigator.push<void>(
       context,
       MaterialPageRoute<void>(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(uiText(context, 'Уведомления'))),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: NotificationsScreen(api: widget.api, onOrder: openOrderId),
-          ),
+        builder: (_) => NotificationsScreen(
+          api: widget.api,
+          onOrder: openOrderId,
+          standalone: true,
         ),
       ),
     );

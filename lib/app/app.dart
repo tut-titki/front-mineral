@@ -202,10 +202,6 @@ class _MainAppState extends State<MainApp> {
       unawaited(_push!.initialize());
     }
     PhotoPickerService.instance.recoverLostPhotos();
-
-    // Важно для случая, когда MainApp
-    // получил уже восстановленную/готовую
-    // AuthSession.
     _sessionChanged();
   }
 

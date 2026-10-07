@@ -6,7 +6,7 @@ import '../widgets/executor_history_tile.dart';
 import '../models/executor_order_queue.dart';
 import 'executor_order_loader.dart';
 import 'executor_profile_screen.dart';
-import 'executor_notifications_screen.dart';
+import '../../notifications/screens/notifications_screen.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:mineral/l10n/language_switcher.dart';
 import 'package:mineral/features/executor/data/executor_repository.dart';
@@ -102,9 +102,10 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => ExecutorNotificationsScreen(
-                  store: store,
-                  employeeId: employeeId,
+                builder: (context) => NotificationsScreen.forUser(
+                  context: context,
+                  repository: store,
+                  userId: employeeId,
                 ),
               ),
             ),
@@ -370,7 +371,7 @@ class _OrderTile extends StatelessWidget {
     return Material(
       color: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         side: BorderSide(
           color: order.emergency
               ? const Color(0xFFF3C4C4)
@@ -381,7 +382,7 @@ class _OrderTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -415,7 +416,7 @@ class _OrderTile extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -425,8 +426,10 @@ class _OrderTile extends StatelessWidget {
                       children: [
                         Text(
                           uiText(context, order.title),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 17,
+                            fontSize: 15,
                             height: 1.25,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF172B4D),
@@ -434,18 +437,12 @@ class _OrderTile extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          uiText(context, order.equipment),
+                          '${uiText(context, order.equipment)} · ${uiText(context, order.area)}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 13,
                             color: Color(0xFF687385),
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          uiText(context, order.area),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF98A2B3),
                           ),
                         ),
                       ],
@@ -457,12 +454,12 @@ class _OrderTile extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       child: Image.memory(
                         order.beforeImages.first.bytes,
-                        width: 68,
-                        height: 68,
+                        width: 56,
+                        height: 56,
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => const SizedBox(
-                          width: 68,
-                          height: 68,
+                          width: 56,
+                          height: 56,
                           child: Icon(Icons.image_not_supported_outlined),
                         ),
                       ),
@@ -470,10 +467,10 @@ class _OrderTile extends StatelessWidget {
                   ],
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 12,
-                runSpacing: 8,
+                runSpacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
@@ -493,6 +490,17 @@ class _OrderTile extends StatelessWidget {
                           : const Color(0xFF687385),
                     ),
                   ),
+                  if (overdue)
+                    Text(
+                      strings(context).overdueByMinutes(
+                        '${(now.difference(order.deadline).inSeconds + 59) ~/ 60}',
+                      ),
+                      style: const TextStyle(
+                        color: Color(0xFFDC2626),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   if (queuePosition != null)
                     Text(
                       strings(context).queuePosition('$queuePosition'),
@@ -503,34 +511,6 @@ class _OrderTile extends StatelessWidget {
                     ),
                 ],
               ),
-              if (overdue) ...[
-                const SizedBox(height: 8),
-                Text(
-                  strings(context).overdueByMinutes(
-                    '${(now.difference(order.deadline).inSeconds + 59) ~/ 60}',
-                  ),
-                  style: const TextStyle(
-                    color: Color(0xFFDC2626),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-              if (order.status == OrderStatus.working) ...[
-                const SizedBox(height: 14),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF01408B),
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: onTap,
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: Text(uiText(context, 'Открыть наряд')),
-                ),
-              ],
             ],
           ),
         ),

@@ -1,3 +1,4 @@
+import '../../core/utils/enterprise_time.dart';
 import 'dart:typed_data';
 import 'package:mineral/features/executor/models/execution_assessment.dart';
 
@@ -200,12 +201,14 @@ class WorkOrder {
   bool get overdue => isOverdue(DateTime.now());
 }
 
-String timeLabel(DateTime date) {
+String timeLabel(DateTime instant) {
+  final date = enterpriseTime(instant);
   return '${date.hour.toString().padLeft(2, '0')}:'
       '${date.minute.toString().padLeft(2, '0')}';
 }
 
-String dateLabel(DateTime date) {
+String dateLabel(DateTime instant) {
+  final date = enterpriseTime(instant);
   return '${date.day.toString().padLeft(2, '0')}.'
       '${date.month.toString().padLeft(2, '0')}.'
       '${date.year}';

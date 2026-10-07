@@ -1,120 +1,372 @@
+import '../../../core/utils/enterprise_time.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../core/api/api_services.dart';
+import '../../auth/data/auth_session.dart' as auth;
 import '../../../l10n/ui_localization.dart';
 import '../../../shared/widgets/backend_section.dart';
 import '../../../shared/widgets/ui.dart';
 import '../data/notifications_api.dart';
+import '../data/demo_notifications.dart';
+import '../../../shared/models/models.dart';
+import '../../executor/data/api_executor_repository.dart';
+import '../../executor/data/executor_repository.dart';
+import '../../executor/models/executor_order_dto.dart';
+import '../../executor/screens/executor_order_loader.dart';
 
+/// Shared notification screen with user-specific data and order navigation.
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({
+  NotificationsScreen({
     super.key,
-    required this.api,
+    ApiServices? api,
+    Future<List<NotificationApiModel>> Function()? load,
+    Future<void> Function(int)? markRead,
+    Stream<void>? changes,
+    this.userId,
+    this.source,
+    this.snapshot,
+    this.standalone = false,
     required this.onOrder,
-  });
-  final ApiServices api;
-  final ValueChanged<int> onOrder;
+  }) : assert(api != null || (load != null && markRead != null)),
+       load = load ?? api!.notifications.getNotifications,
+       markRead =
+           markRead ??
+           ((id) async {
+             await api!.notifications.markRead(id);
+           }),
+       changes = changes ?? api?.realtime.changes;
+
+  factory NotificationsScreen.forUser({
+    Key? key,
+    required BuildContext context,
+    required ExecutorRepository repository,
+    required int userId,
+  }) {
+    Future<void> openOrder(int id) async {
+      WorkOrder? order;
+      if (repository is ApiExecutorRepository) {
+        final dto = await repository.api.loadOrder(id);
+        if (dto.assigneeId != userId) {
+          throw const auth.ApiException(403, 'Это не ваш наряд');
+        }
+        order = dto.toWorkOrder();
+      } else {
+        for (final item in repository.assignedTo(userId)) {
+          if (item.number == id) {
+            order = item;
+            break;
+          }
+        }
+      }
+      if (!context.mounted) return;
+      if (order == null) throw const auth.ApiException(404, 'Наряд не найден');
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => ExecutorOrderLoader(
+            store: repository,
+            order: order!,
+            employeeId: userId,
+          ),
+        ),
+      );
+    }
+
+    if (repository is ApiExecutorRepository) {
+      List<NotificationApiModel> snapshot() =>
+          repository.notifications.map(NotificationApiModel.fromJson).toList();
+      return NotificationsScreen(
+        key: key,
+        userId: userId,
+        standalone: true,
+        source: repository,
+        snapshot: snapshot,
+        load: () async {
+          await repository.loadNotification();
+          return snapshot();
+        },
+        markRead: repository.markNotificationRead,
+        onOrder: openOrder,
+      );
+    }
+    List<NotificationApiModel> snapshot() =>
+        DemoNotifications.items(context, repository, userId);
+    return NotificationsScreen(
+      key: key,
+      userId: userId,
+      standalone: true,
+      source: repository,
+      snapshot: snapshot,
+      load: () async => snapshot(),
+      markRead: (id) => DemoNotifications.markRead(repository, id),
+      onOrder: openOrder,
+    );
+  }
+
+  final int? userId;
+  final Future<List<NotificationApiModel>> Function() load;
+  final Future<void> Function(int) markRead;
+  final FutureOr<void> Function(int) onOrder;
+  final Stream<void>? changes;
+  final Listenable? source;
+  final List<NotificationApiModel> Function()? snapshot;
+  final bool standalone;
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  final pending = <int>{};
-  Future<void> _open(NotificationApiModel notification) async {
-    if (pending.contains(notification.id)) return;
-    setState(() => pending.add(notification.id));
+  final _pending = <int>{};
+  final _read = <int>{};
+  List<NotificationApiModel> _items = [];
+  StreamSubscription<void>? _subscription;
+  int _generation = 0;
+  bool _loading = true;
+  Object? _error;
+  Locale? _locale;
+
+  @override
+  void initState() {
+    super.initState();
+    _items = _normalize(widget.snapshot?.call() ?? []);
+    _subscribe();
+    unawaited(_refresh());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = Localizations.localeOf(context);
+    if (_locale != null && _locale != locale) unawaited(_refresh());
+    _locale = locale;
+  }
+
+  void _subscribe() {
+    _subscription = widget.changes?.listen((_) => unawaited(_refresh()));
+    widget.source?.addListener(_sourceChanged);
+  }
+
+  @override
+  void didUpdateWidget(NotificationsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.source != widget.source ||
+        oldWidget.changes != widget.changes) {
+      oldWidget.source?.removeListener(_sourceChanged);
+      unawaited(_subscription?.cancel());
+      _read.clear();
+      _items = [];
+      _subscribe();
+      unawaited(_refresh());
+    }
+  }
+
+  List<NotificationApiModel> _normalize(List<NotificationApiModel> items) {
+    final unique = <int, NotificationApiModel>{};
+    for (final item in items) {
+      if (widget.userId != null && item.userId != widget.userId) continue;
+      unique[item.id] = _read.contains(item.id) ? item.asRead() : item;
+    }
+    final sorted = unique.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return sorted.take(100).toList();
+  }
+
+  void _sourceChanged() {
+    final snapshot = widget.snapshot;
+    if (!mounted || snapshot == null) return;
+    setState(() => _items = _normalize(snapshot()));
+  }
+
+  String _errorText(Object error) =>
+      error is auth.ApiException ? error.message : backendError(context, error);
+
+  Future<void> _refresh() async {
+    if (!mounted) return;
+    final generation = ++_generation;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      if (!notification.isRead) {
-        await widget.api.notifications.markRead(notification.id);
-        widget.api.realtime.invalidate();
+      final items = await widget.load();
+      if (mounted && generation == _generation) {
+        setState(() => _items = _normalize(widget.snapshot?.call() ?? items));
+      }
+    } catch (error) {
+      if (mounted && generation == _generation) {
+        setState(() => _error = error);
+      }
+    } finally {
+      if (mounted && generation == _generation) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _open(NotificationApiModel item) async {
+    if (_pending.contains(item.id)) return;
+    setState(() => _pending.add(item.id));
+    try {
+      if (!item.isRead) {
+        try {
+          await widget.markRead(item.id);
+          if (!mounted) return;
+          _read.add(item.id);
+          setState(() => _items = _normalize(_items));
+          await _refresh();
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(_errorText(error))));
+          }
+        }
+      }
+      if (mounted && item.workOrderId != null) {
+        await widget.onOrder(item.workOrderId!);
       }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(backendError(context, error))));
+        ).showSnackBar(SnackBar(content: Text(_errorText(error))));
       }
     } finally {
-      if (mounted) setState(() => pending.remove(notification.id));
-    }
-    if (mounted && notification.workOrderId != null) {
-      widget.onOrder(notification.workOrderId!);
+      if (mounted) setState(() => _pending.remove(item.id));
     }
   }
 
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      PageHeading(
-        'Центр уведомлений',
-        subtitle: backendText(
-          context,
-          'Последние уведомления смены',
-          'Ауысымның соңғы хабарландырулары',
+  IconData _icon(NotificationApiModel item) {
+    if (item.isOverdue) return Icons.warning_amber_rounded;
+    return switch (item.type) {
+      'NEW_ORDER' => Icons.assignment_outlined,
+      'BRIGADE_ORDER' => Icons.groups_outlined,
+      'DEADLINE_REMINDER' => Icons.timer_outlined,
+      'NOT_ACCEPTED' => Icons.hourglass_empty,
+      'WEEKLY_AI_SUMMARY' => Icons.auto_awesome_outlined,
+      _ => Icons.notifications_outlined,
+    };
+  }
+
+  Widget _tile(NotificationApiModel item) {
+    final color = item.isOverdue ? const Color(0xFFDC2626) : brand;
+    final busy = _pending.contains(item.id);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: item.isRead ? Colors.white : const Color(0xFFEAF3FC),
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 10,
+          ),
+          minVerticalPadding: 12,
+          leading: busy
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(_icon(item), color: color),
+          title: Text(
+            item.title,
+            style: TextStyle(
+              color: const Color(0xFF172033),
+              fontWeight: item.isRead ? FontWeight.w500 : FontWeight.w700,
+            ),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (item.message.isNotEmpty) Text(item.message),
+                const SizedBox(height: 8),
+                Text(
+                  DateFormat(
+                    'dd.MM.yyyy HH:mm',
+                  ).format(enterpriseTime(item.createdAt)),
+                  style: const TextStyle(color: muted, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          trailing: item.workOrderId == null
+              ? null
+              : const Icon(Icons.chevron_right),
+          onTap: busy ? null : () => _open(item),
         ),
       ),
-      BackendSection<List<NotificationApiModel>>(
-        load: widget.api.notifications.getNotifications,
-        changes: widget.api.realtime.changes,
-        builder: (context, items) => items.isEmpty
-            ? Panel(child: Text(uiText(context, 'Новых уведомлений нет')))
-            : Column(
-                children: [
-                  for (final item in items)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Panel(
-                        color: item.isRead ? Colors.white : lightBlue,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: pending.contains(item.id)
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Icon(
-                                  item.isOverdue
-                                      ? Icons.warning_amber
-                                      : Icons.notifications_outlined,
-                                  color: item.isOverdue ? Colors.red : brand,
-                                ),
-                          title: Text(
-                            item.title,
-                            style: TextStyle(
-                              fontWeight: item.isRead
-                                  ? FontWeight.w500
-                                  : FontWeight.w800,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(item.message),
-                              const SizedBox(height: 8),
-                              Text(
-                                item.createdAt.toLocal().toString(),
-                                style: const TextStyle(
-                                  color: muted,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: item.workOrderId == null
-                              ? null
-                              : const Icon(Icons.chevron_right),
-                          onTap: pending.contains(item.id)
-                              ? null
-                              : () => _open(item),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!widget.standalone)
+          PageHeading(
+            'Центр уведомлений',
+            subtitle: backendText(
+              context,
+              'Последние уведомления смены',
+              'Ауысымның соңғы хабарландырулары',
+            ),
+            action: IconButton(
+              tooltip: backendText(context, 'Обновить', 'Жаңарту'),
+              onPressed: _loading ? null : _refresh,
+              icon: const Icon(Icons.refresh),
+            ),
+          ),
+        if (_loading && _items.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(32),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: BackendError(
+              message: _errorText(_error!),
+              onRetry: _refresh,
+            ),
+          ),
+        if (!_loading && _error == null && _items.isEmpty)
+          Panel(child: Text(uiText(context, 'Новых уведомлений нет'))),
+        for (final item in _items) _tile(item),
+      ],
+    );
+    if (!widget.standalone) return content;
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F7FB),
+      appBar: AppBar(
+        title: Text(uiText(context, 'Уведомления')),
+        actions: [
+          IconButton(
+            tooltip: backendText(context, 'Обновить', 'Жаңарту'),
+            onPressed: _loading ? null : _refresh,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
-    ],
-  );
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          children: [content],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    widget.source?.removeListener(_sourceChanged);
+    unawaited(_subscription?.cancel());
+    super.dispose();
+  }
 }

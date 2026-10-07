@@ -35,6 +35,8 @@ class ApiExecutorRepository extends ChangeNotifier
   final AuthUser _user;
   ExecutorRealtime? _realtime;
   final _notification = <Map<String, dynamic>>[];
+  int _notificationRevision = 0;
+  Future<void>? _notificationLoading;
 
   List<Map<String, dynamic>> get notifications =>
       List.unmodifiable(_notification);
@@ -79,6 +81,9 @@ class ApiExecutorRepository extends ChangeNotifier
         _notify();
       }
     } while (_sessionActive && revision != _revision);
+    if (_sessionActive) {
+      await loadNotification();
+    }
   }
 
   Future<void> _onOrderChanged(Map<String, dynamic> data) async {
@@ -116,12 +121,71 @@ class ApiExecutorRepository extends ChangeNotifier
     }
   }
 
-  void _onNotification(Map<String, dynamic> data) {
-    if (!_sessionActive) return;
+  void _sortNotification() {
+    _notification.sort(
+      (a, b) => DateTime.parse(
+        b['createdAt'] as String,
+      ).compareTo(DateTime.parse(a['createdAt'] as String)),
+    );
+    if (_notification.length > 100) {
+      _notification.removeRange(100, _notification.length);
+    }
+  }
 
+  void _onNotification(Map<String, dynamic> data) {
+    if (!_sessionActive || data['userId'] != _user.id) return;
     final id = data['id'] as int;
+
     _notification.removeWhere((item) => item['id'] == id);
-    _notification.insert(0, Map<String, dynamic>.unmodifiable(data));
+    _notification.add(Map<String, dynamic>.from(data));
+    _notificationRevision++;
+    _sortNotification();
+    _notify();
+  }
+
+  Future<void> loadNotification() {
+    return _notificationLoading ??= _loadNotification().whenComplete(() {
+      _notificationLoading = null;
+    });
+  }
+
+  Future<void> _loadNotification() async {
+    while (_sessionActive) {
+      final revision = _notificationRevision;
+      final items = await api.loadNotification();
+
+      if (!_sessionActive) return;
+      if (revision != _notificationRevision) continue;
+
+      _notification
+        ..clear()
+        ..addAll(
+          items
+              .where((item) => item['userId'] == _user.id)
+              .map((item) => Map<String, dynamic>.from(item)),
+        );
+      _sortNotification();
+      _notify();
+      return;
+    }
+  }
+
+  Future<void> markNotificationRead(int id) async {
+    _checkUser(_user.id);
+    if (!_notification.any(
+      (item) => item['id'] == id && item['userId'] == _user.id,
+    )) {
+      throw const ApiException(403, 'Недостаточно прав');
+    }
+    await api.markNotificationRead(id);
+    if (!_sessionActive) return;
+    for (final item in _notification) {
+      if (item['id'] == id) {
+        item['isRead'] = true;
+        break;
+      }
+    }
+    _notificationRevision++;
     _notify();
   }
 

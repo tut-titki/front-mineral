@@ -414,6 +414,56 @@ void main() {
     },
   );
 
+  test(
+    'executor notification API filters recipient and PATCH uses updated confirmation',
+    () async {
+      final previous = handler;
+      handler = (request) async {
+        if (request.url.path == '/api/notifications') {
+          return json([
+            {
+              'id': 2,
+              'userId': 5,
+              'workOrderId': 773,
+              'type': 'OVERDUE_3',
+              'title': 'Server title',
+              'message': 'Server body',
+              'isRead': false,
+              'createdAt': '2026-10-05T17:35:16.450Z',
+            },
+            {
+              'id': 3,
+              'userId': 99,
+              'workOrderId': 773,
+              'type': 'NOT_ACCEPTED',
+              'title': 'Master notification about the same order',
+              'message': 'Private',
+              'isRead': false,
+              'createdAt': '2026-10-05T17:36:16.450Z',
+            },
+          ]);
+        }
+        if (request.url.path == '/api/notifications/2/read') {
+          expect(request.method, 'PATCH');
+          expect(request.headers['Authorization'], 'Bearer jwt');
+          return json({'updated': 1});
+        }
+        return previous(request);
+      };
+      await repository.loadNotification();
+      expect(repository.notifications.single['id'], 2);
+      expect(repository.notifications.single['message'], 'Server body');
+      final count = requests.length;
+      await expectLater(
+        repository.markNotificationRead(3),
+        throwsA(isA<ApiException>().having((e) => e.status, 'status', 403)),
+      );
+      expect(requests.length, count);
+      await repository.markNotificationRead(2);
+      expect(repository.notifications.single['isRead'], isTrue);
+    },
+  );
+
   test('pagination collects active orders and history independently', () async {
     final previous = handler;
     handler = (r) async {

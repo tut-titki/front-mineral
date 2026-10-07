@@ -1,8 +1,9 @@
+import '../../../core/utils/enterprise_time.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:mineral/shared/models/models.dart';
 
-String greeting(DateTime time) => switch (time.hour) {
+String greeting(DateTime time) => switch (enterpriseTime(time).hour) {
   >= 5 && < 12 => 'Доброе утро',
   >= 12 && < 18 => 'Добрый день',
   >= 18 && < 23 => 'Добрый вечер',

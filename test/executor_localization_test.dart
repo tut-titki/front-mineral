@@ -8,7 +8,7 @@ import 'package:mineral/features/executor/screens/completion_screen.dart';
 import 'package:mineral/features/executor/screens/executor_screen.dart';
 import 'package:mineral/features/executor/screens/executor_order_screen.dart';
 import 'package:mineral/features/executor/screens/executor_result_screen.dart';
-import 'package:mineral/features/executor/screens/executor_notifications_screen.dart';
+import 'package:mineral/features/notifications/screens/notifications_screen.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 import 'package:mineral/l10n/app_locale.dart';
 import 'package:mineral/l10n/ui_localization.dart';
@@ -139,7 +139,15 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     }
     await tester.pumpWidget(
-      localized(ExecutorNotificationsScreen(store: store, employeeId: 1)),
+      localized(
+        Builder(
+          builder: (context) => NotificationsScreen.forUser(
+            context: context,
+            repository: store,
+            userId: 1,
+          ),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
     checkNoRussianLabels(tester);
