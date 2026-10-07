@@ -46,6 +46,73 @@ void main() {
       await expectLater(api.notifications.markRead(2), throwsException);
     },
   );
+  testWidgets('read all marks unread only and pull refresh remains available', (
+    tester,
+  ) async {
+    var items = [notice(1), notice(2), notice(3, read: true)];
+    final reads = <int>[];
+    var loads = 0;
+    await tester.pumpWidget(
+      host(
+        NotificationsScreen(
+          standalone: true,
+          load: () async {
+            loads++;
+            return items;
+          },
+          markRead: (id) async {
+            reads.add(id);
+            items = items
+                .map((item) => item.id == id ? item.asRead() : item)
+                .toList();
+          },
+          onOrder: (_) => fail('Reading all must not navigate'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Барлығын оқу'));
+    await tester.pumpAndSettle();
+    expect(reads, [2, 1]);
+    expect(
+      tester.widget<TextButton>(find.byType(TextButton)).onPressed,
+      isNull,
+    );
+    final before = loads;
+    await tester.drag(find.byType(ListView), const Offset(0, 350));
+    await tester.pumpAndSettle();
+    expect(loads, greaterThan(before));
+    expect(find.byIcon(Icons.refresh), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('read all preserves unread items on failure', (tester) async {
+    await tester.pumpWidget(
+      host(
+        NotificationsScreen(
+          standalone: true,
+          load: () async => [notice(1), notice(2)],
+          markRead: (id) async {
+            if (id == 1) throw const auth.ApiException(503, 'Нет связи');
+          },
+          onOrder: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Барлығын оқу'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<Text>(find.text('Наряд 1')).style?.fontWeight,
+      FontWeight.w700,
+    );
+    expect(
+      tester.widget<Text>(find.text('Наряд 2')).style?.fontWeight,
+      FontWeight.w500,
+    );
+    expect(find.text('Нет связи'), findsOneWidget);
+  });
+
   testWidgets(
     'standalone sorts latest first, groups prefixes and preserves server text',
     (tester) async {
@@ -66,7 +133,7 @@ void main() {
       );
       expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
       expect(find.text(notice(1).message), findsNWidgets(2));
-      expect(find.byTooltip('Жаңарту'), findsOneWidget);
+      expect(find.byIcon(Icons.refresh), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -152,12 +219,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(opened, [773]);
     expect(find.text('Нет связи'), findsOneWidget);
-    final card = tester.widget<Material>(
-      find
-          .ancestor(of: find.byType(ListTile), matching: find.byType(Material))
-          .first,
-    );
-    expect(card.color, const Color(0xFFEAF3FC));
+    final title = tester.widget<Text>(find.text('Наряд 2'));
+    expect(title.style?.fontWeight, FontWeight.w700);
     expect(tester.takeException(), isNull);
   });
 

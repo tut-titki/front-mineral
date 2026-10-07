@@ -1,3 +1,4 @@
+import 'package:mineral/features/references/data/reference_storage_stub.dart';
 import 'package:mineral/features/executor/data/pending_action_storage_io.dart';
 import 'package:mineral/features/executor/models/pending_action.dart';
 import 'package:mineral/features/executor/data/pending_action_storage.dart';
@@ -142,7 +143,7 @@ void main() {
     await session.restore();
     repository = ApiExecutorRepository(
       actionStorage: MemoryPendingActionStorage(),
-      api: ExecutorApi(session),
+      api: ExecutorApi(session, referenceStorage: MemoryReferenceStorage()),
       draftStorage: drafts,
     );
   });
@@ -295,7 +296,7 @@ void main() {
         directory: () async => directory,
       );
       repository = ApiExecutorRepository(
-        api: ExecutorApi(session),
+        api: ExecutorApi(session, referenceStorage: MemoryReferenceStorage()),
         draftStorage: drafts,
         actionStorage: storage,
       );
@@ -334,7 +335,7 @@ void main() {
       repository.dispose();
       fail = false;
       repository = ApiExecutorRepository(
-        api: ExecutorApi(session),
+        api: ExecutorApi(session, referenceStorage: MemoryReferenceStorage()),
         draftStorage: drafts,
         actionStorage: FilePendingActionStorage(
           5,
@@ -355,7 +356,7 @@ void main() {
       repository.dispose();
       final storage = MemoryPendingActionStorage();
       repository = ApiExecutorRepository(
-        api: ExecutorApi(session),
+        api: ExecutorApi(session, referenceStorage: MemoryReferenceStorage()),
         draftStorage: drafts,
         actionStorage: storage,
       );

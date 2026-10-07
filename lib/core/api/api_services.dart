@@ -1,3 +1,5 @@
+import '../../features/references/data/reference_cache.dart';
+import '../../features/references/data/reference_storage.dart';
 import '../../features/orders/data/recommendations_api.dart';
 import '../../features/orders/data/references_api.dart';
 import '../../features/orders/data/uploads_api.dart';
@@ -22,8 +24,12 @@ import '../../features/reports/data/reports_api.dart';
 /// - экраны не создают API-клиенты самостоятельно;
 /// - DemoStore постепенно можно полностью убрать.
 class ApiServices {
-  ApiServices({required String baseUrl, http.Client? httpClient})
-    : _baseUrl = _normalizeBaseUrl(baseUrl) {
+  ApiServices({
+    required String baseUrl,
+    http.Client? httpClient,
+    ReferenceStorage? referenceStorage,
+    ReferenceCache? referenceCache,
+  }) : _baseUrl = _normalizeBaseUrl(baseUrl) {
     client = ApiClient(baseUrl: _baseUrl, httpClient: httpClient);
 
     workOrders = WorkOrdersApi(client);
@@ -33,7 +39,12 @@ class ApiServices {
     notifications = NotificationsApi(client);
     reports = ReportsApi(client);
 
-    references = ReferencesApi(client);
+    references = ReferencesApi(
+      client,
+      cacheNamespace: _baseUrl,
+      storage: referenceStorage,
+      referenceCache: referenceCache,
+    );
 
     recommendations = RecommendationsApi(client);
 

@@ -117,6 +117,8 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final _pending = <int>{};
+  final _expanded = <int>{};
+  bool _readingAll = false;
   final _read = <int>{};
   List<NotificationApiModel> _items = [];
   StreamSubscription<void>? _subscription;
@@ -203,8 +205,37 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  Future<void> _readAll() async {
+    if (_readingAll || _pending.isNotEmpty) return;
+    final unread = _items.where((item) => !item.isRead).toList();
+    if (unread.isEmpty) return;
+    setState(() => _readingAll = true);
+    Object? failure;
+    try {
+      for (final item in unread) {
+        try {
+          await widget.markRead(item.id);
+          if (!mounted) return;
+          _read.add(item.id);
+          setState(() => _items = _normalize(_items));
+        } catch (error) {
+          failure = error;
+        }
+      }
+      if (!mounted) return;
+      await _refresh();
+      if (mounted && failure != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_errorText(failure))));
+      }
+    } finally {
+      if (mounted) setState(() => _readingAll = false);
+    }
+  }
+
   Future<void> _open(NotificationApiModel item) async {
-    if (_pending.contains(item.id)) return;
+    if (_readingAll || _pending.contains(item.id)) return;
     setState(() => _pending.add(item.id));
     try {
       if (!item.isRead) {
@@ -252,55 +283,157 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final color = item.isOverdue ? const Color(0xFFDC2626) : brand;
     final busy = _pending.contains(item.id);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: item.isRead ? Colors.white : const Color(0xFFEAF3FC),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: Color(0xFFDCE4EE)),
+        ),
         clipBehavior: Clip.antiAlias,
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 10,
-          ),
-          minVerticalPadding: 12,
-          leading: busy
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Icon(_icon(item), color: color),
-          title: Text(
-            item.title,
-            style: TextStyle(
-              color: const Color(0xFF172033),
-              fontWeight: item.isRead ? FontWeight.w500 : FontWeight.w700,
-            ),
-          ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Column(
+        child: InkWell(
+          onTap: busy || _readingAll ? null : () => _open(item),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (item.message.isNotEmpty) Text(item.message),
-                const SizedBox(height: 8),
-                Text(
-                  DateFormat(
-                    'dd.MM.yyyy HH:mm',
-                  ).format(enterpriseTime(item.createdAt)),
-                  style: const TextStyle(color: muted, fontSize: 12),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: item.isOverdue
+                        ? const Color(0xFFFFF1F0)
+                        : const Color(0xFFEAF3FC),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: busy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(_icon(item), color: color, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: TextStyle(
+                          color: const Color(0xFF172033),
+                          fontSize: 13,
+                          height: 1.3,
+                          fontWeight: item.isRead
+                              ? FontWeight.w500
+                              : FontWeight.w700,
+                        ),
+                      ),
+                      if (item.message.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => setState(() {
+                            if (!_expanded.add(item.id)) {
+                              _expanded.remove(item.id);
+                            }
+                          }),
+                          child: Text(
+                            item.message,
+                            maxLines: _expanded.contains(item.id) ? null : 2,
+                            overflow: _expanded.contains(item.id)
+                                ? TextOverflow.visible
+                                : TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF7A8597),
+                              fontSize: 12,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                      Text(
+                        DateFormat(
+                          'dd.MM.yyyy HH:mm',
+                        ).format(enterpriseTime(item.createdAt)),
+                        style: const TextStyle(color: muted, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  children: [
+                    if (!item.isRead)
+                      Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(top: 5, bottom: 8),
+                        decoration: const BoxDecoration(
+                          color: brand,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    if (item.workOrderId != null)
+                      const Icon(
+                        Icons.chevron_right,
+                        size: 18,
+                        color: Color(0xFF7A8597),
+                      ),
+                  ],
                 ),
               ],
             ),
           ),
-          trailing: item.workOrderId == null
-              ? null
-              : const Icon(Icons.chevron_right),
-          onTap: busy ? null : () => _open(item),
         ),
       ),
     );
   }
+
+  Widget _readAllButton() => Padding(
+    padding: const EdgeInsets.only(right: 12),
+    child: Tooltip(
+      message: backendText(
+        context,
+        'Прочитать все',
+        'Барлығын оқылған деп белгілеу',
+      ),
+      child: TextButton.icon(
+        onPressed:
+            _readingAll ||
+                _loading ||
+                _pending.isNotEmpty ||
+                !_items.any((item) => !item.isRead)
+            ? null
+            : _readAll,
+        style: TextButton.styleFrom(
+          foregroundColor: brand,
+          backgroundColor: const Color(0xFFEAF3FC),
+          disabledForegroundColor: const Color(0xFF7A8597),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          minimumSize: const Size(0, 40),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: _readingAll
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.done_all_rounded, size: 18),
+        label: Text(
+          backendText(context, 'Прочитать все', 'Барлығын оқу'),
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        ),
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -310,15 +443,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         if (!widget.standalone)
           PageHeading(
             'Центр уведомлений',
+            action: _readAllButton(),
             subtitle: backendText(
               context,
               'Последние уведомления смены',
               'Ауысымның соңғы хабарландырулары',
-            ),
-            action: IconButton(
-              tooltip: backendText(context, 'Обновить', 'Жаңарту'),
-              onPressed: _loading ? null : _refresh,
-              icon: const Icon(Icons.refresh),
             ),
           ),
         if (_loading && _items.isEmpty)
@@ -343,14 +472,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FB),
       appBar: AppBar(
-        title: Text(uiText(context, 'Уведомления')),
-        actions: [
-          IconButton(
-            tooltip: backendText(context, 'Обновить', 'Жаңарту'),
-            onPressed: _loading ? null : _refresh,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
+        title: Text(
+          uiText(context, 'Уведомления'),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        titleSpacing: 0,
+        actions: [_readAllButton()],
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,

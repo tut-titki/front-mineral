@@ -1,3 +1,5 @@
+import '../features/references/data/reference_cache.dart';
+import '../features/references/data/reference_storage.dart';
 import 'dart:async';
 import 'package:mineral/core/services/push_notification_service.dart';
 import 'package:mineral/features/executor/screens/executor_order_loader.dart';
@@ -31,10 +33,16 @@ import 'package:mineral/shared/data/demo_store.dart';
 import 'package:mineral/shared/models/models.dart';
 
 class MainApp extends StatefulWidget {
-  const MainApp({super.key, this.demoMode = false, this.session});
+  const MainApp({
+    super.key,
+    this.demoMode = false,
+    this.session,
+    this.referenceStorage,
+  });
 
   final bool demoMode;
   final AuthSession? session;
+  final ReferenceStorage? referenceStorage;
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -49,7 +57,14 @@ class _MainAppState extends State<MainApp> {
 
   late final AuthSession _session = widget.session ?? AuthSession();
 
-  late final ApiServices api = ApiServices(baseUrl: _session.baseUrl);
+  late final ApiServices api = ApiServices(
+    baseUrl: _session.baseUrl,
+    referenceCache: ReferenceCache(
+      scope: _session.baseUrl,
+      fetch: _session.requestList,
+      storage: widget.referenceStorage,
+    ),
+  );
 
   late final store = DemoStore(
     onOrderChanged: notificationSound.play,
@@ -135,9 +150,12 @@ class _MainAppState extends State<MainApp> {
     }
     _executorStore?.dispose();
     _executorUserId = userId;
-    return _executorStore = ApiExecutorRepository(api: ExecutorApi(_session))
-      ..startRealtime();
+    return _executorStore = ApiExecutorRepository(
+      api: ExecutorApi(_session, referencesCache: api.references.cache),
+    )..startRealtime();
   }
+
+  String? _referenceToken;
 
   void _sessionChanged() {
     final authenticated = _session.authenticated;
@@ -150,8 +168,19 @@ class _MainAppState extends State<MainApp> {
 
     if (authenticated && token != null && token.trim().isNotEmpty) {
       api.setAccessToken(token);
+      if (!widget.demoMode && _referenceToken != token && user != null) {
+        _referenceToken = token;
+        api.references.cache.setScope('${api.baseUrl}|${user.id}');
+        unawaited(
+          api.references.refreshAll().catchError((Object error) {
+            debugPrint('Reference refresh failed: $error');
+          }),
+        );
+      }
     } else {
       api.clearAccessToken();
+      _referenceToken = null;
+      api.references.cache.setScope('${api.baseUrl}|signed-out');
     }
 
     // DemoStore используется только в деморежиме.

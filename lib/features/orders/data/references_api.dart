@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import '../../references/data/reference_cache.dart';
+import '../../references/data/reference_storage.dart';
 import '../../../core/api/api_client.dart';
 
 // MARK: - Area
@@ -78,6 +81,14 @@ enum EmployeeStatus {
     };
   }
 
+  Color get color => switch (this) {
+    EmployeeStatus.available => const Color(0xFF16A34A),
+    EmployeeStatus.busy => const Color(0xFFF59E0B),
+    EmployeeStatus.queued => const Color(0xFF0A57A3),
+    EmployeeStatus.offShift ||
+    EmployeeStatus.unknown => const Color(0xFF7A8597),
+  };
+
   String? get apiValue => switch (this) {
     EmployeeStatus.available => 'AVAILABLE',
     EmployeeStatus.busy => 'BUSY',
@@ -111,6 +122,32 @@ class ExecutorOrderCount {
 
 // MARK: - Executor
 
+class ExecutorCurrentOrder {
+  const ExecutorCurrentOrder({
+    required this.id,
+    required this.number,
+    required this.status,
+    required this.priority,
+    required this.deadline,
+    required this.equipmentName,
+  });
+  final int id;
+  final String number;
+  final String status;
+  final String priority;
+  final DateTime deadline;
+  final String equipmentName;
+  factory ExecutorCurrentOrder.fromJson(Map<String, dynamic> json) =>
+      ExecutorCurrentOrder(
+        id: _asInt(json['id']),
+        number: _asString(json['number']),
+        status: _asString(json['status']),
+        priority: _asString(json['priority']),
+        deadline: DateTime.parse(json['deadline'] as String).toUtc(),
+        equipmentName: _asString(_asJsonMap(json['equipment'])['name']),
+      );
+}
+
 class ExecutorReference {
   const ExecutorReference({
     required this.id,
@@ -120,6 +157,12 @@ class ExecutorReference {
     required this.assignedOrders,
     this.specialty,
     this.grade,
+    this.brigadeId,
+    this.brigade,
+    this.statusText,
+    this.currentOrder,
+    this.queue = 0,
+    this.activeOrders = 0,
   });
 
   final int id;
@@ -127,6 +170,12 @@ class ExecutorReference {
 
   final String? specialty;
   final int? grade;
+  final int? brigadeId;
+  final BrigadeReference? brigade;
+  final String? statusText;
+  final ExecutorCurrentOrder? currentOrder;
+  final int queue;
+  final int activeOrders;
 
   final EmployeeStatus employeeStatus;
   final bool isOnShift;
@@ -142,6 +191,15 @@ class ExecutorReference {
       fullName: _asString(json['fullName']),
       specialty: _asNullableString(json['specialty']),
       grade: _asNullableInt(json['grade']),
+      brigadeId: _asNullableInt(json['brigadeId']),
+      brigade: _mapOrNull(json['brigade'], BrigadeReference.fromJson),
+      statusText: _asNullableString(json['statusText']),
+      currentOrder: _mapOrNull(
+        json['currentOrder'],
+        ExecutorCurrentOrder.fromJson,
+      ),
+      queue: _asIntOrZero(json['queue']),
+      activeOrders: _asIntOrZero(json['activeOrders']),
       employeeStatus: EmployeeStatus.fromApi(
         _asNullableString(json['employeeStatus']),
       ),
@@ -169,6 +227,7 @@ class ExecutorReference {
   }
 
   String get statusLabel {
+    if (statusText != null && statusText!.isNotEmpty) return statusText!;
     if (!isOnShift || employeeStatus == EmployeeStatus.offShift) {
       return 'Не на смене';
     }
@@ -392,71 +451,59 @@ class BrigadeReference {
 // MARK: - References API
 
 class ReferencesApi {
-  const ReferencesApi(this._client);
+  ReferencesApi(
+    ApiClient client, {
+    String cacheNamespace = 'references',
+    ReferenceStorage? storage,
+    ReferenceCache? referenceCache,
+  }) : cache =
+           referenceCache ??
+           ReferenceCache(
+             scope: cacheNamespace,
+             storage: storage,
+             fetch: (path) async {
+               final response = await client.get(path);
+               return _parseList(response.data, (item) => item);
+             },
+           );
+  final ReferenceCache cache;
+  Future<void> refreshAll() => cache.refreshAll();
 
-  final ApiClient _client;
-
-  // MARK: Areas
-
-  Future<List<AreaReference>> getAreas() async {
-    final response = await _client.get('/api/references/areas');
-
-    return _parseList(response.data, AreaReference.fromJson);
+  Future<List<AreaReference>> getAreas() async =>
+      (await cache.get('areas')).map(AreaReference.fromJson).toList();
+  Future<List<EquipmentReference>> getEquipment({int? areaId}) async =>
+      (await cache.get(
+        'equipment${areaId == null ? '' : '?areaId=$areaId'}',
+      )).map(EquipmentReference.fromJson).toList();
+  Future<List<ExecutorReference>> getExecutors({
+    String? specialty,
+    int? brigadeId,
+    bool onShift = false,
+  }) async {
+    final query = Uri(
+      queryParameters: {
+        if (specialty != null && specialty.isNotEmpty) 'specialty': specialty,
+        if (brigadeId != null) 'brigadeId': '$brigadeId',
+        if (onShift) 'onShift': '1',
+      },
+    ).query;
+    return (await cache.get(
+      'executors${query.isEmpty ? '' : '?$query'}',
+      refresh: true,
+    )).map(ExecutorReference.fromJson).toList();
   }
 
-  // MARK: Equipment
-
-  Future<List<EquipmentReference>> getEquipment({int? areaId}) async {
-    final response = await _client.get(
-      '/api/references/equipment',
-      queryParameters: {'areaId': ?areaId},
-    );
-
-    return _parseList(response.data, EquipmentReference.fromJson);
-  }
-
-  // MARK: Executors
-
-  Future<List<ExecutorReference>> getExecutors() async {
-    final response = await _client.get('/api/references/executors');
-
-    return _parseList(response.data, ExecutorReference.fromJson);
-  }
-
-  // MARK: Normatives
-
-  Future<List<NormativeReference>> getNormatives({int? equipmentId}) async {
-    final response = await _client.get(
-      '/api/references/normatives',
-      queryParameters: {'equipmentId': ?equipmentId},
-    );
-
-    return _parseList(response.data, NormativeReference.fromJson);
-  }
-
-  // MARK: Fault codes
-
-  Future<List<FaultCodeReference>> getFaultCodes() async {
-    final response = await _client.get('/api/references/fault-codes');
-
-    return _parseList(response.data, FaultCodeReference.fromJson);
-  }
-
-  // MARK: Materials
-
-  Future<List<MaterialReference>> getMaterials() async {
-    final response = await _client.get('/api/references/materials');
-
-    return _parseList(response.data, MaterialReference.fromJson);
-  }
-
-  // MARK: Brigades
-
-  Future<List<BrigadeReference>> getBrigades() async {
-    final response = await _client.get('/api/references/brigades');
-
-    return _parseList(response.data, BrigadeReference.fromJson);
-  }
+  Future<List<NormativeReference>> getNormatives({int? equipmentId}) async =>
+      (await cache.get(
+        'normatives${equipmentId == null ? '' : '?equipmentId=$equipmentId'}',
+      )).map(NormativeReference.fromJson).toList();
+  Future<List<FaultCodeReference>> getFaultCodes() async => (await cache.get(
+    'fault-codes',
+  )).map(FaultCodeReference.fromJson).toList();
+  Future<List<MaterialReference>> getMaterials() async =>
+      (await cache.get('materials')).map(MaterialReference.fromJson).toList();
+  Future<List<BrigadeReference>> getBrigades() async =>
+      (await cache.get('brigades')).map(BrigadeReference.fromJson).toList();
 }
 
 // MARK: - JSON helpers

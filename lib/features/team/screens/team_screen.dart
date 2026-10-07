@@ -34,11 +34,9 @@ class BackendEmployeeCard extends StatelessWidget {
         ),
         StatusTag(
           executor.statusLabel,
-          color:
-              executor.employeeStatus == EmployeeStatus.available &&
-                  executor.isOnShift
-              ? Colors.green
-              : muted,
+          color: executor.isOnShift
+              ? executor.employeeStatus.color
+              : EmployeeStatus.offShift.color,
         ),
         const SizedBox(height: 12),
         Text(

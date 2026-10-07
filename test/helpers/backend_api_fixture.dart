@@ -1,3 +1,4 @@
+import 'package:mineral/features/references/data/reference_storage_stub.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -7,6 +8,7 @@ import 'package:mineral/core/api/api_services.dart';
 ApiServices testApi({Future<http.Response?> Function(http.Request)? handle}) {
   final api = ApiServices(
     baseUrl: 'https://backend.test',
+    referenceStorage: MemoryReferenceStorage(),
     httpClient: MockClient((request) async {
       final response = await handle?.call(request);
       if (response != null) return response;

@@ -1,9 +1,22 @@
+import '../../references/data/reference_storage.dart';
+import '../../references/data/reference_cache.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:mineral/shared/models/models.dart';
 import '../models/executor_order_dto.dart';
 
 class ExecutorApi {
-  ExecutorApi(this.session);
+  ExecutorApi(
+    this.session, {
+    ReferenceCache? referencesCache,
+    ReferenceStorage? referenceStorage,
+  }) : referenceCache =
+           referencesCache ??
+           ReferenceCache(
+             scope: '${session.baseUrl}|${session.user?.id}',
+             storage: referenceStorage,
+             fetch: session.requestList,
+           );
+  final ReferenceCache referenceCache;
   final AuthSession session;
   Future<List<ExecutorOrderDto>> loadOrders(
     String statuses, {
@@ -24,7 +37,7 @@ class ExecutorApi {
     await session.request('GET', '/api/work-orders/$id'),
   );
   Future<List<Map<String, dynamic>>> references(String name) =>
-      session.requestList('/api/references/$name');
+      referenceCache.get(name);
   Future<Map<String, dynamic>> action(int id, Map<String, dynamic> body) =>
       session.request(
         'POST',

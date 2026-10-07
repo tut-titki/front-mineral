@@ -1,3 +1,4 @@
+import 'package:mineral/features/references/data/reference_storage_stub.dart';
 import 'package:mineral/features/auth/screens/change_password_screen.dart';
 import 'package:mineral/features/auth/formatters/phone_input_formatter.dart';
 import 'dart:convert';
@@ -267,7 +268,9 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(MainApp(session: session));
+      await tester.pumpWidget(
+        MainApp(session: session, referenceStorage: MemoryReferenceStorage()),
+      );
       await tester.pump(const Duration(milliseconds: 2500));
       await tester.pumpAndSettle();
       expect(find.text('Мои наряды'), findsOneWidget);
