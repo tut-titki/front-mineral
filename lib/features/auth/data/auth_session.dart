@@ -346,14 +346,59 @@ class AuthSession extends ChangeNotifier {
     );
   }
 
-  Future<void> logout() async {
-    if (pushToken != null && _token != null) {
-      await request(
-        'DELETE',
-        '/api/devices/${Uri.encodeComponent(pushToken!)}',
-      );
+  Future<void> _pushRegistration = Future.value();
+  bool _loggingOut = false;
+
+  Future<void> registerPushDevice(String token, String platform) {
+    final owner = user?.id;
+    final result = _pushRegistration.then((_) async {
+      if (_loggingOut || !authenticated || user?.id != owner) {
+        throw StateError('Сессия завершена');
+      }
+      await _registerPushDevice(token, platform);
+    });
+    _pushRegistration = result.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    return result;
+  }
+
+  Future<void> _registerPushDevice(String token, String platform) async {
+    if (!authenticated) throw StateError('Требуется вход');
+    if (token.length < 20 || !{'android', 'ios', 'web'}.contains(platform)) {
+      throw ArgumentError('Некорректный токен или платформа устройства');
     }
-    await expire();
+    final previous = pushToken;
+    if (previous != null && previous != token) {
+      await request('DELETE', '/api/devices/${Uri.encodeComponent(previous)}');
+    }
+    // Keep the token even if POST fails: logout must attempt to detach it.
+    pushToken = token;
+    await request(
+      'POST',
+      '/api/devices',
+      body: {'token': token, 'platform': platform},
+    );
+  }
+
+  Future<void> logout() async {
+    _loggingOut = true;
+    try {
+      await _pushRegistration;
+      if (pushToken != null && _token != null) {
+        await request(
+          'DELETE',
+          '/api/devices/${Uri.encodeComponent(pushToken!)}',
+        );
+      }
+    } finally {
+      try {
+        await expire();
+      } finally {
+        _loggingOut = false;
+      }
+    }
   }
 
   Future<void> expire() async {

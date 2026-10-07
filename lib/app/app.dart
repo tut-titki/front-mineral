@@ -6,6 +6,9 @@ import 'package:mineral/features/auth/widgets/auth_scope.dart';
 import 'package:mineral/features/auth/screens/session_gate.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:mineral/core/services/push_notification_service.dart';
+import 'package:mineral/features/executor/screens/executor_order_loader.dart';
+import 'package:mineral/features/executor/models/executor_order_dto.dart';
 
 import 'package:mineral/features/auth/screens/login_screen.dart';
 import 'package:mineral/features/splash/screens/splash_screen.dart';
@@ -35,6 +38,75 @@ class _MainAppState extends State<MainApp> {
   bool _wasAuthenticated = false;
   ApiExecutorRepository? _executorStore;
   int? _executorUserId;
+  PushNotificationService? _push;
+  int? _pendingPushOrderId;
+  bool _openingPush = false;
+
+  void _pushOrderTapped(int id) {
+    _pendingPushOrderId = id;
+    unawaited(_openPushOrder());
+  }
+
+  Future<void> _openPushOrder() async {
+    if (_openingPush || !mounted || !_session.authenticated) return;
+    if (_session.user?.role != 'EXECUTOR') {
+      _pendingPushOrderId = null;
+      return;
+    }
+    final id = _pendingPushOrderId;
+    if (id == null) return;
+    _openingPush = true;
+    _pendingPushOrderId = null;
+    final userId = _session.user!.id;
+    try {
+      // Login/session restoration must finish its own navigation first.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!mounted || _session.user?.id != userId) return;
+      final repository = _apiExecutorStore();
+      final dto = await repository.api.loadOrder(id);
+      if (dto.assigneeId != userId) {
+        throw const ApiException(403, 'Это не ваш наряд');
+      }
+      if (!mounted || _session.user?.id != userId) return;
+      final navigator = _navigatorKey.currentState;
+      if (navigator == null) {
+        _pendingPushOrderId = id;
+        return;
+      }
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => ExecutorOrderLoader(
+              store: repository,
+              employeeId: userId,
+              order: dto.toWorkOrder(),
+            ),
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted && _session.user?.id == userId) {
+        final context = _navigatorKey.currentContext;
+        if (context != null && context.mounted) {
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+            SnackBar(
+              content: Text(
+                error is ApiException
+                    ? error.message
+                    : 'Не удалось открыть наряд',
+              ),
+            ),
+          );
+        }
+      }
+    } finally {
+      _openingPush = false;
+      if (_pendingPushOrderId != null && mounted && _session.authenticated) {
+        unawaited(_openPushOrder());
+      }
+    }
+  }
+
   ApiExecutorRepository _apiExecutorStore() {
     final userId = _session.user!.id;
     if (_executorStore != null && _executorUserId == userId) {
@@ -70,6 +142,9 @@ class _MainAppState extends State<MainApp> {
       );
     }
     _wasAuthenticated = authenticated;
+    if (authenticated && _pendingPushOrderId != null) {
+      unawaited(_openPushOrder());
+    }
   }
 
   late final store = DemoStore(
@@ -82,12 +157,20 @@ class _MainAppState extends State<MainApp> {
     super.initState();
     if (widget.demoMode) store.addScreenshotOrders();
     _session.addListener(_sessionChanged);
+    if (!widget.demoMode) {
+      _push = PushNotificationService(
+        session: _session,
+        onOrderTap: _pushOrderTapped,
+      );
+      unawaited(_push!.initialize());
+    }
     PhotoPickerService.instance.recoverLostPhotos();
   }
 
   @override
   void dispose() {
     _session.removeListener(_sessionChanged);
+    _push?.dispose();
     if (widget.session == null) _session.dispose();
     _executorStore?.dispose();
     store.dispose();
