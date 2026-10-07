@@ -514,8 +514,8 @@ class ApiOrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final equipment = order.equipment.name;
-    final area = order.area.name;
+    final equipment = uiText(context, order.equipment.name);
+    final area = uiText(context, order.area.name);
     final assignee = order.assignee.fullName;
 
     return Padding(
@@ -561,7 +561,7 @@ class ApiOrderCard extends StatelessWidget {
                 const SizedBox(height: 14),
 
                 Text(
-                  order.description,
+                  uiText(context, order.description),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

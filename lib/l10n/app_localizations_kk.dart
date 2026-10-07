@@ -1702,4 +1702,88 @@ class AppLocalizationsKk extends AppLocalizations {
   String ratingRejectsExplanation(String count, String points) {
     return 'Дәлелді себепсіз бас тартулар саны: $count. Олар үшін $points ұпай шегерілді.';
   }
+
+  @override
+  String get profileSettings => 'Баптаулар';
+
+  @override
+  String get completedShort => 'Аяқталды';
+
+  @override
+  String get orderSingular => 'Наряд';
+
+  @override
+  String get noOrders => 'Нарядтар жоқ';
+
+  @override
+  String get noScore => 'Баға жоқ';
+
+  @override
+  String get pushOrderOpenFailed => 'Нарядты ашу мүмкін болмады';
+
+  @override
+  String get companyName => 'Қостанай минералдары';
+
+  @override
+  String get emergencyNotificationChannel => 'Апаттық нарядтар';
+
+  @override
+  String get emergencyNotificationDescription =>
+      'Жауап беруді талап ететін жаңа апаттық нарядтар';
+
+  @override
+  String get offlineActionSaved => 'Телефонда сақталды. Жіберуді күтіп тұр.';
+
+  @override
+  String get actionUnavailable => 'Бұл мәртебеде әрекет қолжетімсіз';
+
+  @override
+  String get executorActionUnavailable => 'Орындаушыға бұл әрекет қолжетімсіз';
+
+  @override
+  String get executionFieldsRequired =>
+      'Орындалған жұмыстарды және ақау кодын толтырыңыз';
+
+  @override
+  String get afterPhotosInvalid => 'Жұмыстан кейінгі фотоларды тексеріңіз';
+
+  @override
+  String get materialsFromCatalogRequired =>
+      'Материалдарды анықтамалықтан таңдаңыз';
+
+  @override
+  String get materialsInvalid => 'Материалдарды тексеріңіз';
+
+  @override
+  String employeeGradeOnly(String grade) {
+    return '$grade разряд';
+  }
+
+  @override
+  String shortOrderCount(String count) {
+    return '$count наряд';
+  }
+
+  @override
+  String offlineActionNotApplied(String reason) {
+    return 'Әрекет қолданылмады: $reason';
+  }
+
+  @override
+  String get ratingPeriodLabel => 'Рейтинг кезеңі';
+
+  @override
+  String get ratingPeriodShift => 'Ауысым · 12 сағат';
+
+  @override
+  String get ratingPeriodDay => 'Тәулік бойынша';
+
+  @override
+  String get ratingPeriodWeek => 'Апта бойынша';
+
+  @override
+  String get ratingPeriodMonth => '30 күн бойынша';
+
+  @override
+  String get ratingPeriodCustom => 'Күндерді таңдау';
 }

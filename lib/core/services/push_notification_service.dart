@@ -3,9 +3,12 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'push_payload.dart';
+import 'package:mineral/l10n/app_locale.dart';
+import 'package:mineral/l10n/app_localizations.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebasePushBackgroundHandler(RemoteMessage message) async {
@@ -14,7 +17,9 @@ Future<void> firebasePushBackgroundHandler(RemoteMessage message) async {
 }
 
 class PushNotificationService {
-  PushNotificationService({required this.session, required this.onOrderTap});
+  PushNotificationService({required this.session, required this.onOrderTap}) {
+    appLocale.addListener(_localeChanged);
+  }
   final AuthSession session;
   final void Function(int) onOrderTap;
   final _local = FlutterLocalNotificationsPlugin();
@@ -25,6 +30,42 @@ class PushNotificationService {
   String? _registeredFor;
   Future<void>? _registration;
   bool _disposed = false;
+  bool _channelsReady = false;
+  AppLocalizations get _strings => lookupAppLocalizations(
+    appLocale.value ?? Locale(session.user?.language == 'kk' ? 'kk' : 'ru'),
+  );
+
+  void _localeChanged() {
+    if (_channelsReady && !_disposed) {
+      unawaited(_updateChannels().catchError((Object _) {}));
+    }
+  }
+
+  Future<void> _updateChannels() async {
+    final android = _local
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await android?.createNotificationChannel(
+      AndroidNotificationChannel(
+        'emergency_orders',
+        _strings.emergencyNotificationChannel,
+        importance: Importance.max,
+        sound: const RawResourceAndroidNotificationSound('emergency_order'),
+        playSound: true,
+        enableVibration: true,
+        description: _strings.emergencyNotificationDescription,
+      ),
+    );
+    await android?.createNotificationChannel(
+      AndroidNotificationChannel(
+        'orders',
+        _strings.orders,
+        importance: Importance.high,
+        playSound: true,
+      ),
+    );
+  }
 
   Future<void> initialize() async {
     if (kIsWeb ||
@@ -55,29 +96,8 @@ class PushNotificationService {
           }
         },
       );
-      final android = _local
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
-      await android?.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'emergency_orders',
-          'Аварийные наряды',
-          importance: Importance.max,
-          sound: RawResourceAndroidNotificationSound('emergency_order'),
-          playSound: true,
-          enableVibration: true,
-          description: 'Новые аварийные наряды, требующие ответа',
-        ),
-      );
-      await android?.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'orders',
-          'Наряды',
-          importance: Importance.high,
-          playSound: true,
-        ),
-      );
+      _channelsReady = true;
+      await _updateChannels();
       await Firebase.initializeApp();
       if (_disposed) return;
       FirebaseMessaging.onBackgroundMessage(firebasePushBackgroundHandler);
@@ -187,7 +207,9 @@ class PushNotificationService {
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           payload.channelId,
-          payload.emergency ? 'Аварийные наряды' : 'Наряды',
+          payload.emergency
+              ? _strings.emergencyNotificationChannel
+              : _strings.orders,
           icon: 'ic_notification',
           importance: payload.emergency ? Importance.max : Importance.high,
           priority: payload.emergency ? Priority.max : Priority.high,
@@ -208,6 +230,7 @@ class PushNotificationService {
   void _logError(Object error) => debugPrint('Push operation failed: $error');
   void dispose() {
     _disposed = true;
+    appLocale.removeListener(_localeChanged);
     session.removeListener(_sessionChanged);
     _retry?.cancel();
     for (final subscription in _subscriptions) {

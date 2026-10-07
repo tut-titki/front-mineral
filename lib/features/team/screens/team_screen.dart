@@ -242,7 +242,9 @@ class BackendBrigadeMembersScreen extends StatelessWidget {
                       ? Panel(
                           child: ListTile(
                             title: Text(member.fullName),
-                            subtitle: Text(member.specialty ?? '—'),
+                            subtitle: Text(
+                              uiText(context, member.specialty ?? '—'),
+                            ),
                           ),
                         )
                       : BackendEmployeeCard(executor: executors[member.id]!),

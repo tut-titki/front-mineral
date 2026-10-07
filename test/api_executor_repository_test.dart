@@ -1,3 +1,5 @@
+import 'package:mineral/features/executor/models/executor_rating_period.dart';
+import 'package:mineral/features/executor/models/executor_order_queue.dart';
 import 'dart:async';
 import 'package:mineral/features/executor/screens/executor_profile_screen.dart';
 import 'package:mineral/features/references/data/reference_storage_stub.dart';
@@ -154,6 +156,111 @@ void main() {
     session.dispose();
     await directory.delete(recursive: true);
   });
+  test(
+    'FIFO restored from server events after a fresh repository is created',
+    () async {
+      handler = (request) async {
+        if (request.url.path.endsWith('/fault-codes') ||
+            request.url.path.endsWith('/materials')) {
+          return json([]);
+        }
+        if (request.url.path == '/api/work-orders') {
+          return json(
+            request.url.queryParameters['status']!.startsWith('ISSUED')
+                ? [order(76, 'QUEUED'), order(77, 'QUEUED')]
+                : [],
+          );
+        }
+        final id = int.parse(request.url.path.split('/').last);
+        final data = order(id, 'QUEUED', full: true);
+        data['events'] = [
+          {
+            'action': 'QUEUE',
+            'toStatus': 'QUEUED',
+            'createdAt': id == 76
+                ? '2026-10-06T12:00:00Z'
+                : '2026-10-06T11:00:00Z',
+            'actor': {'fullName': 'Worker'},
+            'comment': null,
+          },
+        ];
+        return json(data);
+      };
+      await repository.refreshExecutor(5);
+      expect(
+        ExecutorOrderQueue(
+          repository.assignedTo(5),
+        ).queued.map((o) => o.number),
+        [77, 76],
+      );
+      repository.dispose();
+      repository = ApiExecutorRepository(
+        actionStorage: MemoryPendingActionStorage(),
+        api: ExecutorApi(session, referenceStorage: MemoryReferenceStorage()),
+        draftStorage: drafts,
+      );
+      await repository.refreshExecutor(5);
+      expect(
+        ExecutorOrderQueue(
+          repository.assignedTo(5),
+        ).queued.map((o) => o.number),
+        [77, 76],
+      );
+    },
+  );
+
+  test(
+    'simultaneous ratings use separate caches and UTC custom range',
+    () async {
+      final month = Completer<http.Response>();
+      handler = (request) async {
+        if (request.url.queryParameters['period'] == 'month') {
+          return month.future;
+        }
+        return json({'id': 5, 'score': 42, 'closed': 2});
+      };
+      final old = repository.loadExecutorRating(5);
+      const shift = ExecutorRatingPeriod('shift');
+      await repository.loadExecutorRating(5, period: shift);
+      month.complete(json({'id': 5, 'score': 88, 'closed': 10}));
+      await old;
+      expect(repository.executorRating(5, period: shift)!.score, 42);
+      expect(repository.executorRating(5)!.score, 88);
+      final custom = ExecutorRatingPeriod.custom(
+        DateTime.parse('2026-10-01T00:00:00+05:00'),
+        DateTime.parse('2026-10-02T23:59:59.999+05:00'),
+      );
+      await repository.loadExecutorRating(5, period: custom);
+      expect(requests.last.url.queryParameters, {
+        'from': '2026-09-30T19:00:00.000Z',
+        'to': '2026-10-02T18:59:59.999Z',
+      });
+    },
+  );
+
+  testWidgets('profile changes rating period through the selector', (
+    tester,
+  ) async {
+    handler = (request) async => json({'id': 5, 'score': 79, 'closed': 12});
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('ru'),
+        home: Scaffold(
+          body: ExecutorProfileScreen(store: repository, employeeId: 5),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('За смену · 12 часов').last);
+    await tester.pumpAndSettle();
+    expect(requests.last.url.queryParameters['period'], 'shift');
+    expect(tester.takeException(), isNull);
+  });
+
   test(
     'own monthly rating loads once and retains last result on failure',
     () async {
@@ -667,6 +774,9 @@ void main() {
   test('pagination collects active orders and history independently', () async {
     final previous = handler;
     handler = (r) async {
+      if (r.url.path == '/api/work-orders/201') {
+        return json(order(201, 'QUEUED', full: true));
+      }
       if (r.url.path != '/api/work-orders') return previous(r);
       final active = r.url.queryParameters['status']!.startsWith('ISSUED');
       final offset = int.parse(r.url.queryParameters['offset']!);

@@ -1694,4 +1694,87 @@ class AppLocalizationsRu extends AppLocalizations {
   String ratingRejectsExplanation(String count, String points) {
     return 'Отказов без уважительной причины: $count. За них снято $points баллов.';
   }
+
+  @override
+  String get profileSettings => 'Настройки';
+
+  @override
+  String get completedShort => 'Завершено';
+
+  @override
+  String get orderSingular => 'Наряд';
+
+  @override
+  String get noOrders => 'Нет нарядов';
+
+  @override
+  String get noScore => 'Нет оценки';
+
+  @override
+  String get pushOrderOpenFailed => 'Не удалось открыть наряд';
+
+  @override
+  String get companyName => 'Костанайские минералы';
+
+  @override
+  String get emergencyNotificationChannel => 'Аварийные наряды';
+
+  @override
+  String get emergencyNotificationDescription =>
+      'Новые аварийные наряды, требующие ответа';
+
+  @override
+  String get offlineActionSaved => 'Сохранено на телефоне. Ожидает отправки.';
+
+  @override
+  String get actionUnavailable => 'Действие недоступно из текущего статуса';
+
+  @override
+  String get executorActionUnavailable => 'Недоступное действие исполнителя';
+
+  @override
+  String get executionFieldsRequired => 'Заполните выполненные работы и шифр';
+
+  @override
+  String get afterPhotosInvalid => 'Проверьте фото после работ';
+
+  @override
+  String get materialsFromCatalogRequired =>
+      'Выберите материалы из справочника';
+
+  @override
+  String get materialsInvalid => 'Проверьте материалы';
+
+  @override
+  String employeeGradeOnly(String grade) {
+    return '$grade разряд';
+  }
+
+  @override
+  String shortOrderCount(String count) {
+    return '$count нар.';
+  }
+
+  @override
+  String offlineActionNotApplied(String reason) {
+    return 'Действие не применено: $reason';
+  }
+
+  @override
+  String get ratingPeriodLabel => 'Период рейтинга';
+
+  @override
+  String get ratingPeriodShift => 'За смену · 12 часов';
+
+  @override
+  String get ratingPeriodDay => 'За сутки';
+
+  @override
+  String get ratingPeriodWeek => 'За неделю';
+
+  @override
+  String get ratingPeriodMonth => 'За 30 дней';
+
+  @override
+  String get ratingPeriodCustom => 'Выбрать даты';
 }

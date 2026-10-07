@@ -13,6 +13,43 @@ AppLocalizations strings(BuildContext context) =>
 String uiText(BuildContext context, String source) {
   final s = strings(context);
   switch (source) {
+    case "Настройки":
+      return s.profileSettings;
+    case "Завершено":
+      return s.completedShort;
+    case "Наряд":
+      return s.orderSingular;
+    case "Нет нарядов":
+      return s.noOrders;
+    case "Нет оценки":
+      return s.noScore;
+    case "Не удалось открыть наряд":
+      return s.pushOrderOpenFailed;
+    case "Костанайские минералы":
+      return s.companyName;
+    case "Аварийные наряды":
+      return s.emergencyNotificationChannel;
+    case "Новые аварийные наряды, требующие ответа":
+      return s.emergencyNotificationDescription;
+    case "Сохранено на телефоне. Ожидает отправки.":
+      return s.offlineActionSaved;
+    case "Действие недоступно из текущего статуса":
+      return s.actionUnavailable;
+    case "Недоступное действие исполнителя":
+      return s.executorActionUnavailable;
+    case "Заполните выполненные работы и шифр":
+      return s.executionFieldsRequired;
+    case "Проверьте фото после работ":
+      return s.afterPhotosInvalid;
+    case "Выберите материалы из справочника":
+      return s.materialsFromCatalogRequired;
+    case "Проверьте материалы":
+      return s.materialsInvalid;
+    case "Телефонда сақталды. Жіберуді күтіп тұр.":
+      return s.offlineActionSaved;
+    case "Наряд не в работе":
+      return s.orderNotWorkingMessage;
+
     case 'ACCEPTED':
     case 'Принято':
       return s.aiVerdictAcceptedLabel;
@@ -920,6 +957,15 @@ String uiText(BuildContext context, String source) {
   if (source == 'свободен') return s.available;
   if (source == 'не на смене') return uiText(context, 'Не на смене');
   RegExpMatch? match;
+  match = RegExp(
+    r'^(Действие не применено|Әрекет қолданылмады): (.+)$',
+  ).firstMatch(source);
+  if (match != null) return s.offlineActionNotApplied(match[2]!);
+  match = RegExp(r'^(\d+) разряд$').firstMatch(source);
+  if (match != null) return s.employeeGradeOnly(match[1]!);
+  match = RegExp(r'^(\d+) нар\.$').firstMatch(source);
+  if (match != null) return s.shortOrderCount(match[1]!);
+
   match = RegExp(
     r'^выполняет наряд №(.+), в очереди (\d+)$',
   ).firstMatch(source);

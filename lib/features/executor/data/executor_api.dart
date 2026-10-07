@@ -1,3 +1,4 @@
+import '../models/executor_rating_period.dart';
 import '../../references/data/reference_storage.dart';
 import '../../references/data/reference_cache.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
@@ -18,8 +19,9 @@ class ExecutorApi {
            );
   final ReferenceCache referenceCache;
   final AuthSession session;
-  Future<Map<String, dynamic>> loadRating() =>
-      session.request('GET', '/api/reports/my-rating?period=month');
+  Future<Map<String, dynamic>> loadRating({
+    ExecutorRatingPeriod period = const ExecutorRatingPeriod(),
+  }) => session.request('GET', '/api/reports/my-rating?${period.key}');
   Future<List<ExecutorOrderDto>> loadOrders(
     String statuses, {
     int offset = 0,

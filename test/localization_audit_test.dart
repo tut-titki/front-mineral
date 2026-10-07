@@ -1,0 +1,123 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mineral/l10n/app_localizations.dart';
+import 'package:mineral/l10n/backend_ui_labels.dart';
+import 'package:mineral/l10n/ui_localization.dart';
+import 'package:mineral/core/api/backend_document.dart';
+import 'package:mineral/shared/widgets/backend_section.dart';
+import 'helpers/localization_assertions.dart';
+
+Widget host(Widget child) => MaterialApp(
+  locale: const Locale('kk'),
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: SingleChildScrollView(child: child)),
+);
+
+void main() {
+  testWidgets('all static legacy UI labels have Kazakh translations', (
+    tester,
+  ) async {
+    await tester.pumpWidget(host(const SizedBox()));
+    final context = tester.element(find.byType(Scaffold));
+    final allowed = <String>{
+      for (final entry in russianMessages.entries)
+        if (!entry.key.startsWith('@') &&
+            entry.value == kazakhMessages[entry.key])
+          entry.value as String,
+      for (final entry in backendUiLabels.entries)
+        if (entry.key == entry.value) entry.key,
+    };
+    final calls = RegExp(
+      r'''(?:uiText\(\s*\w+,\s*|(?:PageHeading|SectionHeading|StatusTag)\(\s*)(['"])((?:(?!\1).)*?)\1''',
+      dotAll: true,
+    );
+    var checked = 0;
+    for (final file in Directory(
+      'lib',
+    ).listSync(recursive: true).whereType<File>()) {
+      if (!file.path.endsWith('.dart') ||
+          file.path.contains(
+            '${Platform.pathSeparator}l10n${Platform.pathSeparator}',
+          )) {
+        continue;
+      }
+      for (final match in calls.allMatches(file.readAsStringSync())) {
+        final source = match[2]!;
+        if (source.contains(r'$') ||
+            !RegExp('[А-Яа-яЁё]').hasMatch(source) ||
+            allowed.contains(source)) {
+          continue;
+        }
+        expect(
+          uiText(context, source),
+          isNot(source),
+          reason: '${file.path}: $source',
+        );
+        checked++;
+      }
+    }
+    expect(checked, greaterThan(100));
+  });
+
+  testWidgets('composed employee labels, offline messages and units localize', (
+    tester,
+  ) async {
+    await tester.pumpWidget(host(const SizedBox()));
+    final context = tester.element(find.byType(Scaffold));
+    final s = strings(context);
+    expect(uiText(context, 'Настройки'), s.profileSettings);
+    expect(uiText(context, 'Завершено'), s.completedShort);
+    expect(
+      uiText(context, 'В работе · 2 нар.'),
+      '${s.working} · ${s.shortOrderCount('2')}',
+    );
+    expect(
+      uiText(context, 'В очереди · 3 нар.'),
+      '${s.queued} · ${s.shortOrderCount('3')}',
+    );
+    expect(uiText(context, '5 разряд'), s.employeeGradeOnly('5'));
+    expect(
+      uiText(context, 'Телефонда сақталды. Жіберуді күтіп тұр.'),
+      s.offlineActionSaved,
+    );
+    expect(
+      uiText(context, 'Действие не применено: Ответ сервера'),
+      s.offlineActionNotApplied('Ответ сервера'),
+    );
+    expect(
+      uiText(context, 'Сохранено на телефоне. Ожидает отправки.'),
+      s.offlineActionSaved,
+    );
+    expect(uiText(context, 'Пользовательский текст'), 'Пользовательский текст');
+  });
+
+  testWidgets('report fields, enums and known catalog labels localize', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        BackendDocumentView(
+          document: BackendDocument({
+            'quality': 4.9,
+            'onTimeRate': 1,
+            'employeeStatus': 'AVAILABLE',
+            'role': 'MASTER',
+            'status': 'CLOSED',
+            'equipment': 'Дробилка КМД-1750',
+            'explanation': 'Ответ ИИ сервера',
+          }),
+        ),
+      ),
+    );
+    expect(find.text('Сапа: 4.9'), findsOneWidget);
+    expect(find.text('Қызметкер мәртебесі: Бос'), findsOneWidget);
+    expect(find.text('Рөлі: Ауысым шебері'), findsOneWidget);
+    expect(find.text('Мәртебе: Жабылды'), findsOneWidget);
+    final s = strings(tester.element(find.byType(Scaffold)));
+    expect(find.text('Жабдық: ${s.crusherEquipment}'), findsOneWidget);
+    expect(find.text('Түсіндірме: Ответ ИИ сервера'), findsOneWidget);
+    checkNoRussianLabels(tester);
+  });
+}

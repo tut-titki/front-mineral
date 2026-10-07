@@ -1,3 +1,5 @@
+import '../models/executor_rating_period.dart';
+import 'package:mineral/core/utils/enterprise_time.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mineral/features/auth/screens/change_password_screen.dart';
@@ -24,15 +26,18 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
   ExecutorRepository get store => widget.store;
   int get employeeId => widget.employeeId;
   late Future<ExecutorRating?> _ratingLoad;
+  ExecutorRatingPeriod _period = const ExecutorRatingPeriod();
+  DateTimeRange? _customRange;
+  int _selectorRevision = 0;
 
   @override
   void initState() {
     super.initState();
-    _ratingLoad = store.loadExecutorRating(employeeId);
+    _ratingLoad = store.loadExecutorRating(employeeId, period: _period);
   }
 
   Future<void> _refreshRating() async {
-    final future = store.loadExecutorRating(employeeId);
+    final future = store.loadExecutorRating(employeeId, period: _period);
     setState(() {
       _ratingLoad = future;
     });
@@ -41,6 +46,103 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
     } catch (_) {
       // FutureBuilder displays the error and keeps the last successful rating.
     }
+  }
+
+  String _periodLabel(BuildContext context) {
+    final s = strings(context);
+    return switch (_period.period) {
+      'shift' => s.ratingPeriodShift,
+      'day' => s.ratingPeriodDay,
+      'week' => s.ratingPeriodWeek,
+      'custom' => '${_date(_customRange!.start)} – ${_date(_customRange!.end)}',
+      _ => s.ratingPeriodMonth,
+    };
+  }
+
+  String _date(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+
+  Future<void> _selectPeriod(String? value) async {
+    if (value == null) return;
+    ExecutorRatingPeriod next;
+    if (value == 'custom') {
+      final now = enterpriseTime(store.now);
+      final today = DateTime(now.year, now.month, now.day);
+      final range = await showDateRangePicker(
+        context: context,
+        firstDate: DateTime(2000),
+        lastDate: today,
+        initialDateRange: _customRange,
+        helpText: strings(context).ratingPeriodCustom,
+      );
+      if (!mounted) return;
+      if (range == null) {
+        setState(() => _selectorRevision++);
+        return;
+      }
+      _customRange = range;
+      DateTime midnight(DateTime date) => DateTime.utc(
+        date.year,
+        date.month,
+        date.day,
+      ).subtract(const Duration(hours: 5));
+      next = ExecutorRatingPeriod.custom(
+        midnight(range.start),
+        midnight(range.end)
+            .add(const Duration(days: 1))
+            .subtract(const Duration(milliseconds: 1)),
+      );
+    } else {
+      next = ExecutorRatingPeriod(value);
+    }
+    if (!mounted) return;
+    setState(() {
+      _period = next;
+      _ratingLoad = store.loadExecutorRating(employeeId, period: next);
+    });
+  }
+
+  Widget _periodSelector(BuildContext context) {
+    final s = strings(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: DropdownButtonFormField<String>(
+        key: ValueKey('${_period.key}:$_selectorRevision'),
+        isExpanded: true,
+        initialValue: _period.period,
+        decoration: InputDecoration(
+          labelText: s.ratingPeriodLabel,
+          prefixIcon: const Icon(LucideIcons.calendarDays, size: 20),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 14,
+          ),
+        ),
+        items:
+            [
+                  ('shift', s.ratingPeriodShift),
+                  ('day', s.ratingPeriodDay),
+                  ('week', s.ratingPeriodWeek),
+                  ('month', s.ratingPeriodMonth),
+                  ('custom', s.ratingPeriodCustom),
+                ]
+                .map(
+                  (item) => DropdownMenuItem(
+                    value: item.$1,
+                    child: Text(
+                      item.$2,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                )
+                .toList(),
+        onChanged: _selectPeriod,
+      ),
+    );
   }
 
   static const _blue = Color(0xFF01408B);
@@ -183,11 +285,12 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _periodSelector(context),
                     FutureBuilder<ExecutorRating?>(
                       future: _ratingLoad,
                       builder: (context, snapshot) => _rating(
                         context,
-                        store.executorRating(employeeId),
+                        store.executorRating(employeeId, period: _period),
                         loading:
                             snapshot.connectionState != ConnectionState.done,
                         error: snapshot.hasError
@@ -375,7 +478,7 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
                               ? loading
                                     ? '…'
                                     : uiText(context, 'Пока нет оценки')
-                              : s.historyMonthSummary,
+                              : _periodLabel(context),
                           style: const TextStyle(
                             fontSize: 12,
                             height: 1.3,

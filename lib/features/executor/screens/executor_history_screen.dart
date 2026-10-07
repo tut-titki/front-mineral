@@ -253,7 +253,7 @@ class _ExecutorHistoryScreenState extends State<ExecutorHistoryScreen> {
                                   onPressed: () =>
                                       setState(() => _status = item.$1),
                                   style: TextButton.styleFrom(
-                                    minimumSize: const Size.fromHeight(40),
+                                    minimumSize: const Size.fromHeight(48),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 6,
                                     ),
@@ -288,7 +288,7 @@ class _ExecutorHistoryScreenState extends State<ExecutorHistoryScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Text(
-                        widget.error!,
+                        uiText(context, widget.error!),
                         style: const TextStyle(color: Colors.red),
                       ),
                     ),

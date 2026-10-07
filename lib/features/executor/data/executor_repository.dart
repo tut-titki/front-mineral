@@ -1,3 +1,4 @@
+import 'package:mineral/features/executor/models/executor_rating_period.dart';
 import 'package:flutter/foundation.dart';
 import '../models/execution_assessment.dart';
 import 'package:mineral/shared/models/models.dart';
@@ -10,8 +11,14 @@ abstract interface class ExecutorRepository implements Listenable {
   List<String> get executorFaultCodes;
   List<String> get executorMaterials;
   Employee employee(int id);
-  ExecutorRating? executorRating(int employeeId);
-  Future<ExecutorRating?> loadExecutorRating(int employeeId);
+  ExecutorRating? executorRating(
+    int employeeId, {
+    ExecutorRatingPeriod period = const ExecutorRatingPeriod(),
+  });
+  Future<ExecutorRating?> loadExecutorRating(
+    int employeeId, {
+    ExecutorRatingPeriod period = const ExecutorRatingPeriod(),
+  });
   List<WorkOrder> assignedTo(int employeeId);
   Future<void> refreshExecutor(int employeeId);
   Future<WorkOrder> loadExecutorOrder(int employeeId, WorkOrder order);

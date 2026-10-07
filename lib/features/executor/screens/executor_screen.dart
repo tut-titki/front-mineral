@@ -175,7 +175,7 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_refreshError ?? store.loadError!),
+                  Text(uiText(context, _refreshError ?? store.loadError!)),
                   TextButton(
                     onPressed: _refresh,
                     child: Text(uiText(context, 'Повторить')),
@@ -249,7 +249,7 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Text(
-                      store.loadError ?? _refreshError!,
+                      uiText(context, store.loadError ?? _refreshError!),
                       style: const TextStyle(color: Colors.red),
                     ),
                   ),

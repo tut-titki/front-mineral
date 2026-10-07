@@ -1,5 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:mineral/core/services/push_notification_service.dart';
+import 'package:mineral/l10n/app_locale.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -41,6 +47,51 @@ void main() {
     requests.clear();
   });
   tearDown(() => session.dispose());
+
+  testWidgets('Android channel names follow live language changes', (
+    tester,
+  ) async {
+    const channel = MethodChannel('dexterous.com/flutter/local_notifications');
+    final channels = <Map<dynamic, dynamic>>[];
+    final previousLocale = appLocale.value;
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    AndroidFlutterLocalNotificationsPlugin.registerWith();
+    appLocale.value = const Locale('ru');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+      call,
+    ) async {
+      if (call.method == 'initialize') return true;
+      if (call.method == 'createNotificationChannel') {
+        channels.add(Map<dynamic, dynamic>.from(call.arguments as Map));
+      }
+      return null;
+    });
+    final service = PushNotificationService(
+      session: session,
+      onOrderTap: (_) {},
+    );
+    addTearDown(() {
+      service.dispose();
+      debugDefaultTargetPlatformOverride = null;
+      appLocale.value = previousLocale;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        null,
+      );
+    });
+    await tester.runAsync(service.initialize);
+    expect(channels.map((c) => c['name']), ['Аварийные наряды', 'Наряды']);
+    channels.clear();
+    appLocale.value = const Locale('kk');
+    await tester.pumpAndSettle();
+    expect(channels.map((c) => c['name']), ['Апаттық нарядтар', 'Нарядтар']);
+    expect(channels.map((c) => c['id']), ['emergency_orders', 'orders']);
+    expect(
+      channels.first['description'],
+      'Жауап беруді талап ететін жаңа апаттық нарядтар',
+    );
+    debugDefaultTargetPlatformOverride = null;
+  });
 
   test(
     'register uses documented body; rotation and logout detach before JWT removal',

@@ -3175,6 +3175,156 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Отказов без уважительной причины: {count}. За них снято {points} баллов.'**
   String ratingRejectsExplanation(String count, String points);
+
+  /// No description provided for @profileSettings.
+  ///
+  /// In ru, this message translates to:
+  /// **'Настройки'**
+  String get profileSettings;
+
+  /// No description provided for @completedShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Завершено'**
+  String get completedShort;
+
+  /// No description provided for @orderSingular.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд'**
+  String get orderSingular;
+
+  /// No description provided for @noOrders.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет нарядов'**
+  String get noOrders;
+
+  /// No description provided for @noScore.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет оценки'**
+  String get noScore;
+
+  /// No description provided for @pushOrderOpenFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть наряд'**
+  String get pushOrderOpenFailed;
+
+  /// No description provided for @companyName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Костанайские минералы'**
+  String get companyName;
+
+  /// No description provided for @emergencyNotificationChannel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аварийные наряды'**
+  String get emergencyNotificationChannel;
+
+  /// No description provided for @emergencyNotificationDescription.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новые аварийные наряды, требующие ответа'**
+  String get emergencyNotificationDescription;
+
+  /// No description provided for @offlineActionSaved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сохранено на телефоне. Ожидает отправки.'**
+  String get offlineActionSaved;
+
+  /// No description provided for @actionUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Действие недоступно из текущего статуса'**
+  String get actionUnavailable;
+
+  /// No description provided for @executorActionUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Недоступное действие исполнителя'**
+  String get executorActionUnavailable;
+
+  /// No description provided for @executionFieldsRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заполните выполненные работы и шифр'**
+  String get executionFieldsRequired;
+
+  /// No description provided for @afterPhotosInvalid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверьте фото после работ'**
+  String get afterPhotosInvalid;
+
+  /// No description provided for @materialsFromCatalogRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите материалы из справочника'**
+  String get materialsFromCatalogRequired;
+
+  /// No description provided for @materialsInvalid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверьте материалы'**
+  String get materialsInvalid;
+
+  /// No description provided for @employeeGradeOnly.
+  ///
+  /// In ru, this message translates to:
+  /// **'{grade} разряд'**
+  String employeeGradeOnly(String grade);
+
+  /// No description provided for @shortOrderCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count} нар.'**
+  String shortOrderCount(String count);
+
+  /// No description provided for @offlineActionNotApplied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Действие не применено: {reason}'**
+  String offlineActionNotApplied(String reason);
+
+  /// No description provided for @ratingPeriodLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Период рейтинга'**
+  String get ratingPeriodLabel;
+
+  /// No description provided for @ratingPeriodShift.
+  ///
+  /// In ru, this message translates to:
+  /// **'За смену · 12 часов'**
+  String get ratingPeriodShift;
+
+  /// No description provided for @ratingPeriodDay.
+  ///
+  /// In ru, this message translates to:
+  /// **'За сутки'**
+  String get ratingPeriodDay;
+
+  /// No description provided for @ratingPeriodWeek.
+  ///
+  /// In ru, this message translates to:
+  /// **'За неделю'**
+  String get ratingPeriodWeek;
+
+  /// No description provided for @ratingPeriodMonth.
+  ///
+  /// In ru, this message translates to:
+  /// **'За 30 дней'**
+  String get ratingPeriodMonth;
+
+  /// No description provided for @ratingPeriodCustom.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать даты'**
+  String get ratingPeriodCustom;
 }
 
 class _AppLocalizationsDelegate

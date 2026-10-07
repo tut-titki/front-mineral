@@ -186,7 +186,10 @@ class _MasterShellState extends State<MasterShell> {
                           width: 110,
                           height: 48,
                           fit: BoxFit.contain,
-                          semanticLabel: 'Костанайские минералы',
+                          semanticLabel: uiText(
+                            context,
+                            'Костанайские минералы',
+                          ),
                         ),
                   actions: [
                     IconButton(
@@ -263,7 +266,10 @@ class _MasterShellState extends State<MasterShell> {
                             width: 192,
                             height: 96,
                             fit: BoxFit.contain,
-                            semanticLabel: 'Костанайские минералы',
+                            semanticLabel: uiText(
+                              context,
+                              'Костанайские минералы',
+                            ),
                           ),
                         ),
 

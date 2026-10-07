@@ -207,8 +207,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           [
                             if (executor.specialty != null &&
                                 executor.specialty!.trim().isNotEmpty)
-                              executor.specialty!,
-                            _employeeStatusLabel(executor.employeeStatus),
+                              uiText(context, executor.specialty!),
+                            uiText(
+                              context,
+                              _employeeStatusLabel(executor.employeeStatus),
+                            ),
                           ].join(' · '),
                         ),
                         trailing: isCurrent
@@ -670,7 +673,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          order.description,
+          uiText(context, order.description),
           style: const TextStyle(
             color: ink,
             fontSize: 24,
@@ -710,7 +713,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    order.comment!,
+                    uiText(context, order.comment!),
                     style: const TextStyle(color: ink, height: 1.45),
                   ),
                 ),
@@ -1557,7 +1560,7 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              value,
+              uiText(context, value),
               style: TextStyle(
                 color: valueColor ?? ink,
                 fontWeight: FontWeight.w600,
@@ -1808,8 +1811,8 @@ class _EventRow extends StatelessWidget {
                   if (event.fromStatus != null || event.toStatus != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      '${event.fromStatus?.label ?? '—'} → '
-                      '${event.toStatus?.label ?? '—'}',
+                      '${uiText(context, event.fromStatus?.label ?? '—')} → '
+                      '${uiText(context, event.toStatus?.label ?? '—')}',
                       style: const TextStyle(fontSize: 12, color: muted),
                     ),
                   ],
@@ -1817,7 +1820,10 @@ class _EventRow extends StatelessWidget {
                   if (event.comment != null &&
                       event.comment!.trim().isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Text(event.comment!, style: const TextStyle(height: 1.4)),
+                    Text(
+                      uiText(context, event.comment!),
+                      style: const TextStyle(height: 1.4),
+                    ),
                   ],
                 ],
               ),

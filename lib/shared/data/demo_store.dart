@@ -1,3 +1,4 @@
+import 'package:mineral/features/executor/models/executor_rating_period.dart';
 import 'package:flutter/material.dart';
 import 'package:mineral/features/executor/data/executor_repository.dart';
 import 'package:mineral/features/executor/data/execution_draft_storage.dart';
@@ -11,10 +12,15 @@ class DemoStore extends ChangeNotifier implements ExecutorRepository {
   String createUniqueId() => const Uuid().v4();
   final OfflineActionQueue? queue;
   @override
-  ExecutorRating? executorRating(int employeeId) => null;
+  ExecutorRating? executorRating(
+    int employeeId, {
+    ExecutorRatingPeriod period = const ExecutorRatingPeriod(),
+  }) => null;
   @override
-  Future<ExecutorRating?> loadExecutorRating(int employeeId) async =>
-      executorRating(employeeId);
+  Future<ExecutorRating?> loadExecutorRating(
+    int employeeId, {
+    ExecutorRatingPeriod period = const ExecutorRatingPeriod(),
+  }) async => executorRating(employeeId, period: period);
   @override
   bool get isLoading => false;
   @override

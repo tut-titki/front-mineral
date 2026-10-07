@@ -1,3 +1,4 @@
+import '../models/executor_rating_period.dart';
 import 'package:mineral/core/services/photo_upload_rules.dart';
 import 'dart:convert';
 import 'dart:async';
@@ -96,7 +97,7 @@ class ApiExecutorRepository extends ChangeNotifier
         if (existing != null) {
           _removeUnavailable(
             existing,
-            const ApiException(403, "Наряд переназначен другому испонителю."),
+            const ApiException(403, "Наряд переназначен другому исполнителю."),
           );
         }
         return;
@@ -110,18 +111,22 @@ class ApiExecutorRepository extends ChangeNotifier
 
       if (order.status == OrderStatus.closed) {
         unawaited(
-          loadExecutorRating(_user.id).catchError((Object _) => _rating),
+          loadExecutorRating(
+            _user.id,
+          ).catchError((Object _) => executorRating(_user.id)),
         );
       }
 
       if (existing?.detailsLoaded == true) {
         await loadExecutorOrder(_user.id, order);
+      } else if (order.status == OrderStatus.queued) {
+        await loadExecutorOrderTime(_user.id, order);
       }
     } catch (e) {
       if (!_sessionActive) return;
       _error = e is ApiException && e.message.isNotEmpty
           ? e.message
-          : "Не удалось обновить данные. Потяните список вниз, чтобы обновить его.";
+          : 'Не удалось обновить данные. Потяните список вниз, чтобы повторить.';
       _notify();
       rethrow;
     }
@@ -267,31 +272,42 @@ class ApiExecutorRepository extends ChangeNotifier
   }
 
   @override
-  ExecutorRating? executorRating(int employeeId) {
+  ExecutorRating? executorRating(
+    int employeeId, {
+    ExecutorRatingPeriod period = const ExecutorRatingPeriod(),
+  }) {
     _checkUser(employeeId);
-    return _rating;
+    return _ratings[period.key];
   }
 
-  ExecutorRating? _rating;
-  Future<ExecutorRating?>? _ratingLoading;
+  final _ratings = <String, ExecutorRating>{};
+  final _ratingLoads = <String, Future<ExecutorRating?>>{};
 
   @override
-  Future<ExecutorRating?> loadExecutorRating(int employeeId) {
+  Future<ExecutorRating?> loadExecutorRating(
+    int employeeId, {
+    ExecutorRatingPeriod period = const ExecutorRatingPeriod(),
+  }) {
     _checkUser(employeeId);
-    return _ratingLoading ??= _loadRating(employeeId).whenComplete(() {
-      _ratingLoading = null;
-    });
+    return _ratingLoads[period.key] ??= _loadRating(employeeId, period)
+        .whenComplete(() {
+          _ratingLoads.remove(period.key);
+        });
   }
 
-  Future<ExecutorRating?> _loadRating(int employeeId) async {
-    final data = await api.loadRating();
+  Future<ExecutorRating?> _loadRating(
+    int employeeId,
+    ExecutorRatingPeriod period,
+  ) async {
+    final data = await api.loadRating(period: period);
     _checkUser(employeeId);
     if (data['id'] != employeeId) {
       throw const ApiException(403, 'Недостаточно прав');
     }
-    _rating = ExecutorRating.fromJson(data);
+    final rating = ExecutorRating.fromJson(data);
+    _ratings[period.key] = rating;
     _notify();
-    return _rating;
+    return rating;
   }
 
   @override
@@ -321,6 +337,32 @@ class ApiExecutorRepository extends ChangeNotifier
       final active = await _pages(
         'ISSUED,QUEUED,ACCEPTED,IN_PROGRESS,PAUSED,REWORK',
       );
+      // Compact responses omit events; restore FIFO from server QUEUE events.
+      final queued = active
+          .where(
+            (dto) => dto.status == 'QUEUED' && dto.assigneeId == employeeId,
+          )
+          .toList();
+      final queueDetails = <int, ExecutorOrderDto?>{};
+      for (var start = 0; start < queued.length; start += 8) {
+        await Future.wait(
+          queued.skip(start).take(8).map((dto) async {
+            try {
+              queueDetails[dto.id] = await api.loadOrder(dto.id);
+            } on ApiException catch (error) {
+              if (error.status != 403 && error.status != 404) rethrow;
+              queueDetails[dto.id] = null;
+            }
+          }),
+        );
+      }
+      final restoredActive = active
+          .map(
+            (dto) =>
+                queueDetails.containsKey(dto.id) ? queueDetails[dto.id] : dto,
+          )
+          .whereType<ExecutorOrderDto>()
+          .toList();
       final history = await _pages(
         'COMPLETED,AI_REVIEW,CLOSED,CANCELLED,REJECTED',
       );
@@ -328,7 +370,7 @@ class ApiExecutorRepository extends ChangeNotifier
       final materials = await api.references('materials');
       _checkUser(employeeId);
       if (revision != _revision) return;
-      for (final dto in [...active, ...history]) {
+      for (final dto in [...restoredActive, ...history]) {
         dto.toWorkOrder();
       }
       _faultIds.clear();
@@ -342,7 +384,7 @@ class ApiExecutorRepository extends ChangeNotifier
       final old = {..._active, ..._history};
       _active.clear();
       _history.clear();
-      for (final dto in [...active, ...history]) {
+      for (final dto in [...restoredActive, ...history]) {
         if (dto.assigneeId != employeeId) continue;
         _store(dto, existing: old[dto.id]);
       }

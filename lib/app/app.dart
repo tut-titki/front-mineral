@@ -129,7 +129,7 @@ class _MainAppState extends State<MainApp> {
               content: Text(
                 error is ApiException
                     ? error.message
-                    : 'Не удалось открыть наряд',
+                    : AppLocalizations.of(context).pushOrderOpenFailed,
               ),
             ),
           );
@@ -272,7 +272,8 @@ class _MainAppState extends State<MainApp> {
 
           debugShowCheckedModeBanner: false,
 
-          onGenerateTitle: (context) => 'Костанайские минералы',
+          onGenerateTitle: (context) =>
+              AppLocalizations.of(context).companyName,
 
           theme: buildAppTheme(),
 
