@@ -1,8 +1,8 @@
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: assets/logo_blue.png
+  image_path: assets/logo_naryadAi.png
   background_color_android: "#FFFFFF"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: assets/logo_blue.png
+  adaptive_icon_foreground: assets/logo_naryadAi.png
   adaptive_icon_foreground_inset: 20

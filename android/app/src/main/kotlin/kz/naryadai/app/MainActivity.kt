@@ -1,4 +1,4 @@
-package com.example.mineral
+package kz.naryadai.app
 
 import io.flutter.embedding.android.FlutterActivity
 
