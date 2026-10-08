@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart' show Locale;
+import 'package:flutter/widgets.dart' show Color, Locale;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'push_payload.dart';
@@ -211,6 +211,7 @@ class PushNotificationService {
               ? _strings.emergencyNotificationChannel
               : _strings.orders,
           icon: 'ic_notification',
+          color: const Color(0xFF01408B),
           importance: payload.emergency ? Importance.max : Importance.high,
           priority: payload.emergency ? Priority.max : Priority.high,
           sound: payload.emergency
