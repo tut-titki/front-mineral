@@ -486,7 +486,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           uiText(context, 'Уведомления'),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
         titleSpacing: 0,
         actions: [_readAllButton()],

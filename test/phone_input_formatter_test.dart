@@ -54,4 +54,46 @@ void main() {
   test('allows clearing the field', () {
     expect(formatter.formatEditUpdate(editing('+7 7'), editing('')).text, '');
   });
+
+  test('API mask blocks extra digits at the end and in the middle', () {
+    const api = ApiPhoneInputFormatter();
+    final full = editing('+7 700 123 45 67');
+    expect(api.formatEditUpdate(full, editing('${full.text}8')), full);
+    final middle = editing(full.text, 5);
+    expect(
+      api.formatEditUpdate(middle, editing('+7 7090 123 45 67', 6)),
+      middle,
+    );
+    expect(
+      api
+          .formatEditUpdate(
+            TextEditingValue.empty,
+            editing('+7 700 123 45 67899'),
+          )
+          .text,
+      full.text,
+    );
+  });
+
+  test('a full number still permits deleting and replacing digits', () {
+    const api = ApiPhoneInputFormatter();
+    final full = editing('+7 700 123 45 67');
+    expect(
+      api.formatEditUpdate(full, editing('+7 700 123 45 6')).text,
+      '+7 700 123 45 6',
+    );
+    expect(
+      api.formatEditUpdate(full, editing('+7 700 123 45 68')).text,
+      '+7 700 123 45 68',
+    );
+  });
+
+  test('composition cannot exceed the national mask', () {
+    const api = ApiPhoneInputFormatter();
+    final full = editing('+7 700 123 45 67');
+    final input = editing(
+      '${full.text}8',
+    ).copyWith(composing: const TextRange(start: 15, end: 16));
+    expect(api.formatEditUpdate(full, input), full);
+  });
 }

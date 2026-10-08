@@ -45,10 +45,7 @@ class ExecutorResultScreen extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
           surfaceTintColor: Colors.transparent,
-          title: Text(
-            s.resultOrderNumber(order.displayNumber),
-            style: const TextStyle(fontSize: 16, color: Color(0xFF172033)),
-          ),
+          title: Text(s.resultOrderNumber(order.displayNumber)),
         ),
         bottomNavigationBar: SafeArea(
           top: false,

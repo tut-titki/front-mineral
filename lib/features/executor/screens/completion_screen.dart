@@ -678,7 +678,6 @@ class _CompletionScreenState extends State<CompletionScreen> {
         centerTitle: true,
         title: Text(
           strings(context).closeOrderNumber(widget.order.displayNumber),
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
       bottomNavigationBar: SafeArea(

@@ -378,19 +378,22 @@ void main() {
     },
   );
 
-  test('API phone formatter preserves international and overlong numbers', () {
-    const formatter = ApiPhoneInputFormatter();
-    for (final number in ['+44 7700 900123', '+1234567890123456']) {
-      final input = TextEditingValue(
-        text: number,
-        selection: TextSelection.collapsed(offset: number.length),
-      );
-      expect(
-        formatter.formatEditUpdate(TextEditingValue.empty, input).text,
-        number,
-      );
-    }
-  });
+  test(
+    'API phone formatter preserves international numbers up to 15 digits',
+    () {
+      const formatter = ApiPhoneInputFormatter();
+      for (final number in ['+44 7700 900123', '+1234567890123456']) {
+        final input = TextEditingValue(
+          text: number,
+          selection: TextSelection.collapsed(offset: number.length),
+        );
+        expect(
+          formatter.formatEditUpdate(TextEditingValue.empty, input).text,
+          number == '+1234567890123456' ? '+123456789012345' : number,
+        );
+      }
+    },
+  );
 
   testWidgets(
     'phone details highlights phone; short legacy password reaches API',

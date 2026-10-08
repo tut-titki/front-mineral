@@ -253,11 +253,18 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.tap(find.byKey(const ValueKey('executor-rating-period')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('За смену · 12 часов').last);
     await tester.pumpAndSettle();
     expect(requests.last.url.queryParameters['period'], 'shift');
+    expect(find.text('За 30 дней'), findsNothing);
+    expect(find.text('За смену · 12 часов'), findsOneWidget);
+    await tester.tap(find.text('79.0'));
+    await tester.pumpAndSettle();
+    expect(find.text('За смену · 12 часов'), findsNWidgets(2));
+    expect(find.text('За месяц'), findsNothing);
+    expect(find.text('За 30 дней'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

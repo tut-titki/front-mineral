@@ -28,7 +28,6 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
   late Future<ExecutorRating?> _ratingLoad;
   ExecutorRatingPeriod _period = const ExecutorRatingPeriod();
   DateTimeRange? _customRange;
-  int _selectorRevision = 0;
 
   @override
   void initState() {
@@ -76,10 +75,7 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
         helpText: strings(context).ratingPeriodCustom,
       );
       if (!mounted) return;
-      if (range == null) {
-        setState(() => _selectorRevision++);
-        return;
-      }
+      if (range == null) return;
       _customRange = range;
       DateTime midnight(DateTime date) => DateTime.utc(
         date.year,
@@ -102,48 +98,107 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
     });
   }
 
-  Widget _periodSelector(BuildContext context) {
+  Future<void> _showPeriodPicker() async {
     final s = strings(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DropdownButtonFormField<String>(
-        key: ValueKey('${_period.key}:$_selectorRevision'),
-        isExpanded: true,
-        initialValue: _period.period,
-        decoration: InputDecoration(
-          labelText: s.ratingPeriodLabel,
-          prefixIcon: const Icon(LucideIcons.calendarDays, size: 20),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 14,
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: Text(
+                  s.ratingPeriodLabel,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              for (final item in [
+                ('shift', s.ratingPeriodShift),
+                ('day', s.ratingPeriodDay),
+                ('week', s.ratingPeriodWeek),
+                ('month', s.ratingPeriodMonth),
+                ('custom', s.ratingPeriodCustom),
+              ])
+                ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  selected: _period.period == item.$1,
+                  selectedColor: _blue,
+                  selectedTileColor: const Color(0xFFEAF2FE),
+                  leading: Icon(
+                    item.$1 == 'custom'
+                        ? LucideIcons.calendarDays
+                        : LucideIcons.clock,
+                    size: 20,
+                  ),
+                  title: Text(item.$2),
+                  trailing: _period.period == item.$1
+                      ? const Icon(LucideIcons.check, size: 20)
+                      : null,
+                  onTap: () => Navigator.pop(sheetContext, item.$1),
+                ),
+            ],
           ),
         ),
-        items:
-            [
-                  ('shift', s.ratingPeriodShift),
-                  ('day', s.ratingPeriodDay),
-                  ('week', s.ratingPeriodWeek),
-                  ('month', s.ratingPeriodMonth),
-                  ('custom', s.ratingPeriodCustom),
-                ]
-                .map(
-                  (item) => DropdownMenuItem(
-                    value: item.$1,
-                    child: Text(
-                      item.$2,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                )
-                .toList(),
-        onChanged: _selectPeriod,
       ),
     );
+    if (selected != null && mounted) await _selectPeriod(selected);
   }
+
+  Widget _periodSelector(BuildContext context) => Align(
+    alignment: Alignment.centerLeft,
+    child: Material(
+      color: const Color(0xFFF1F6FD),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        key: const ValueKey('executor-rating-period'),
+        onTap: _showPeriodPicker,
+        borderRadius: BorderRadius.circular(10),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 40),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(LucideIcons.calendarDays, size: 14, color: _blue),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    _periodLabel(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: _blue,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(LucideIcons.chevronDown, size: 14, color: _blue),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 
   static const _blue = Color(0xFF01408B);
   static const _gradient = LinearGradient(
@@ -285,7 +340,6 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _periodSelector(context),
                     FutureBuilder<ExecutorRating?>(
                       future: _ratingLoad,
                       builder: (context, snapshot) => _rating(
@@ -473,18 +527,20 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          rating == null
-                              ? loading
-                                    ? '…'
-                                    : uiText(context, 'Пока нет оценки')
-                              : _periodLabel(context),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            height: 1.3,
-                            color: Color(0xFF7A8597),
+                        _periodSelector(context),
+                        if (rating == null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              loading
+                                  ? '…'
+                                  : uiText(context, 'Пока нет оценки'),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF7A8597),
+                              ),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -616,7 +672,7 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                strings(sheetContext).historyMonthSummary,
+                                _periodLabel(sheetContext),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFFC8DDF5),

@@ -8,7 +8,12 @@ class PhoneInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    if (!newValue.composing.isCollapsed) return newValue;
+    if (!newValue.composing.isCollapsed) {
+      final limit = newValue.text.trimLeft().startsWith('+7') ? 11 : 10;
+      return newValue.text.replaceAll(RegExp(r'\D'), '').length > limit
+          ? oldValue
+          : newValue;
+    }
 
     var text = newValue.text;
     var caret = newValue.selection.isValid
@@ -42,6 +47,9 @@ class PhoneInputFormatter extends TextInputFormatter {
       digits = digits.substring(1);
       digitsBeforeCaret = (digitsBeforeCaret - 1).clamp(0, 10);
     }
+    if (digits.length > 10 && validatePhone(oldValue.text) == null) {
+      return oldValue;
+    }
     if (digits.isEmpty) return TextEditingValue.empty;
     digits = digits.substring(0, digits.length.clamp(0, 10));
 
@@ -73,7 +81,7 @@ String? validatePhone(
   return null;
 }
 
-/// Keep international numbers and invalid long input intact for validation.
+/// National mask allows 11 digits; international numbers allow up to 15.
 class ApiPhoneInputFormatter extends TextInputFormatter {
   const ApiPhoneInputFormatter();
   @override
@@ -83,8 +91,22 @@ class ApiPhoneInputFormatter extends TextInputFormatter {
   ) {
     final text = newValue.text.trimLeft();
     final digits = text.replaceAll(RegExp(r'\D'), '');
-    if ((text.startsWith('+') && !text.startsWith('+7')) || digits.length > 11) {
-      return newValue;
+    if (text.startsWith('+') && !text.startsWith('+7')) {
+      if (digits.length <= 15) return newValue;
+      if (!newValue.composing.isCollapsed) return oldValue;
+      var count = 0;
+      var end = 0;
+      for (; end < newValue.text.length; end++) {
+        if (RegExp(r'\d').hasMatch(newValue.text[end]) && ++count > 15) break;
+      }
+      return TextEditingValue(
+        text: newValue.text.substring(0, end),
+        selection: TextSelection.collapsed(
+          offset: newValue.selection.isValid
+              ? newValue.selection.extentOffset.clamp(0, end)
+              : end,
+        ),
+      );
     }
     return const PhoneInputFormatter().formatEditUpdate(oldValue, newValue);
   }

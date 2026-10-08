@@ -116,8 +116,6 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
             uiText(context, 'Профиль'),
           ][_page],
           style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
             color: _page != 0 ? Colors.white : const Color(0xFF172033),
           ),
         ),

@@ -243,10 +243,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.transparent,
           centerTitle: true,
-          title: Text(
-            strings(context).orderNumber(order.displayNumber),
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-          ),
+          title: Text(strings(context).orderNumber(order.displayNumber)),
         ),
         bottomNavigationBar: SafeArea(
           top: false,

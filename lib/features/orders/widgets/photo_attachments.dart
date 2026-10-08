@@ -83,7 +83,10 @@ class PhotoAttachments extends StatelessWidget {
         builder: (_) => Scaffold(
           backgroundColor: Colors.black,
           appBar: AppBar(
-            title: Text(photo.name),
+            title: Text(
+              photo.name,
+              style: const TextStyle(color: Colors.white),
+            ),
             backgroundColor: Colors.black,
             foregroundColor: Colors.white,
           ),
