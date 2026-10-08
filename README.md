@@ -276,12 +276,6 @@ flutter test
 flutter build apk --debug
 ```
 
-Готовый APK:
-
-```text
-build/app/outputs/flutter-apk/app-debug.apk
-```
-
 Установка на выбранное устройство:
 
 ```sh

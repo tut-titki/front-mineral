@@ -34,6 +34,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final formKey = GlobalKey<FormState>();
 
   final descriptionController = TextEditingController();
+  final descriptionFocus = FocusNode();
 
   final commentController = TextEditingController();
 
@@ -60,7 +61,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   WorkOrderType type = WorkOrderType.emergency;
 
-  WorkOrderPriority priority = WorkOrderPriority.normal;
+  WorkOrderPriority priority = WorkOrderPriority.emergency;
 
   bool useNormative = true;
 
@@ -101,6 +102,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   @override
   void dispose() {
+    descriptionFocus.dispose();
     descriptionController.dispose();
     commentController.dispose();
 
@@ -210,7 +212,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   // MARK: Area / equipment
 
-  Future<void> changeArea(int newAreaId) async {
+  Future<void> changeArea(int newAreaId, {int? selectedEquipmentId}) async {
     setState(() {
       areaId = newAreaId;
 
@@ -226,10 +228,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       workRecommendation = null;
     });
 
-    await loadEquipment(newAreaId);
+    await loadEquipment(newAreaId, selectedEquipmentId: selectedEquipmentId);
   }
 
-  Future<void> loadEquipment(int selectedAreaId) async {
+  Future<void> loadEquipment(
+    int selectedAreaId, {
+    int? selectedEquipmentId,
+  }) async {
     setState(() {
       loadingEquipment = true;
     });
@@ -246,9 +251,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       setState(() {
         equipment = result;
 
-        if (result.isNotEmpty) {
-          equipmentId = result.first.id;
-        }
+        equipmentId = result.any((item) => item.id == selectedEquipmentId)
+            ? selectedEquipmentId
+            : (result.isEmpty ? null : result.first.id);
 
         loadingEquipment = false;
       });
@@ -320,8 +325,15 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           normativeId = loadedNormatives.first.id;
         }
 
-        if (recommendations.isNotEmpty) {
-          executorId = recommendations.first.id;
+        if (executorId == null) {
+          executorId = recommendations
+              .where(
+                (item) => executors.any(
+                  (executor) => executor.id == item.id && executor.isOnShift,
+                ),
+              )
+              .firstOrNull
+              ?.id;
         }
 
         loadingNormatives = false;
@@ -961,10 +973,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   priority = WorkOrderPriority.planned;
                 }
               });
+              descriptionFocus.requestFocus();
             },
           ),
           const SizedBox(height: 20),
           TextFormField(
+            key: const ValueKey('order-description'),
+            focusNode: descriptionFocus,
             controller: descriptionController,
             minLines: 3,
             maxLines: 6,
@@ -1021,62 +1036,28 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DropdownButtonFormField<int>(
-            key: ValueKey('area-$areaId'),
-            initialValue: areaId,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: uiText(context, 'Участок')),
-            items: [
-              for (final area in areas)
-                DropdownMenuItem(
-                  value: area.id,
-                  child: Text(uiText(context, area.name)),
-                ),
-            ],
-            onChanged: creating
-                ? null
-                : (value) {
-                    if (value != null) {
-                      changeArea(value);
-                    }
-                  },
-            validator: (value) =>
-                value == null ? uiText(context, 'Выберите участок') : null,
+          _selectionCard(
+            key: const ValueKey('select-equipment'),
+            title: uiText(context, 'Оборудование'),
+            placeholder: uiText(context, 'Выберите оборудование'),
+            value: equipment
+                .where((item) => item.id == equipmentId)
+                .firstOrNull,
+            label: (item) => uiText(context, item.name),
+            details: (item) => [
+              areas
+                  .where((area) => area.id == item.areaId)
+                  .map((area) => uiText(context, area.name))
+                  .firstOrNull,
+              item.inventoryNumber,
+            ].whereType<String>().join(' · '),
+            icon: Icons.precision_manufacturing_outlined,
+            onTap: creating || loadingEquipment ? null : _selectEquipment,
           ),
-          const SizedBox(height: 16),
-
-          if (loadingEquipment) const LinearProgressIndicator(),
-
-          if (loadingEquipment) const SizedBox(height: 16),
-
-          DropdownButtonFormField<int>(
-            key: ValueKey('equipment-$areaId-$equipmentId'),
-            initialValue: equipmentId,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: uiText(context, 'Оборудование'),
-            ),
-            items: [
-              for (final item in equipment)
-                DropdownMenuItem(
-                  value: item.id,
-                  child: Text(
-                    item.inventoryNumber?.trim().isNotEmpty == true
-                        ? '${uiText(context, item.name)} · ${item.inventoryNumber}'
-                        : uiText(context, item.name),
-                  ),
-                ),
-            ],
-            onChanged: loadingEquipment || creating
-                ? null
-                : (value) {
-                    if (value != null) {
-                      changeEquipment(value);
-                    }
-                  },
-            validator: (value) =>
-                value == null ? uiText(context, 'Выберите оборудование') : null,
-          ),
+          if (loadingEquipment) ...[
+            const SizedBox(height: 8),
+            const LinearProgressIndicator(),
+          ],
 
           const SizedBox(height: 16),
 
@@ -1129,117 +1110,258 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               },
             ),
           if (!assignBrigade)
-            DropdownButtonFormField<int>(
-              key: ValueKey('executor-$equipmentId-$executorId'),
-              initialValue: executorId,
-              isExpanded: true,
-              isDense: false,
-              itemHeight: 90,
-              decoration: InputDecoration(
-                labelText: uiText(context, 'Исполнитель'),
-              ),
-              items: [
-                for (final executor in executors)
-                  DropdownMenuItem(
-                    value: executor.id,
-                    enabled: executor.isOnShift,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.circle,
-                          size: 10,
-                          color: employeeStatusColor(executor.employeeStatus),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                executor.fullName,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                [
-                                  if (executor.specialty != null)
-                                    uiText(context, executor.specialty!),
-                                  uiText(context, executor.statusLabel),
-                                  if (executor.currentOrder != null)
-                                    '№${executor.currentOrder!.number}',
-                                  if (executor.queue > 0)
-                                    backendText(
-                                      context,
-                                      'В очереди: ${executor.queue}',
-                                      'Кезекте: ${executor.queue}',
-                                    ),
-                                ].join(' · '),
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: muted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+            _selectionCard(
+              key: const ValueKey('select-executor'),
+              title: uiText(context, 'Исполнитель'),
+              placeholder: uiText(context, 'Выберите исполнителя'),
+              value: executorId == null ? null : findExecutor(executorId!),
+              label: (item) => item.fullName,
+              details: (item) => [
+                uiText(context, item.statusLabel),
+                if (item.currentOrder != null) '№${item.currentOrder!.number}',
+                if (item.queue > 0)
+                  backendText(
+                    context,
+                    'В очереди: ${item.queue}',
+                    'Кезекте: ${item.queue}',
                   ),
-              ],
-              onChanged: creating
-                  ? null
-                  : (value) {
-                      setState(() {
-                        executorId = value;
-                      });
-                    },
-              validator: (value) => value == null
-                  ? uiText(context, 'Выберите исполнителя')
-                  : null,
+              ].join(' · '),
+              icon: Icons.person_outline,
+              onTap: creating ? null : _selectExecutor,
             ),
-
-          if (!assignBrigade && executorId != null) ...[
-            const SizedBox(height: 10),
-            for (final executor in executors.where((e) => e.id == executorId))
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  if (executor.currentOrder != null)
-                    Chip(
-                      avatar: const Icon(Icons.assignment_outlined, size: 16),
-                      label: Text('№${executor.currentOrder!.number}'),
-                    ),
-                  Chip(
-                    avatar: const Icon(Icons.queue_outlined, size: 16),
-                    label: Text(
-                      backendText(
-                        context,
-                        'В очереди: ${executor.queue}',
-                        'Кезекте: ${executor.queue}',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-          if (!assignBrigade && recommendedExecutors.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            _ExecutorRecommendation(
-              recommendations: recommendedExecutors,
-              selectedId: executorId,
-              onSelect: (id) {
-                setState(() {
-                  executorId = id;
-                });
-              },
-            ),
-          ],
         ],
       ),
     );
+  }
+
+  Widget _selectionCard<T extends Object>({
+    required Key key,
+    required String title,
+    required String placeholder,
+    required T? value,
+    required String Function(T) label,
+    required String Function(T) details,
+    required IconData icon,
+    required VoidCallback? onTap,
+  }) {
+    return OutlinedButton(
+      key: key,
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        side: const BorderSide(color: border),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: brand),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 12, color: muted)),
+                const SizedBox(height: 3),
+                Text(
+                  value == null ? placeholder : label(value),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: ink,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (value != null && details(value).isNotEmpty)
+                  Text(
+                    details(value),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: muted),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.search_rounded, color: brand, size: 20),
+        ],
+      ),
+    );
+  }
+
+  Future<T?> _pickOption<T extends Object>({
+    required String title,
+    required List<T> items,
+    required String Function(T) label,
+    required String Function(T) details,
+    required bool Function(T) enabled,
+    required bool Function(T) selected,
+    required Widget Function(T) leading,
+  }) async {
+    String query = '';
+
+    return showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, update) {
+            final normalizedQuery = query.trim().toLowerCase();
+
+            final filtered = items.where((item) {
+              final haystack = '${label(item)} ${details(item)}'.toLowerCase();
+
+              return haystack.contains(normalizedQuery);
+            }).toList();
+
+            final keyboard = MediaQuery.viewInsetsOf(sheetContext).bottom;
+
+            final height = MediaQuery.sizeOf(sheetContext).height - keyboard;
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: keyboard),
+              child: SafeArea(
+                top: false,
+                child: SizedBox(
+                  height: height * .7,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: ink,
+                          ),
+                        ),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: TextField(
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.search_rounded),
+                            hintText: backendText(context, 'Поиск', 'Іздеу'),
+                          ),
+                          onChanged: (value) {
+                            query = value;
+
+                            update(() {});
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? Center(
+                                child: Text(
+                                  uiText(
+                                    context,
+                                    'По вашему запросу ничего не найдено',
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                itemCount: filtered.length,
+                                itemBuilder: (context, index) {
+                                  final item = filtered[index];
+
+                                  return ListTile(
+                                    leading: leading(item),
+                                    title: Text(label(item)),
+                                    subtitle: Text(details(item)),
+                                    trailing: selected(item)
+                                        ? const Icon(Icons.check, color: brand)
+                                        : null,
+                                    enabled: enabled(item),
+                                    onTap: enabled(item)
+                                        ? () {
+                                            Navigator.pop(sheetContext, item);
+                                          }
+                                        : null,
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _selectEquipment() async {
+    try {
+      final items = await widget.api.references.getEquipment();
+      if (!mounted) return;
+      final selected = await _pickOption<EquipmentReference>(
+        title: uiText(context, 'Оборудование'),
+        items: items,
+        label: (item) => uiText(context, item.name),
+        details: (item) => [
+          areas
+              .where((area) => area.id == item.areaId)
+              .map((area) => uiText(context, area.name))
+              .firstOrNull,
+          item.inventoryNumber,
+        ].whereType<String>().join(' · '),
+        enabled: (_) => true,
+        selected: (item) => item.id == equipmentId,
+        leading: (_) => const Icon(Icons.precision_manufacturing_outlined),
+      );
+      if (!mounted || selected == null || selected.id == equipmentId) return;
+      if (selected.areaId == areaId) {
+        await changeEquipment(selected.id);
+      } else {
+        await changeArea(selected.areaId, selectedEquipmentId: selected.id);
+      }
+    } catch (error) {
+      if (mounted) showMessage(context, backendError(context, error));
+    }
+  }
+
+  Future<void> _selectExecutor() async {
+    final recommendedIds = recommendedExecutors.map((item) => item.id).toSet();
+    final ordered = [
+      ...executors.where((item) => recommendedIds.contains(item.id)),
+      ...executors.where((item) => !recommendedIds.contains(item.id)),
+    ];
+    final selected = await _pickOption<ExecutorReference>(
+      title: uiText(context, 'Исполнитель'),
+      items: ordered,
+      label: (item) => item.fullName,
+      details: (item) => [
+        if (item.specialty != null) uiText(context, item.specialty!),
+        uiText(context, item.statusLabel),
+        if (item.currentOrder != null) '№${item.currentOrder!.number}',
+        if (item.queue > 0)
+          backendText(
+            context,
+            'В очереди: ${item.queue}',
+            'Кезекте: ${item.queue}',
+          ),
+      ].join(' · '),
+      enabled: (item) => item.isOnShift,
+      selected: (item) => item.id == executorId,
+      leading: (item) => Icon(
+        Icons.circle,
+        size: 12,
+        color: employeeStatusColor(item.employeeStatus),
+      ),
+    );
+    if (mounted && selected != null) setState(() => executorId = selected.id);
   }
 
   Widget _buildDeadline() {
@@ -1250,6 +1372,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           DropdownButtonFormField<WorkOrderPriority>(
+            key: ValueKey('priority-$priority'),
             initialValue: priority,
             isExpanded: true,
             decoration: InputDecoration(
@@ -1456,89 +1579,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                 label: Text(uiText(context, 'Применить')),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// MARK: - Executor recommendation
-
-class _ExecutorRecommendation extends StatelessWidget {
-  const _ExecutorRecommendation({
-    required this.recommendations,
-    required this.selectedId,
-    required this.onSelect,
-  });
-
-  final List<RecommendedExecutor> recommendations;
-
-  final int? selectedId;
-
-  final ValueChanged<int> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final visible = recommendations.take(3).toList();
-
-    return RadioGroup<int>(
-      groupValue: selectedId,
-      onChanged: (value) {
-        if (value != null) onSelect(value);
-      },
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.auto_awesome_outlined, size: 18, color: brand),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    uiText(context, 'Рекомендуемые исполнители'),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            for (final item in visible)
-              Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  leading: Radio<int>(value: item.id, activeColor: brand),
-                  title: Text(item.fullName),
-                  subtitle: Text(
-                    [
-                      if (item.specialty != null)
-                        uiText(context, item.specialty!),
-                      uiText(context, item.statusLabel),
-                      uiText(context, 'Очередь: ${item.queue}'),
-                      if (item.equipmentRating != null)
-                        uiText(context, 'Рейтинг: ${item.ratingLabel}'),
-                    ].join(' · '),
-                  ),
-                  trailing: Text(
-                    item.score.toStringAsFixed(0),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: brand,
-                    ),
-                  ),
-                  onTap: () => onSelect(item.id),
-                ),
-              ),
           ],
         ),
       ),
