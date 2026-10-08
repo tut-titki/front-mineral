@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/utils/enterprise_time.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/backend_document.dart';
 import '../../l10n/ui_localization.dart';
 import 'ui.dart';
+import 'backend_refresh_view.dart';
 
 String backendText(BuildContext context, String ru, String kk) =>
     Localizations.localeOf(context).languageCode == 'kk'
@@ -32,7 +34,7 @@ class BackendError extends StatelessWidget {
         const SizedBox(height: 12),
         FilledButton.icon(
           onPressed: onRetry,
-          icon: const Icon(Icons.refresh),
+          icon: const Icon(Icons.replay),
           label: Text(backendText(context, 'Повторить', 'Қайталау')),
         ),
       ],
@@ -46,10 +48,12 @@ class BackendSection<T> extends StatefulWidget {
     required this.load,
     required this.builder,
     this.changes,
+    this.refreshInterval,
   });
   final Future<T> Function() load;
   final Widget Function(BuildContext, T) builder;
   final Stream<void>? changes;
+  final Duration? refreshInterval;
   @override
   State<BackendSection<T>> createState() => _BackendSectionState<T>();
 }
@@ -60,25 +64,72 @@ class _BackendSectionState<T> extends State<BackendSection<T>> {
   bool loading = true;
   int generation = 0;
   StreamSubscription<void>? subscription;
+  Timer? refreshTimer;
+  DateTime? lastRefresh;
+  BackendRefreshController? refreshController;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final controller = BackendRefreshScope.maybeOf(context);
+    if (controller == refreshController) return;
+    refreshController?.unregister(refreshFromGesture);
+    refreshController?.setInitialLoading(this, false);
+    refreshController = controller;
+    refreshController?.register(refreshFromGesture);
+    refreshController?.setInitialLoading(this, loading && data == null);
+  }
+
   @override
   void initState() {
     super.initState();
-    subscription = widget.changes?.listen((_) => reload());
+    subscription = widget.changes?.listen((_) {
+      final interval = widget.refreshInterval;
+      if (interval == null) {
+        reload();
+        return;
+      }
+      if (refreshTimer != null) return;
+      final elapsed = lastRefresh == null
+          ? interval
+          : DateTime.now().difference(lastRefresh!);
+      final delay = elapsed >= interval ? Duration.zero : interval - elapsed;
+      refreshTimer = Timer(delay, () {
+        refreshTimer = null;
+        reload();
+      });
+    });
     reload();
   }
 
   @override
   void dispose() {
+    refreshController?.unregister(refreshFromGesture);
+    refreshController?.setInitialLoading(this, false);
     subscription?.cancel();
+    refreshTimer?.cancel();
     super.dispose();
   }
 
+  Future<void> refreshFromGesture() async {
+    refreshTimer?.cancel();
+    refreshTimer = null;
+    final interval = widget.refreshInterval;
+    if (interval != null && lastRefresh != null) {
+      final elapsed = DateTime.now().difference(lastRefresh!);
+      if (elapsed < interval) await Future<void>.delayed(interval - elapsed);
+    }
+    if (mounted) await reload();
+  }
+
   Future<void> reload() async {
+    lastRefresh = DateTime.now();
     final current = ++generation;
     setState(() {
       loading = true;
       error = null;
     });
+    refreshController?.setInitialLoading(this, data == null);
     try {
       final result = await widget.load();
       if (mounted && current == generation) {
@@ -86,6 +137,7 @@ class _BackendSectionState<T> extends State<BackendSection<T>> {
           data = result;
           loading = false;
         });
+        refreshController?.setInitialLoading(this, false);
       }
     } catch (exception) {
       if (mounted && current == generation) {
@@ -93,6 +145,7 @@ class _BackendSectionState<T> extends State<BackendSection<T>> {
           error = exception;
           loading = false;
         });
+        refreshController?.setInitialLoading(this, false);
       }
     }
   }
@@ -101,22 +154,14 @@ class _BackendSectionState<T> extends State<BackendSection<T>> {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Align(
-        alignment: Alignment.centerRight,
-        child: IconButton(
-          tooltip: uiText(context, 'Обновить'),
-          onPressed: loading ? null : reload,
-          icon: const Icon(Icons.refresh),
-        ),
-      ),
-      if (loading)
+      if (loading && data == null && refreshController == null)
         const Padding(
           padding: EdgeInsets.all(28),
           child: Center(child: CircularProgressIndicator()),
-        )
-      else if (error != null)
+        ),
+      if (error != null)
         BackendError(message: backendError(context, error!), onRetry: reload)
-      else
+      else if (data != null)
         widget.builder(context, data as T),
     ],
   );
@@ -151,7 +196,11 @@ class BackendDocumentView extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final entry in value.entries)
+          for (final entry in value.entries.where(
+            (entry) =>
+                entry.key != 'rawResponse' &&
+                !_isIdentifier(entry.key.toString()),
+          ))
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: entry.value is Map || entry.value is List
@@ -181,6 +230,10 @@ class BackendDocumentView extends StatelessWidget {
       return backendText(context, value ? 'Да' : 'Нет', value ? 'Иә' : 'Жоқ');
     }
     if (value is String) {
+      if (RegExp(r'^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}').hasMatch(value)) {
+        final date = DateTime.tryParse(value);
+        if (date != null) return enterpriseDateTimeLabel(date);
+      }
       if ({
         'status',
         'employeeStatus',
@@ -240,6 +293,10 @@ class BackendDocumentView extends StatelessWidget {
     }
     return value.toString();
   }
+
+  bool _isIdentifier(String key) =>
+      key.toLowerCase() == 'id' ||
+      RegExp(r'(Id|ID|Ids|IDs|_id|_ids)$').hasMatch(key);
 
   String _label(BuildContext context, String key) {
     const labels = {
@@ -390,6 +447,25 @@ class BackendDocumentView extends StatelessWidget {
       'finalScore': ('Итоговая оценка', 'Қорытынды баға'),
       'aiScore': ('Оценка ИИ', 'ЖИ бағасы'),
       'masterScore': ('Оценка мастера', 'Шебер бағасы'),
+      'aiAssessment': ('ИИ-проверка', 'ЖИ тексеруі'),
+      'completionText': ('Выполненные работы', 'Орындалған жұмыстар'),
+      'actualDowntimeMinutes': (
+        'Фактический простой, мин',
+        'Нақты тоқтап тұру, мин',
+      ),
+      'needsMasterReview': (
+        'Нужна проверка мастером',
+        'Шебердің тексеруі қажет',
+      ),
+      'confidence': ('Уверенность', 'Сенімділік'),
+      'photoScore': ('Оценка фото', 'Фото бағасы'),
+      'completedAt': ('Выполнен', 'Орындалды'),
+      'closedAt': ('Закрыт', 'Жабылды'),
+      'vsNormativePercent': (
+        'Время к нормативу, %',
+        'Нормативке қатысты уақыт, %',
+      ),
+      'overdueMinutes': ('Просрочка, мин', 'Кешігу, мин'),
       'verdict': ('Результат проверки', 'Тексеру нәтижесі'),
       'strengths': ('Что сделано хорошо', 'Жақсы орындалған тұстар'),
       'improvements': ('Что улучшить', 'Жақсартуға болатын тұстар'),

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/app_notifications_button.dart';
+import '../../../shared/widgets/app_refresh_indicator.dart';
 import 'dart:async';
 import '../widgets/executor_greeting.dart';
 import '../widgets/executor_history_tile.dart';
@@ -120,12 +122,8 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            tooltip: uiText(context, 'Уведомления'),
-            icon: Icon(
-              LucideIcons.bell,
-              color: _page != 0 ? Colors.white : null,
-            ),
+          AppNotificationsButton(
+            color: _page != 0 ? Colors.white : null,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (context) => NotificationsScreen.forUser(
@@ -165,9 +163,6 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
           if (_page == 2) {
             return ExecutorProfileScreen(store: store, employeeId: employeeId);
           }
-          if (store.isLoading && store.assignedTo(employeeId).isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
           if (store.loadError != null && store.assignedTo(employeeId).isEmpty) {
             return Center(
               child: Column(
@@ -191,6 +186,8 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
               loadTime: (order) =>
                   store.loadExecutorOrderTime(employeeId, order),
               error: _refreshError ?? store.loadError,
+              isLoading:
+                  store.isLoading && store.assignedTo(employeeId).isEmpty,
             );
           }
           final orders = store.assignedTo(employeeId).where((order) {
@@ -219,8 +216,9 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
                         .contains(_query.trim().toLowerCase())),
               )
               .toList();
-          return RefreshIndicator(
+          return AppRefreshIndicator(
             onRefresh: _refresh,
+            isLoading: store.isLoading && store.assignedTo(employeeId).isEmpty,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),

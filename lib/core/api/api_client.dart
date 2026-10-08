@@ -113,9 +113,12 @@ class ApiClient {
     );
   }
 
-  Future<Uint8List> getBytes(String path) async {
+  Future<Uint8List> getBytes(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     final response = await _httpClient.get(
-      _buildUri(path),
+      _buildUri(path, queryParameters: queryParameters),
       headers: _buildHeaders(authenticated: true),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {

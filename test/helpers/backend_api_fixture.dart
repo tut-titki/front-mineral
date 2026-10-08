@@ -12,6 +12,9 @@ ApiServices testApi({Future<http.Response?> Function(http.Request)? handle}) {
     httpClient: MockClient((request) async {
       final response = await handle?.call(request);
       if (response != null) return response;
+      if (request.url.path == '/api/work-orders/board') {
+        return jsonResponse(boardJson());
+      }
       if (request.url.path == '/api/analytics/dashboard') {
         return jsonResponse({
           'active': 0,
@@ -39,6 +42,30 @@ http.Response jsonResponse(Object? data, {int status = 200}) => http.Response(
   status,
   headers: {'content-type': 'application/json; charset=utf-8'},
 );
+
+Map<String, dynamic> boardJson({
+  List<Map<String, dynamic>> issued = const [],
+  List<Map<String, dynamic>> inProgress = const [],
+}) => {
+  'since': DateTime.now()
+      .subtract(const Duration(hours: 12))
+      .toUtc()
+      .toIso8601String(),
+  'counters': {
+    'issued': issued.length,
+    'completed': 0,
+    'overdue': 0,
+    'equipmentInDowntime': 0,
+  },
+  'columns': {
+    'issued': issued,
+    'accepted': [],
+    'inProgress': inProgress,
+    'queued': [],
+    'completed': [],
+    'overdue': [],
+  },
+};
 
 Map<String, dynamic> orderJson({
   int id = 773,
@@ -105,6 +132,8 @@ ApiServices createFormApi({void Function(Map<String, dynamic>)? onCreate}) =>
             ]);
           case '/api/references/executors':
             return jsonResponse([executorJson()]);
+          case '/api/references/brigades':
+            return jsonResponse([{'id': 1, 'name': 'Brigade A', 'members': [{'id': 7, 'fullName': 'Test Executor', 'specialty': 'Specialty'}]}]);
           case '/api/references/normatives':
             return jsonResponse([
               {'id': 3, 'name': 'Normative', 'hours': '2'},

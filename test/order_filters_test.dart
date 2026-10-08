@@ -34,7 +34,14 @@ void main() {
   for (final language in ['ru', 'kk']) {
     testWidgets('backend search and board work in $language', (tester) async {
       final api = testApi(
-        handle: (request) async => request.url.path == '/api/work-orders'
+        handle: (request) async => request.url.path == '/api/work-orders/board'
+            ? jsonResponse(
+                boardJson(
+                  issued: [orderJson(id: 773)],
+                  inProgress: [orderJson(id: 774, status: 'IN_PROGRESS')],
+                ),
+              )
+            : request.url.path == '/api/work-orders'
             ? jsonResponse([
                 orderJson(id: 773),
                 orderJson(id: 774, status: 'IN_PROGRESS'),

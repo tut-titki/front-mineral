@@ -9,6 +9,9 @@ abstract final class AppColors {
   static const border = Color(0xFFE1E7F0);
   static const inactive = Color(0xFFDDE3ED);
   static const info = Color(0xFF0284C7);
+  static const profileHeaderGradient = LinearGradient(
+    colors: [primary, Color(0xFF0A57A3)],
+  );
 }
 
 ThemeData buildAppTheme() {

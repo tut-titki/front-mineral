@@ -132,6 +132,9 @@ class RecommendationsApi {
 
   Future<List<RecommendedExecutor>> getRecommendedExecutors({
     required int equipmentId,
+    String? description,
+    int? faultCodeId,
+    int? brigadeId,
   }) async {
     if (equipmentId <= 0) {
       throw const ApiException(
@@ -142,7 +145,13 @@ class RecommendationsApi {
 
     final response = await _client.get(
       '/api/recommendations/executors',
-      queryParameters: {'equipmentId': equipmentId},
+      queryParameters: {
+        'equipmentId': equipmentId,
+        if (description != null && description.trim().isNotEmpty)
+          'description': description.trim(),
+        'faultCodeId': ?faultCodeId,
+        'brigadeId': ?brigadeId,
+      },
     );
 
     final data = response.data;

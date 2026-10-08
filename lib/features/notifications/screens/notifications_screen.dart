@@ -1,6 +1,8 @@
 import '../../../core/utils/enterprise_time.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/app_refresh_indicator.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../core/api/api_services.dart';
 import '../../auth/data/auth_session.dart' as auth;
@@ -290,7 +292,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       'DEADLINE_REMINDER' => Icons.timer_outlined,
       'NOT_ACCEPTED' => Icons.hourglass_empty,
       'WEEKLY_AI_SUMMARY' => Icons.auto_awesome_outlined,
-      _ => Icons.notifications_outlined,
+      _ => LucideIcons.bell,
     };
   }
 
@@ -460,11 +462,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               'Ауысымның соңғы хабарландырулары',
             ),
           ),
-        if (_loading && _items.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(child: CircularProgressIndicator()),
-          ),
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -490,8 +487,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         titleSpacing: 0,
         actions: [_readAllButton()],
       ),
-      body: RefreshIndicator(
+      body: AppRefreshIndicator(
         onRefresh: _refresh,
+        isLoading: _loading && _items.isEmpty,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
