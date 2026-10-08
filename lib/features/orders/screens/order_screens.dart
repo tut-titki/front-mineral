@@ -34,6 +34,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final formKey = GlobalKey<FormState>();
 
   final descriptionController = TextEditingController();
+  final descriptionFocus = FocusNode();
 
   final commentController = TextEditingController();
 
@@ -60,7 +61,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   WorkOrderType type = WorkOrderType.emergency;
 
-  WorkOrderPriority priority = WorkOrderPriority.normal;
+  WorkOrderPriority priority = WorkOrderPriority.emergency;
 
   bool useNormative = true;
 
@@ -101,6 +102,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   @override
   void dispose() {
+    descriptionFocus.dispose();
     descriptionController.dispose();
     commentController.dispose();
 
@@ -320,7 +322,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           normativeId = loadedNormatives.first.id;
         }
 
-        if (recommendations.isNotEmpty) {
+        if (recommendations.isNotEmpty && executorId == null) {
           executorId = recommendations.first.id;
         }
 
@@ -958,10 +960,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   priority = WorkOrderPriority.planned;
                 }
               });
+              descriptionFocus.requestFocus();
             },
           ),
           const SizedBox(height: 20),
           TextFormField(
+            key: const ValueKey('order-description'),
+            focusNode: descriptionFocus,
             controller: descriptionController,
             minLines: 3,
             maxLines: 6,
@@ -1040,6 +1045,17 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             validator: (value) =>
                 value == null ? uiText(context, 'Выберите участок') : null,
           ),
+          if (areas.length > 1) ...[
+            const SizedBox(height: 8),
+            _quickChoices(
+              areas,
+              selectedId: areaId,
+              idOf: (area) => area.id,
+              labelOf: (area) => uiText(context, area.name),
+              keyPrefix: 'quick-area',
+              onSelected: changeArea,
+            ),
+          ],
           const SizedBox(height: 16),
 
           if (loadingEquipment) const LinearProgressIndicator(),
@@ -1074,6 +1090,17 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             validator: (value) =>
                 value == null ? uiText(context, 'Выберите оборудование') : null,
           ),
+          if (equipment.length > 1) ...[
+            const SizedBox(height: 8),
+            _quickChoices(
+              equipment,
+              selectedId: equipmentId,
+              idOf: (item) => item.id,
+              labelOf: (item) => uiText(context, item.name),
+              keyPrefix: 'quick-equipment',
+              onSelected: changeEquipment,
+            ),
+          ],
 
           const SizedBox(height: 16),
 
@@ -1196,6 +1223,23 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   ? uiText(context, 'Выберите исполнителя')
                   : null,
             ),
+          if (!assignBrigade &&
+              executors.where((e) => e.isOnShift).length > 1) ...[
+            const SizedBox(height: 8),
+            _quickChoices(
+              executors.where((e) => e.isOnShift).toList(),
+              selectedId: executorId,
+              idOf: (item) => item.id,
+              labelOf: (item) => item.fullName,
+              keyPrefix: 'quick-executor',
+              avatarOf: (item) => Icon(
+                Icons.circle,
+                size: 10,
+                color: employeeStatusColor(item.employeeStatus),
+              ),
+              onSelected: (id) => setState(() => executorId = id),
+            ),
+          ],
 
           if (!assignBrigade && executorId != null) ...[
             const SizedBox(height: 10),
@@ -1239,6 +1283,41 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     );
   }
 
+  Widget _quickChoices<T>(
+    List<T> items, {
+    required int? selectedId,
+    required int Function(T) idOf,
+    required String Function(T) labelOf,
+    required String keyPrefix,
+    required ValueChanged<int> onSelected,
+    Widget Function(T)? avatarOf,
+  }) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final item in items) ...[
+            ChoiceChip(
+              key: ValueKey('$keyPrefix-${idOf(item)}'),
+              avatar: avatarOf?.call(item),
+              label: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 180),
+                child: Text(labelOf(item), overflow: TextOverflow.ellipsis),
+              ),
+              selected: selectedId == idOf(item),
+              onSelected: creating || loadingEquipment
+                  ? null
+                  : (_) {
+                      if (selectedId != idOf(item)) onSelected(idOf(item));
+                    },
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildDeadline() {
     return _OrderFormSection(
       title: 'Срок и приоритет',
@@ -1247,6 +1326,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           DropdownButtonFormField<WorkOrderPriority>(
+            key: ValueKey('priority-$priority'),
             initialValue: priority,
             isExpanded: true,
             decoration: InputDecoration(

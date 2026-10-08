@@ -513,6 +513,118 @@ void main() {
     expect(sent!.containsKey('assigneeId'), false);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('master issues an order for another area in six taps', (
+    tester,
+  ) async {
+    Map<String, dynamic>? sent;
+    final api = testApi(
+      handle: (request) async {
+        switch (request.url.path) {
+          case '/api/references/areas':
+            return jsonResponse([
+              {'id': 1, 'name': 'Area A'},
+              {'id': 2, 'name': 'Area B'},
+            ]);
+          case '/api/references/equipment':
+            final area = request.url.queryParameters['areaId'];
+            return jsonResponse(
+              area == '2'
+                  ? [
+                      {'id': 4, 'name': 'Pump A', 'areaId': 2},
+                      {'id': 5, 'name': 'Pump B', 'areaId': 2},
+                    ]
+                  : [
+                      {'id': 2, 'name': 'Conveyor A', 'areaId': 1},
+                      {'id': 3, 'name': 'Conveyor B', 'areaId': 1},
+                    ],
+            );
+          case '/api/references/executors':
+            return jsonResponse([
+              executorJson(),
+              {...executorJson(), 'id': 8, 'fullName': 'Second Executor'},
+            ]);
+          case '/api/references/normatives':
+            return jsonResponse([
+              {'id': 3, 'name': 'Normative', 'hours': '2'},
+            ]);
+          case '/api/recommendations/executors':
+            return jsonResponse([
+              {
+                'id': 7,
+                'fullName': 'Test Executor',
+                'employeeStatus': 'AVAILABLE',
+                'queue': 0,
+                'score': 80,
+              },
+            ]);
+          case '/api/work-orders':
+            if (request.method == 'POST') {
+              sent = Map<String, dynamic>.from(jsonDecode(request.body) as Map);
+              return jsonResponse(orderJson());
+            }
+        }
+        return null;
+      },
+    );
+    addTearDown(api.dispose);
+    await tester.pumpWidget(
+      host(
+        Builder(
+          builder: (context) => Scaffold(
+            body: FilledButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) =>
+                      CreateOrderScreen(api: api, photoPicker: NoPhotos()),
+                ),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    var taps = 0;
+    Future<void> tap(Finder target) async {
+      await tester.ensureVisible(target);
+      await tester.tap(target);
+      taps++;
+      await tester.pumpAndSettle();
+    }
+
+    await tap(find.text('Open'));
+    await tap(find.text('Плановый').first);
+    expect(
+      tester
+          .widget<EditableText>(
+            find.descendant(
+              of: find.byKey(const ValueKey('order-description')),
+              matching: find.byType(EditableText),
+            ),
+          )
+          .focusNode
+          .hasFocus,
+      isTrue,
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('order-description')),
+      'Проверить насос',
+    );
+    await tap(find.byKey(const ValueKey('quick-area-2')));
+    await tap(find.byKey(const ValueKey('quick-equipment-5')));
+    await tap(find.byKey(const ValueKey('quick-executor-8')));
+    await tap(find.text('Выдать наряд'));
+
+    expect(taps, lessThanOrEqualTo(6));
+    expect(sent, isNotNull);
+    expect(sent!['areaId'], 2);
+    expect(sent!['equipmentId'], 5);
+    expect(sent!['assigneeId'], 8);
+    expect(sent!['type'], 'PLANNED');
+    expect(sent!['priority'], 'PLANNED');
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'master sees completion, timing, downtime and explicit review warning',
     (tester) async {
