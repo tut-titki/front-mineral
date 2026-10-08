@@ -513,7 +513,7 @@ void main() {
     expect(sent!.containsKey('assigneeId'), false);
     expect(tester.takeException(), isNull);
   });
-  testWidgets('master issues an order for another area in six taps', (
+  testWidgets('equipment search selects its area and issues an order quickly', (
     tester,
   ) async {
     Map<String, dynamic>? sent;
@@ -536,6 +536,10 @@ void main() {
                   : [
                       {'id': 2, 'name': 'Conveyor A', 'areaId': 1},
                       {'id': 3, 'name': 'Conveyor B', 'areaId': 1},
+                      if (area == null) ...[
+                        {'id': 4, 'name': 'Pump A', 'areaId': 2},
+                        {'id': 5, 'name': 'Pump B', 'areaId': 2},
+                      ],
                     ],
             );
           case '/api/references/executors':
@@ -611,18 +615,33 @@ void main() {
       find.byKey(const ValueKey('order-description')),
       'Проверить насос',
     );
-    await tap(find.byKey(const ValueKey('quick-area-2')));
-    await tap(find.byKey(const ValueKey('quick-equipment-5')));
-    await tap(find.byKey(const ValueKey('quick-executor-8')));
+    await tap(find.byKey(const ValueKey('select-equipment')));
+    await tester.enterText(find.byType(TextField).last, 'Pump B');
+    await tester.pumpAndSettle();
+    await tap(find.widgetWithText(ListTile, 'Pump B').last);
     await tap(find.text('Выдать наряд'));
 
     expect(taps, lessThanOrEqualTo(6));
     expect(sent, isNotNull);
     expect(sent!['areaId'], 2);
     expect(sent!['equipmentId'], 5);
-    expect(sent!['assigneeId'], 8);
+    expect(sent!['assigneeId'], 7);
     expect(sent!['type'], 'PLANNED');
     expect(sent!['priority'], 'PLANNED');
+    expect(tester.takeException(), isNull);
+
+    sent = null;
+    await tap(find.text('Open'));
+    await tester.enterText(
+      find.byKey(const ValueKey('order-description')),
+      'Проверить назначение',
+    );
+    await tap(find.byKey(const ValueKey('select-executor')));
+    await tester.enterText(find.byType(TextField).last, 'Second Executor');
+    await tester.pumpAndSettle();
+    await tap(find.widgetWithText(ListTile, 'Second Executor').last);
+    await tap(find.text('Выдать наряд'));
+    expect(sent!['assigneeId'], 8);
     expect(tester.takeException(), isNull);
   });
   testWidgets(
