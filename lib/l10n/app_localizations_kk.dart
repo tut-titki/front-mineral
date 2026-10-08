@@ -1795,4 +1795,7 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get oilFilterMaterial => 'Май сүзгісі';
+
+  @override
+  String get appSlogan => 'Наряд берілді — ЖИ бақылауында';
 }

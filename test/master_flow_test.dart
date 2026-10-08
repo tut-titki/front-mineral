@@ -12,7 +12,7 @@ Future<void> openLogin(WidgetTester tester) async {
   addTearDown(tester.view.resetDevicePixelRatio);
   final api = testApi();
   await tester.pumpWidget(MainApp(demoMode: true, apiServices: api));
-  await tester.pump(const Duration(milliseconds: 2500));
+  await tester.pump(const Duration(seconds: 5));
   await tester.pumpAndSettle();
 }
 

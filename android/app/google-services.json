@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "546787225462",
+    "project_id": "hackaton-abc89",
+    "storage_bucket": "hackaton-abc89.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:546787225462:android:e9174e705833cc51d49457",
+        "android_client_info": {
+          "package_name": "kz.naryadai.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDTgq9s5e3a9z75--N43lGt2CMGRVRUb4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

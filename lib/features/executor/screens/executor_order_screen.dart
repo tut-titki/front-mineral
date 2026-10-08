@@ -1,6 +1,7 @@
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'completion_screen.dart';
 import '../widgets/order_section.dart';
 import '../widgets/work_timer.dart';
@@ -31,6 +32,13 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
   int get employeeId => widget.employeeId;
   bool _changing = false;
   bool _reasonOpen = false;
+  final _comment = TextEditingController();
+
+  @override
+  void dispose() {
+    _comment.dispose();
+    super.dispose();
+  }
 
   Future<bool> _change(
     BuildContext context,
@@ -295,19 +303,48 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
                       child: Text(strings(context).retry),
                     ),
                   if (actions.contains('ACCEPT'))
-                    FilledButton(
-                      onPressed: () => _change(context, OrderStatus.accepted),
-                      child: Text(uiText(context, 'Принять в работу')),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () => _change(
+                        context,
+                        OrderStatus.accepted,
+                        reason: _comment.text.trim(),
+                      ),
+                      icon: const Icon(LucideIcons.play, size: 18),
+                      label: Text(uiText(context, 'Принять в работу')),
                     ),
 
-                  if (actions.contains('QUEUE'))
-                    OutlinedButton(
-                      onPressed: () => _change(context, OrderStatus.queued),
-                      child: Text(uiText(context, 'Поставить в очередь')),
+                  if (actions.contains('QUEUE')) ...[
+                    const SizedBox(height: 6),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        side: const BorderSide(color: Color(0xFF01408B)),
+                      ),
+                      onPressed: () => _change(
+                        context,
+                        OrderStatus.queued,
+                        reason: _comment.text.trim(),
+                      ),
+                      icon: const Icon(LucideIcons.listChecks, size: 18),
+                      label: Text(uiText(context, 'Поставить в очередь')),
                     ),
+                  ],
 
                   if (actions.contains('REJECT'))
                     TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFDC2626),
+                        minimumSize: const Size.fromHeight(48),
+                      ),
                       onPressed: () => _reason(context, OrderStatus.rejected),
                       child: Text(uiText(context, 'Отклонить')),
                     ),
@@ -382,7 +419,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
           ),
         ),
         body: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -393,7 +430,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
               child: Row(
                 children: [
                   const Icon(
-                    Icons.settings_outlined,
+                    LucideIcons.settings,
                     size: 20,
                     color: Color(0xFF01408B),
                   ),
@@ -408,7 +445,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
                     ),
                   ),
                   const Icon(
-                    Icons.schedule_rounded,
+                    LucideIcons.clock,
                     size: 18,
                     color: Color(0xFF01408B),
                   ),
@@ -431,7 +468,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
             Text(
               uiText(context, order.title),
               style: const TextStyle(
-                fontSize: 23,
+                fontSize: 22,
                 fontWeight: FontWeight.w700,
                 height: 1.25,
               ),
@@ -450,16 +487,16 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
                     child: order.beforeImages.isNotEmpty
                         ? Image.memory(
                             order.beforeImages.first.bytes,
-                            width: 60,
-                            height: 60,
+                            width: 48,
+                            height: 48,
                             fit: BoxFit.cover,
                           )
                         : Container(
-                            width: 60,
-                            height: 60,
-                            color: const Color(0xFFF0F4FA),
+                            width: 48,
+                            height: 48,
+                            color: const Color(0xFFEAF3FF),
                             child: const Icon(
-                              Icons.precision_manufacturing_outlined,
+                              LucideIcons.factory,
                               color: Color(0xFF65748B),
                             ),
                           ),
@@ -470,9 +507,17 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
+                          strings(context).equipment,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF8491A6),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
                           uiText(context, order.equipment),
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -491,31 +536,70 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            OrderSection(
-              icon: Icons.schedule_outlined,
-              title: uiText(context, 'Срок выполнения'),
-              child: Text(
-                '${dateLabel(order.deadline)} · ${timeLabel(order.deadline)}',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: order.overdue
-                      ? const Color(0xFFDC2626)
-                      : const Color(0xFF01408B),
-                ),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFE6EAF0)),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              strings(context).priorityValue(uiText(context, order.priority)),
-              style: TextStyle(
-                color: order.emergency
-                    ? const Color(0xFFDC2626)
-                    : const Color(0xFF65748B),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF3FF),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      LucideIcons.clock,
+                      color: Color(0xFF01408B),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          uiText(context, 'Срок выполнения'),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF8491A6),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${dateLabel(order.deadline)} · ${timeLabel(order.deadline)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: order.overdue
+                                ? const Color(0xFFDC2626)
+                                : const Color(0xFF01408B),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          strings(
+                            context,
+                          ).priorityValue(uiText(context, order.priority)),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: order.emergency
+                                ? const Color(0xFFDC2626)
+                                : const Color(0xFF65748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
             OrderSection(
-              icon: Icons.description_outlined,
+              icon: LucideIcons.fileText,
               title: uiText(context, 'Описание неисправности'),
               child: Container(
                 padding: const EdgeInsets.all(14),
@@ -525,16 +609,49 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
                 ),
                 child: Text(
                   uiText(context, order.description),
-                  style: const TextStyle(fontSize: 15, height: 1.5),
+                  style: const TextStyle(fontSize: 14, height: 1.45),
                 ),
               ),
             ),
             if (order.comment.isNotEmpty) ...[
               const SizedBox(height: 20),
               OrderSection(
-                icon: Icons.chat_bubble_outline,
+                icon: LucideIcons.messageSquare,
                 title: uiText(context, 'Комментарий'),
                 child: Text(uiText(context, order.comment)),
+              ),
+            ],
+            if (actions.contains('ACCEPT') || actions.contains('QUEUE')) ...[
+              const SizedBox(height: 18),
+              OrderSection(
+                icon: LucideIcons.messageSquare,
+                title: strings(context).comment,
+                child: TextField(
+                  controller: _comment,
+                  enabled: !_changing,
+                  maxLength: 500,
+                  minLines: 2,
+                  maxLines: 3,
+                  style: const TextStyle(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: strings(context).optionalComment,
+                    hintStyle: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF8491A6),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.all(12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFDCE5F1)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFDCE5F1)),
+                    ),
+                  ),
+                ),
               ),
             ],
             const SizedBox(height: 24),
@@ -544,7 +661,7 @@ class _ExecutorOrderScreenState extends State<ExecutorOrderScreen> {
                 photos: order.beforeImages,
                 framed: false,
               )
-            else
+            else if (!actions.contains('ACCEPT'))
               OrderSection(
                 icon: Icons.camera_alt_outlined,
                 title: uiText(context, 'Фото до начала работ'),
