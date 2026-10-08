@@ -13,7 +13,7 @@ String backendText(BuildContext context, String ru, String kk) =>
     : uiText(context, ru);
 
 String backendError(BuildContext context, Object error) => error is ApiException
-    ? error.message
+    ? uiText(context, error.message)
     : backendText(
         context,
         'Не удалось загрузить данные. Проверьте соединение и повторите.',

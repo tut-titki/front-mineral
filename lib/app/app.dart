@@ -30,6 +30,7 @@ import 'package:mineral/features/splash/screens/splash_screen.dart';
 
 import 'package:mineral/l10n/app_locale.dart';
 import 'package:mineral/l10n/app_localizations.dart';
+import 'package:mineral/l10n/ui_localization.dart';
 
 import 'package:mineral/shared/data/demo_store.dart';
 import 'package:mineral/shared/models/models.dart';
@@ -174,7 +175,7 @@ class _MainAppState extends State<MainApp> {
             SnackBar(
               content: Text(
                 error is ApiException
-                    ? error.message
+                    ? uiText(context, error.message)
                     : AppLocalizations.of(context).pushOrderOpenFailed,
               ),
             ),

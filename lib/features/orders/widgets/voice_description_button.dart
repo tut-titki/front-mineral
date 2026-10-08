@@ -153,7 +153,7 @@ class _VoiceDescriptionButtonState extends State<VoiceDescriptionButton> {
         showMessage(
           context,
           error is ApiException
-              ? '${error.message} ${backendText(context, 'Можно повторить запись или ввести текст.', 'Қайта жазуға немесе мәтін енгізуге болады.')}'
+              ? '${backendError(context, error)} ${backendText(context, 'Можно повторить запись или ввести текст.', 'Қайта жазуға немесе мәтін енгізуге болады.')}'
               : backendText(
                   context,
                   'Не удалось записать голос. Можно ввести текст.',

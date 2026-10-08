@@ -1824,7 +1824,11 @@ class _InfoRow extends StatelessWidget {
             flex: 3,
             child: Text(
               uiText(context, label),
-              style: const TextStyle(color: Color(0xFF7A8597), fontSize: 13, height: 1.4),
+              style: const TextStyle(
+                color: Color(0xFF7A8597),
+                fontSize: 13,
+                height: 1.4,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -2188,7 +2192,7 @@ class _ErrorState extends StatelessWidget {
           children: [
             const Icon(Icons.cloud_off_outlined, size: 48, color: muted),
             const SizedBox(height: 16),
-            Text(message, textAlign: TextAlign.center),
+            Text(uiText(context, message), textAlign: TextAlign.center),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onRetry,
