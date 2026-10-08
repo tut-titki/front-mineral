@@ -77,6 +77,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const ValueKey('order-advanced')));
+      await tester.tap(find.byKey(const ValueKey('order-advanced')));
+      await tester.pumpAndSettle();
       final mode = find
           .ancestor(
             of: find.text('Бригада'),

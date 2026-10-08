@@ -491,7 +491,12 @@ void main() {
     );
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('equipment-2')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, 'Ремонт насоса');
+    await tester.ensureVisible(find.byKey(const ValueKey('order-advanced')));
+    await tester.tap(find.byKey(const ValueKey('order-advanced')));
+    await tester.pumpAndSettle();
     final mode = find
         .ancestor(
           of: find.text('Бригада'),
@@ -598,7 +603,12 @@ void main() {
     }
 
     await tap(find.text('Open'));
-    await tap(find.text('Плановый').first);
+    await tester.enterText(
+      find.byKey(const ValueKey('equipment-search')),
+      'Pump B',
+    );
+    await tester.pumpAndSettle();
+    await tap(find.byKey(const ValueKey('equipment-5')));
     expect(
       tester
           .widget<EditableText>(
@@ -615,27 +625,26 @@ void main() {
       find.byKey(const ValueKey('order-description')),
       'Проверить насос',
     );
-    await tap(find.byKey(const ValueKey('select-equipment')));
-    await tester.enterText(find.byType(TextField).last, 'Pump B');
     await tester.pumpAndSettle();
-    await tap(find.widgetWithText(ListTile, 'Pump B').last);
     await tap(find.text('Выдать наряд'));
 
-    expect(taps, lessThanOrEqualTo(6));
+    expect(taps, 3);
     expect(sent, isNotNull);
     expect(sent!['areaId'], 2);
     expect(sent!['equipmentId'], 5);
     expect(sent!['assigneeId'], 7);
     expect(sent!['type'], 'PLANNED');
-    expect(sent!['priority'], 'PLANNED');
+    expect(sent!['priority'], 'NORMAL');
     expect(tester.takeException(), isNull);
 
     sent = null;
     await tap(find.text('Open'));
+    await tap(find.byKey(const ValueKey('equipment-2')));
     await tester.enterText(
       find.byKey(const ValueKey('order-description')),
       'Проверить назначение',
     );
+    await tester.pumpAndSettle();
     await tap(find.byKey(const ValueKey('select-executor')));
     await tester.enterText(find.byType(TextField).last, 'Second Executor');
     await tester.pumpAndSettle();

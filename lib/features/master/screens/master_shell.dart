@@ -134,14 +134,14 @@ class _MasterShellState extends State<MasterShell> {
   // MARK: - Create order
 
   Future<void> createOrder() async {
-    final created = await Navigator.push<bool>(
+    final created = await Navigator.push<int>(
       context,
-      MaterialPageRoute<bool>(
+      MaterialPageRoute<int>(
         builder: (_) => CreateOrderScreen(api: widget.api),
       ),
     );
 
-    if (!mounted || created != true) {
+    if (!mounted || created == null) {
       return;
     }
 
@@ -153,6 +153,7 @@ class _MasterShellState extends State<MasterShell> {
     setState(() {
       page = 1;
     });
+    await openOrderId(created);
   }
 
   // MARK: - Notifications

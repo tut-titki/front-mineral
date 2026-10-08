@@ -22,6 +22,7 @@ class CreateWorkOrderInput {
     this.brigadeId,
     required this.priority,
     this.normativeId,
+    this.faultCodeId,
     this.deadline,
     this.comment,
     this.beforePhotoUrls = const [],
@@ -38,6 +39,7 @@ class CreateWorkOrderInput {
   final WorkOrderPriority priority;
 
   final int? normativeId;
+  final int? faultCodeId;
   final DateTime? deadline;
 
   final String? comment;
@@ -54,6 +56,7 @@ class CreateWorkOrderInput {
       if (brigadeId != null) 'brigadeId': brigadeId,
       'priority': priority.apiValue,
       if (normativeId != null) 'normativeId': normativeId,
+      if (faultCodeId != null) 'faultCodeId': faultCodeId,
       if (deadline != null) 'deadline': deadline!.toUtc().toIso8601String(),
       if (comment != null && comment!.trim().isNotEmpty)
         'comment': comment!.trim(),

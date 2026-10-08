@@ -12,6 +12,10 @@ class RecommendedExecutor {
     required this.score,
     this.specialty,
     this.equipmentRating,
+    this.statusText,
+    this.grade,
+    this.equipmentOrders = 0,
+    this.reasons = const [],
   });
 
   final int id;
@@ -22,6 +26,10 @@ class RecommendedExecutor {
 
   /// Количество активных нарядов.
   final int queue;
+  final String? statusText;
+  final int? grade;
+  final int equipmentOrders;
+  final List<String> reasons;
 
   /// Средняя оценка работ исполнителя
   /// на таком типе оборудования.
@@ -41,12 +49,19 @@ class RecommendedExecutor {
       queue: _asIntOrZero(json['queue']),
       equipmentRating: _asNullableDouble(json['equipmentRating']),
       score: _asDouble(json['score']),
+      statusText: _asNullableString(json['statusText']),
+      grade: _asNullableInt(json['grade']),
+      equipmentOrders: _asIntOrZero(json['equipmentOrders']),
+      reasons: (json['reasons'] as List? ?? [])
+          .map((e) => e.toString())
+          .toList(),
     );
   }
 
   bool get isAvailable => employeeStatus == EmployeeStatus.available;
 
   String get statusLabel {
+    if (statusText != null && statusText!.isNotEmpty) return statusText!;
     return switch (employeeStatus) {
       EmployeeStatus.available => 'Свободен',
       EmployeeStatus.busy => 'В работе',
@@ -76,6 +91,8 @@ class WorkRecommendation {
     this.normativeId,
     this.estimatedHours,
     this.explanation,
+    this.normative,
+    this.faultCode,
   });
 
   final int? faultCodeId;
@@ -87,6 +104,8 @@ class WorkRecommendation {
 
   /// Объяснение рекомендации.
   final String? explanation;
+  final NormativeReference? normative;
+  final FaultCodeReference? faultCode;
 
   factory WorkRecommendation.fromJson(Map<String, dynamic> json) {
     return WorkRecommendation(
@@ -94,6 +113,12 @@ class WorkRecommendation {
       normativeId: _asNullableInt(json['normativeId']),
       estimatedHours: _asNullableDouble(json['estimatedHours']),
       explanation: _asNullableString(json['explanation']),
+      normative: json['normative'] is Map
+          ? NormativeReference.fromJson(_asJsonMap(json['normative']))
+          : null,
+      faultCode: json['faultCode'] is Map
+          ? FaultCodeReference.fromJson(_asJsonMap(json['faultCode']))
+          : null,
     );
   }
 
@@ -175,6 +200,7 @@ class RecommendationsApi {
   Future<WorkRecommendation> getWorkRecommendation({
     required String description,
     required int equipmentId,
+    bool fast = false,
   }) async {
     final normalizedDescription = description.trim();
 
@@ -194,7 +220,11 @@ class RecommendationsApi {
 
     final response = await _client.post(
       '/api/recommendations/work',
-      body: {'description': normalizedDescription, 'equipmentId': equipmentId},
+      body: {
+        'description': normalizedDescription,
+        'equipmentId': equipmentId,
+        if (fast) 'fast': true,
+      },
     );
 
     return WorkRecommendation.fromJson(_asJsonMap(response.data));

@@ -34,6 +34,7 @@ class FakePhotoPicker extends PhotoPickerService {
 }
 
 Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+  await tester.pumpAndSettle();
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);
@@ -82,7 +83,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tapVisible(tester, find.byKey(const ValueKey('equipment-2')));
     await tester.enterText(find.byType(TextFormField).at(0), 'Ремонт насоса');
+    await tapVisible(tester, find.byKey(const ValueKey('order-advanced')));
     await tester.enterText(find.byType(TextFormField).at(1), 'Устранить течь');
 
     await choosePhotoSource(tester, 'Камера');
@@ -125,6 +128,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tapVisible(tester, find.byKey(const ValueKey('order-advanced')));
     await tapVisible(tester, find.text('Прикрепить фото'));
     await tapVisible(tester, find.text('Отмена'));
     expect(find.text('0/5'), findsOneWidget);

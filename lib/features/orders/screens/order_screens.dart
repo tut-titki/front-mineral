@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:async';
 import '../../../shared/widgets/backend_section.dart';
+import '../../auth/widgets/auth_scope.dart';
+import '../../references/data/reference_storage.dart';
 import '../../../shared/widgets/backend_refresh_view.dart';
 
 import 'package:flutter/material.dart';
@@ -21,16 +25,25 @@ import 'package:mineral/shared/models/models.dart';
 import 'package:mineral/shared/widgets/ui.dart';
 
 class CreateOrderScreen extends StatefulWidget {
-  const CreateOrderScreen({super.key, required this.api, this.photoPicker});
+  const CreateOrderScreen({
+    super.key,
+    required this.api,
+    this.photoPicker,
+    this.initialEquipmentId,
+    this.draftStorage,
+  });
 
   final ApiServices api;
+  final int? initialEquipmentId;
+  final ReferenceStorage? draftStorage;
   final PhotoPickerService? photoPicker;
 
   @override
   State<CreateOrderScreen> createState() => _CreateOrderScreenState();
 }
 
-class _CreateOrderScreenState extends State<CreateOrderScreen> {
+class _CreateOrderScreenState extends State<CreateOrderScreen>
+    with WidgetsBindingObserver {
   final formKey = GlobalKey<FormState>();
 
   final descriptionController = TextEditingController();
@@ -59,11 +72,28 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   // MARK: Order
 
-  WorkOrderType type = WorkOrderType.emergency;
+  WorkOrderType get type => priority == WorkOrderPriority.emergency
+      ? WorkOrderType.emergency
+      : WorkOrderType.planned;
 
-  WorkOrderPriority priority = WorkOrderPriority.emergency;
+  WorkOrderPriority priority = WorkOrderPriority.normal;
 
-  bool useNormative = true;
+  bool useNormative = false;
+  bool manualWork = false;
+  bool manualExecutor = false;
+  bool customDeadline = false;
+  int deadlineHours = 2;
+  Timer? recommendationTimer;
+  Timer? draftTimer;
+  ReferenceStorage? draftStorage;
+  String? draftKey;
+  bool issued = false;
+  bool draftRestored = false;
+  Future<void> draftWrites = Future.value();
+  int recommendationVersion = 0;
+  int equipmentVersion = 0;
+  String equipmentSearch = '';
+  final Map<String, WorkRecommendation> recommendationCache = {};
 
   DateTime deadline = DateTime.now().add(const Duration(hours: 2));
 
@@ -93,20 +123,112 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     photoPicker = widget.photoPicker ?? PhotoPickerService.instance;
 
+    descriptionController.addListener(scheduleRecommendation);
     restorePhotos();
     loadInitialData();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    draftTimer?.cancel();
+    if (!issued) saveDraft();
+    recommendationTimer?.cancel();
+    descriptionController.removeListener(scheduleRecommendation);
     descriptionFocus.dispose();
     descriptionController.dispose();
     commentController.dispose();
 
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed && !issued) saveDraft();
+  }
+
+  Future<void> restoreDraft() async {
+    final owner = AuthScope.maybeOf(context)?.user?.id;
+    if (owner == null && widget.draftStorage == null) return;
+    draftStorage = widget.draftStorage ?? createReferenceStorage();
+    draftKey = 'order-draft:${widget.api.baseUrl}:${owner ?? 'test'}';
+    try {
+      final values = await draftStorage!.read(draftKey!);
+      if (!mounted || values == null || values.isEmpty) return;
+      final draft = values.first;
+      equipmentId = draft['equipmentId'] as int?;
+      if (!equipment.any((e) => e.id == equipmentId)) equipmentId = null;
+      descriptionController.text = draft['description'] as String? ?? '';
+      commentController.text = draft['comment'] as String? ?? '';
+      priority =
+          WorkOrderPriority.values
+              .where((p) => p.apiValue == draft['priority'])
+              .firstOrNull ??
+          WorkOrderPriority.normal;
+      executorId = draft['executorId'] as int?;
+      normativeId = draft['normativeId'] as int?;
+      faultCodeId = draft['faultCodeId'] as int?;
+      manualWork = draft['manualWork'] == true;
+      manualExecutor = draft['manualExecutor'] == true;
+      customDeadline = draft['customDeadline'] == true;
+      deadline =
+          DateTime.tryParse(draft['deadline'] as String? ?? '') ??
+          DateTime.now().add(const Duration(hours: 2));
+      deadlineHours = draft['deadlineHours'] as int? ?? 2;
+      assignBrigade = draft['assignBrigade'] == true;
+      brigadeId = draft['brigadeId'] as int?;
+      if (!brigades.any((b) => b.id == brigadeId)) brigadeId = null;
+      final savedPhotos = (draft['photos'] as List? ?? [])
+          .take(5)
+          .map(
+            (p) => OrderPhoto(
+              name: p['name'] as String,
+              bytes: base64Decode(p['bytes'] as String),
+              takenAt: DateTime.tryParse(p['takenAt'] as String? ?? ''),
+            ),
+          );
+      photos.addAll(savedPhotos.take(5 - photos.length));
+      setState(() {});
+    } catch (_) {
+      // A missing/corrupt draft must not prevent opening the creation form.
+    }
+  }
+
+  void saveDraft() {
+    if (issued || !draftRestored || draftStorage == null || draftKey == null) {
+      return;
+    }
+    final data = {
+      'equipmentId': equipmentId,
+      'description': descriptionController.text,
+      'comment': commentController.text,
+      'priority': priority.apiValue,
+      'executorId': executorId,
+      'normativeId': normativeId,
+      'faultCodeId': faultCodeId,
+      'manualWork': manualWork,
+      'manualExecutor': manualExecutor,
+      'customDeadline': customDeadline,
+      'deadline': deadline.toIso8601String(),
+      'deadlineHours': deadlineHours,
+      'assignBrigade': assignBrigade,
+      'brigadeId': brigadeId,
+      'photos': [
+        for (final p in photos)
+          {
+            'name': p.name,
+            'bytes': base64Encode(p.bytes),
+            'takenAt': p.takenAt?.toIso8601String(),
+          },
+      ],
+    };
+    draftWrites = draftWrites
+        .then((_) => draftStorage!.write(draftKey!, [data]))
+        .catchError((Object _) {});
   }
 
   // MARK: Initial data
@@ -122,7 +244,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         refs.getExecutors(),
         refs.getFaultCodes(refresh: true),
         refs.getBrigades(refresh: true),
-        refs.getEquipment(areaId: selectedArea, refresh: true),
+        refs.getEquipment(refresh: true),
         refs.getNormatives(equipmentId: selectedEquipment, refresh: true),
       ]);
       if (!mounted ||
@@ -171,6 +293,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         widget.api.references.getExecutors(),
         widget.api.references.getFaultCodes(),
         widget.api.references.getBrigades(),
+        widget.api.references.getEquipment(),
       ]);
 
       if (!mounted) return;
@@ -182,16 +305,40 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       faultCodes = results[2] as List<FaultCodeReference>;
       brigades = results[3] as List<BrigadeReference>;
 
-      if (areas.isNotEmpty) {
-        areaId = areas.first.id;
+      equipment = results[4] as List<EquipmentReference>;
+      setState(() => loadingReferences = false);
+      if (!draftRestored) {
+        await restoreDraft();
+        draftRestored = true;
       }
-
-      setState(() {
-        loadingReferences = false;
-      });
-
-      if (areaId != null) {
-        await loadEquipment(areaId!);
+      final restoredEquipment = equipmentId;
+      final initial = widget.initialEquipmentId ?? restoredEquipment;
+      if (initial != null && equipment.any((e) => e.id == initial)) {
+        final savedExecutor = executorId;
+        final savedNormative = normativeId;
+        final savedFault = faultCodeId;
+        final savedManualWork = manualWork && restoredEquipment == initial;
+        final savedManualExecutor =
+            manualExecutor && restoredEquipment == initial;
+        await changeEquipment(initial, force: true);
+        if (!mounted) return;
+        setState(() {
+          if (savedManualWork) {
+            manualWork = true;
+            normativeId = normatives.any((n) => n.id == savedNormative)
+                ? savedNormative
+                : null;
+            faultCodeId = faultCodes.any((f) => f.id == savedFault)
+                ? savedFault
+                : null;
+            useNormative = normativeId != null && !customDeadline;
+          }
+          if (savedManualExecutor &&
+              executors.any((e) => e.id == savedExecutor)) {
+            executorId = savedExecutor;
+            manualExecutor = true;
+          }
+        });
       }
     } on ApiException catch (error) {
       if (!mounted) return;
@@ -212,72 +359,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   // MARK: Area / equipment
 
-  Future<void> changeArea(int newAreaId, {int? selectedEquipmentId}) async {
-    setState(() {
-      areaId = newAreaId;
-
-      equipmentId = null;
-      executorId = null;
-      normativeId = null;
-      faultCodeId = null;
-
-      equipment = [];
-      normatives = [];
-
-      recommendedExecutors = [];
-      workRecommendation = null;
-    });
-
-    await loadEquipment(newAreaId, selectedEquipmentId: selectedEquipmentId);
-  }
-
-  Future<void> loadEquipment(
-    int selectedAreaId, {
-    int? selectedEquipmentId,
-  }) async {
-    setState(() {
-      loadingEquipment = true;
-    });
-
-    try {
-      final result = await widget.api.references.getEquipment(
-        areaId: selectedAreaId,
-      );
-
-      if (!mounted || areaId != selectedAreaId) {
-        return;
-      }
-
-      setState(() {
-        equipment = result;
-
-        equipmentId = result.any((item) => item.id == selectedEquipmentId)
-            ? selectedEquipmentId
-            : (result.isEmpty ? null : result.first.id);
-
-        loadingEquipment = false;
-      });
-
-      if (equipmentId != null) {
-        await changeEquipment(equipmentId!, force: true);
-      }
-    } on ApiException catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        loadingEquipment = false;
-      });
-
-      showMessage(context, error.message);
-    } catch (error) {
-      if (!mounted || areaId != selectedAreaId) return;
-      setState(() {
-        loadingEquipment = false;
-        pageError = backendError(context, error);
-      });
-    }
-  }
-
   Future<void> changeEquipment(int newEquipmentId, {bool force = false}) async {
     if (!force && equipmentId == newEquipmentId) {
       return;
@@ -285,6 +366,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
     setState(() {
       equipmentId = newEquipmentId;
+      areaId = equipment.firstWhere((e) => e.id == newEquipmentId).areaId;
+      manualWork = false;
+      manualExecutor = false;
+      useNormative = false;
+      recommendationVersion++;
 
       executorId = null;
       normativeId = null;
@@ -298,17 +384,25 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       loadingRecommendations = true;
     });
 
+    final selectionVersion = ++equipmentVersion;
+    final initialDescription = descriptionController.text.trim();
+    final initialBrigade = assignBrigade ? brigadeId : null;
     try {
       final results = await Future.wait([
         widget.api.references.getNormatives(equipmentId: newEquipmentId),
-        widget.api.recommendations.getRecommendedExecutors(
-          equipmentId: newEquipmentId,
-          description: descriptionController.text,
-          faultCodeId: faultCodeId,
-        ),
+        widget.api.recommendations
+            .getRecommendedExecutors(
+              equipmentId: newEquipmentId,
+              description: descriptionController.text,
+              faultCodeId: faultCodeId,
+              brigadeId: assignBrigade ? brigadeId : null,
+            )
+            .catchError((_) => <RecommendedExecutor>[]),
       ]);
 
-      if (!mounted || equipmentId != newEquipmentId) {
+      if (!mounted ||
+          equipmentId != newEquipmentId ||
+          selectionVersion != equipmentVersion) {
         return;
       }
 
@@ -319,26 +413,15 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       setState(() {
         normatives = loadedNormatives;
 
-        recommendedExecutors = recommendations;
-
-        if (loadedNormatives.isNotEmpty) {
-          normativeId = loadedNormatives.first.id;
+        if (descriptionController.text.trim() == initialDescription &&
+            initialBrigade == (assignBrigade ? brigadeId : null)) {
+          recommendedExecutors = recommendations;
+          if (!manualExecutor) executorId = recommendations.firstOrNull?.id;
         }
-
-        if (executorId == null) {
-          executorId = recommendations
-              .where(
-                (item) => executors.any(
-                  (executor) => executor.id == item.id && executor.isOnShift,
-                ),
-              )
-              .firstOrNull
-              ?.id;
-        }
-
         loadingNormatives = false;
         loadingRecommendations = false;
       });
+      scheduleRecommendation();
     } on ApiException catch (error) {
       if (!mounted) return;
 
@@ -349,100 +432,126 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
       showMessage(context, error.message);
     } catch (error) {
-      if (!mounted || equipmentId != newEquipmentId) return;
+      if (!mounted ||
+          equipmentId != newEquipmentId ||
+          selectionVersion != equipmentVersion) {
+        return;
+      }
       setState(() {
         loadingNormatives = false;
-        loadingRecommendations = false;
-        pageError = backendError(context, error);
-      });
-    }
-  }
-
-  // MARK: AI recommendation
-
-  Future<void> requestWorkRecommendation() async {
-    final selectedEquipmentId = equipmentId;
-
-    final description = descriptionController.text.trim();
-
-    if (selectedEquipmentId == null) {
-      showMessage(context, 'Сначала выберите оборудование.');
-      return;
-    }
-
-    if (description.length < 3) {
-      showMessage(context, 'Сначала опишите неисправность.');
-      return;
-    }
-
-    setState(() {
-      loadingRecommendations = true;
-    });
-
-    try {
-      final result = await widget.api.recommendations.getWorkRecommendation(
-        description: description,
-        equipmentId: selectedEquipmentId,
-      );
-
-      if (!mounted || equipmentId != selectedEquipmentId) return;
-      setState(() => workRecommendation = result);
-      final executorsSuggestion = await widget.api.recommendations
-          .getRecommendedExecutors(
-            equipmentId: selectedEquipmentId,
-            description: description,
-            faultCodeId: result.faultCodeId,
-          );
-      if (!mounted || equipmentId != selectedEquipmentId) return;
-
-      setState(() {
-        workRecommendation = result;
-        recommendedExecutors = executorsSuggestion;
-        loadingRecommendations = false;
-      });
-    } on ApiException catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        loadingRecommendations = false;
-      });
-
-      showMessage(context, error.message);
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
         loadingRecommendations = false;
       });
       showMessage(context, backendError(context, error));
     }
   }
 
-  void applyWorkRecommendation() {
-    final recommendation = workRecommendation;
+  // MARK: AI recommendation
 
-    if (recommendation == null) {
-      return;
-    }
-
+  void scheduleRecommendation() {
+    recommendationTimer?.cancel();
+    recommendationVersion++;
+    if (!mounted || creating) return;
     setState(() {
-      final recommendedNormative = recommendation.normativeId;
-
-      if (recommendedNormative != null &&
-          normatives.any((item) => item.id == recommendedNormative)) {
-        normativeId = recommendedNormative;
-
-        useNormative = true;
-      }
-
-      final recommendedFault = recommendation.faultCodeId;
-
-      if (recommendedFault != null &&
-          faultCodes.any((item) => item.id == recommendedFault)) {
-        faultCodeId = recommendedFault;
+      if (!manualWork) {
+        workRecommendation = null;
+        faultCodeId = null;
+        normativeId = null;
+        useNormative = false;
       }
     });
+    if (equipmentId == null) return;
+    if (descriptionController.text.trim().length < 3) {
+      setState(() => loadingRecommendations = false);
+      return;
+    }
+    recommendationTimer = Timer(
+      const Duration(milliseconds: 800),
+      requestWorkRecommendation,
+    );
+    setState(() {});
+  }
 
-    showMessage(context, 'Рекомендация применена.');
+  Future<void> requestWorkRecommendation() async {
+    final selectedEquipment = equipmentId;
+    final description = descriptionController.text.trim();
+    if (selectedEquipment == null || description.length < 3 || creating) return;
+    final version = ++recommendationVersion;
+    bool current() =>
+        mounted &&
+        !creating &&
+        version == recommendationVersion &&
+        equipmentId == selectedEquipment;
+    setState(() => loadingRecommendations = true);
+    bool fullApplied = false;
+    Future<void> request(bool fast) async {
+      try {
+        final key = '$selectedEquipment:$description:$fast';
+        final result =
+            recommendationCache[key] ??
+            await widget.api.recommendations
+                .getWorkRecommendation(
+                  description: description,
+                  equipmentId: selectedEquipment,
+                  fast: fast,
+                )
+                .timeout(const Duration(seconds: 30));
+        recommendationCache[key] = result;
+        if (!current() || (fast && fullApplied)) return;
+        if (!fast) fullApplied = true;
+        setState(() {
+          workRecommendation = result;
+          if (result.normative != null &&
+              !normatives.any((n) => n.id == result.normative!.id)) {
+            normatives = [...normatives, result.normative!];
+          }
+          if (result.faultCode != null &&
+              !faultCodes.any((f) => f.id == result.faultCode!.id)) {
+            faultCodes = [...faultCodes, result.faultCode!];
+          }
+          if (!manualWork) {
+            faultCodeId = result.faultCodeId;
+            normativeId = result.normativeId;
+            useNormative = normativeId != null && !customDeadline;
+          }
+        });
+        await updateRecommendedExecutors(version);
+      } catch (_) {
+        // Suggestions are optional: issuance remains available with a two-hour deadline.
+      }
+    }
+
+    await Future.wait([request(true), request(false)]);
+    if (current()) setState(() => loadingRecommendations = false);
+  }
+
+  Future<void> updateRecommendedExecutors([int? expectedVersion]) async {
+    final selectedEquipment = equipmentId;
+    if (selectedEquipment == null) return;
+    final version = expectedVersion ?? recommendationVersion;
+    final selectedBrigade = assignBrigade ? brigadeId : null;
+    final selectedFault = faultCodeId;
+    try {
+      final result = await widget.api.recommendations.getRecommendedExecutors(
+        equipmentId: selectedEquipment,
+        description: descriptionController.text.trim(),
+        faultCodeId: selectedFault,
+        brigadeId: selectedBrigade,
+      );
+      if (!mounted ||
+          creating ||
+          version != recommendationVersion ||
+          equipmentId != selectedEquipment ||
+          selectedFault != faultCodeId ||
+          selectedBrigade != (assignBrigade ? brigadeId : null)) {
+        return;
+      }
+      setState(() {
+        recommendedExecutors = result;
+        if (!manualExecutor) {
+          executorId = result.firstOrNull?.id;
+        }
+      });
+    } catch (_) {}
   }
 
   // MARK: Photos
@@ -542,6 +651,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     }
 
     setState(() {
+      customDeadline = true;
+      useNormative = false;
       deadline = DateTime(
         date.year,
         date.month,
@@ -595,13 +706,15 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       return;
     }
 
-    if (!useNormative && !deadline.isAfter(DateTime.now())) {
+    if (customDeadline && !deadline.isAfter(DateTime.now())) {
       showMessage(context, 'Выберите срок в будущем.');
       return;
     }
 
     setState(() {
       creating = true;
+      recommendationVersion++;
+      recommendationTimer?.cancel();
     });
 
     try {
@@ -627,7 +740,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       //
       // POST /api/work-orders также
       // нельзя автоматически повторять.
-      await widget.api.workOrders.createWorkOrder(
+      final created = await widget.api.workOrders.createWorkOrder(
         CreateWorkOrderInput(
           type: type,
           description: descriptionController.text.trim(),
@@ -636,8 +749,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           assigneeId: assignBrigade ? null : selectedExecutorId,
           brigadeId: assignBrigade ? brigadeId : null,
           priority: priority,
-          normativeId: useNormative ? normativeId : null,
-          deadline: useNormative ? null : deadline.toUtc(),
+          normativeId: normativeId,
+          faultCodeId: faultCodeId,
+          deadline: customDeadline
+              ? deadline.toUtc()
+              : normativeId != null
+              ? null
+              : DateTime.now().add(Duration(hours: deadlineHours)).toUtc(),
           comment: commentController.text.trim().isEmpty
               ? null
               : commentController.text.trim(),
@@ -647,7 +765,15 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
       if (!mounted) return;
 
-      Navigator.pop(context, true);
+      issued = true;
+      draftTimer?.cancel();
+      await draftWrites;
+      if (draftStorage != null && draftKey != null) {
+        try {
+          await draftStorage!.write(draftKey!, []);
+        } catch (_) {}
+      }
+      if (mounted) Navigator.pop(context, created.id);
     } on ApiException catch (error) {
       if (!mounted) return;
 
@@ -655,7 +781,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     } catch (error) {
       if (!mounted) return;
 
-      showMessage(context, backendError(context, error));
+      showMessage(
+        context,
+        backendText(
+          context,
+          'Соединение оборвалось. Проверьте список нарядов, прежде чем создавать снова.',
+          'Байланыс үзілді. Қайта жасамас бұрын нарядтар тізімін тексеріңіз.',
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -798,11 +931,18 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
+                  key: const ValueKey('issue-order'),
+                  style: priority == WorkOrderPriority.emergency
+                      ? FilledButton.styleFrom(
+                          backgroundColor: Colors.red.shade700,
+                        )
+                      : null,
                   onPressed:
                       creating ||
                           loadingReferences ||
                           pickingPhotos ||
-                          voiceBusy
+                          voiceBusy ||
+                          missingInput != null
                       ? null
                       : submit,
                   icon: creating
@@ -813,7 +953,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         )
                       : const Icon(Icons.send_outlined),
                   label: Text(
-                    uiText(context, creating ? 'Создание...' : 'Выдать наряд'),
+                    uiText(
+                      context,
+                      creating ? 'Создание...' : missingInput ?? 'Выдать наряд',
+                    ),
                   ),
                 ),
               ),
@@ -825,6 +968,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   Widget _buildBody() {
+    if (draftRestored && !issued && draftStorage != null) {
+      draftTimer?.cancel();
+      draftTimer = Timer(const Duration(milliseconds: 350), saveDraft);
+    }
     if (loadingReferences) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -854,7 +1001,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
     return BackendRefreshView(
       onRefresh: refreshReferences,
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
@@ -865,30 +1012,41 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               children: [
                 _buildHeader(),
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
 
+                _buildEquipment(),
                 _buildDescription(),
-
-                _buildPlace(),
-
-                _buildDeadline(),
-
-                _buildRecommendation(),
-
-                PhotoAttachments(
-                  framed: false,
-                  title: 'Фото неисправности · до 5',
-                  photos: photos,
-                  busy: pickingPhotos,
-                  onCamera: photoPicker.supportsCamera
-                      ? () => addPhotos(camera: true)
-                      : null,
-                  onGallery: () => addPhotos(camera: false),
-                  onRemove: (index) {
-                    setState(() {
-                      photos.removeAt(index);
-                    });
-                  },
+                _buildQuickSummary(),
+                _buildExecutors(),
+                ExpansionTile(
+                  key: const ValueKey('order-advanced'),
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: const EdgeInsets.only(top: 12),
+                  backgroundColor: Colors.white,
+                  collapsedBackgroundColor: Colors.white,
+                  shape: const Border(top: BorderSide(color: border)),
+                  collapsedShape: const Border(top: BorderSide(color: border)),
+                  leading: const Icon(Icons.tune_rounded, color: brand),
+                  title: Text(backendText(context, 'Дополнительно', 'Қосымша')),
+                  children: [
+                    _buildPlace(),
+                    _buildDeadline(),
+                    PhotoAttachments(
+                      framed: false,
+                      title: 'Фото неисправности · до 5',
+                      photos: photos,
+                      busy: pickingPhotos,
+                      onCamera: photoPicker.supportsCamera
+                          ? () => addPhotos(camera: true)
+                          : null,
+                      onGallery: () => addPhotos(camera: false),
+                      onRemove: (index) {
+                        setState(() {
+                          photos.removeAt(index);
+                        });
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -898,44 +1056,328 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    final now = DateTime.now();
+  String? get missingInput {
+    if (equipmentId == null) return 'Выберите оборудование';
+    if (descriptionController.text.trim().length < 3) {
+      return backendText(context, 'Опишите проблему', 'Мәселені сипаттаңыз');
+    }
+    if (assignBrigade ? brigadeId == null : executorId == null) {
+      return assignBrigade ? 'Выберите бригаду' : 'Выберите исполнителя';
+    }
+    return null;
+  }
 
+  Widget _buildEquipment() {
+    final selected = equipment.where((e) => e.id == equipmentId).firstOrNull;
+    if (selected != null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: _selectionCard(
+          key: const ValueKey('select-equipment'),
+          title: uiText(context, 'Оборудование'),
+          placeholder: '',
+          value: selected,
+          label: (e) => uiText(context, e.name),
+          details: (e) => equipmentDetails(e),
+          icon: Icons.precision_manufacturing_outlined,
+          onTap: creating || voiceBusy ? null : _selectEquipment,
+        ),
+      );
+    }
+    final query = equipmentSearch.toLowerCase();
+    final items = equipment.where(
+      (e) =>
+          '${e.name} ${e.inventoryNumber ?? ''} ${e.type ?? ''} ${equipmentDetails(e)}'
+              .toLowerCase()
+              .contains(query),
+    );
+    return _OrderFormSection(
+      title: 'Оборудование',
+      icon: Icons.precision_manufacturing_outlined,
+      child: Column(
+        children: [
+          TextField(
+            key: const ValueKey('equipment-search'),
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search),
+              hintText: uiText(context, 'Поиск'),
+            ),
+            onChanged: (value) => setState(() => equipmentSearch = value),
+          ),
+          const SizedBox(height: 12),
+          if (items.isEmpty) Text(uiText(context, 'Ничего не найдено')),
+          for (final item in items)
+            ListTile(
+              key: ValueKey('equipment-${item.id}'),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(
+                Icons.precision_manufacturing_outlined,
+                color: brand,
+              ),
+              title: Text(
+                uiText(context, item.name),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(equipmentDetails(item)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: creating || voiceBusy
+                  ? null
+                  : () {
+                      changeEquipment(item.id);
+                      focusDescription();
+                    },
+            ),
+        ],
+      ),
+    );
+  }
+
+  void focusDescription() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      descriptionFocus.requestFocus();
+      final fieldContext = descriptionFocus.context;
+      if (fieldContext != null) {
+        Scrollable.ensureVisible(
+          fieldContext,
+          duration: const Duration(milliseconds: 250),
+        );
+      }
+    });
+  }
+
+  String equipmentDetails(EquipmentReference item) => [
+    item.inventoryNumber,
+    areas
+        .where((a) => a.id == item.areaId)
+        .map((a) => uiText(context, a.name))
+        .firstOrNull,
+    if (item.criticality != null)
+      backendText(
+        context,
+        'Критичность: ${item.criticality}/5',
+        'Маңыздылық: ${item.criticality}/5',
+      ),
+  ].whereType<String>().join(' · ');
+
+  Widget _buildQuickSummary() {
+    if (equipmentId == null) return const SizedBox.shrink();
+    final fault = faultCodes.where((f) => f.id == faultCodeId).firstOrNull;
+    final norm = normatives.where((n) => n.id == normativeId).firstOrNull;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: lightBlue,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            loadingRecommendations
+                ? backendText(context, 'ИИ уточняет…', 'ЖИ нақтылауда…')
+                : uiText(context, 'Срок исполнения'),
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          if (fault != null)
+            Text('${fault.code} · ${uiText(context, fault.name)}'),
+          if (norm != null)
+            Text(uiText(context, '${norm.name} · ${norm.hours} ч.')),
+          if (workRecommendation?.explanation != null)
+            Text(uiText(context, workRecommendation!.explanation!)),
+          if (normativeId == null && !customDeadline) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final hours in [1, 2, 4, 8])
+                  ChoiceChip(
+                    label: Text(backendText(context, '$hours ч', '$hours сағ')),
+                    selected: deadlineHours == hours,
+                    onSelected: creating
+                        ? null
+                        : (_) => setState(() => deadlineHours = hours),
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 8),
+          Text(
+            backendText(
+              context,
+              'До ${timeLabel(customDeadline ? deadline : DateTime.now().add(Duration(minutes: ((norm?.hoursValue ?? deadlineHours) * 60).round())))}',
+              '${timeLabel(customDeadline ? deadline : DateTime.now().add(Duration(minutes: ((norm?.hoursValue ?? deadlineHours) * 60).round())))} дейін',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExecutors() {
+    if (equipmentId == null || assignBrigade) return const SizedBox.shrink();
+    return _OrderFormSection(
+      title: 'Исполнитель',
+      icon: Icons.person_outline,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final item in recommendedExecutors.take(3))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Material(
+                color: executorId == item.id ? lightBlue : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  key: ValueKey('executor-${item.id}'),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  title: Text(
+                    item.fullName,
+                    style: const TextStyle(
+                      color: ink,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        uiText(context, item.statusLabel),
+                        style: TextStyle(color: item.employeeStatus.color),
+                      ),
+                      if (item.specialty != null || item.grade != null)
+                        Text(
+                          [
+                            if (item.specialty != null)
+                              uiText(context, item.specialty!),
+                            if (item.grade != null) '${item.grade} разряд',
+                          ].join(' · '),
+                          style: const TextStyle(fontSize: 12, color: muted),
+                        ),
+                      if (item.id == recommendedExecutors.first.id)
+                        Text(
+                          backendText(context, 'ИИ рекомендует', 'ЖИ ұсынады'),
+                          style: const TextStyle(color: brand),
+                        ),
+                      for (final reason in item.reasons.skip(1))
+                        Text(uiText(context, reason)),
+                      if (item.equipmentRating != null)
+                        Text('★ ${item.ratingLabel} · ${item.equipmentOrders}'),
+                    ],
+                  ),
+                  trailing: Icon(
+                    executorId == item.id
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                    color: brand,
+                  ),
+                  onTap: creating
+                      ? null
+                      : () => setState(() {
+                          executorId = item.id;
+                          manualExecutor = true;
+                        }),
+                ),
+              ),
+            ),
+          if (recommendedExecutors.isEmpty && !loadingRecommendations)
+            Text(
+              backendText(
+                context,
+                'На смене нет исполнителей',
+                'Ауысымда орындаушылар жоқ',
+              ),
+            ),
+          OutlinedButton(
+            key: const ValueKey('select-executor'),
+            onPressed: creating ? null : _selectExecutor,
+            child: Text(
+              backendText(
+                context,
+                'Все исполнители (${executors.length})',
+                'Барлық орындаушылар (${executors.length})',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    final stages = [
+      (uiText(context, 'Оборудование'), equipmentId != null),
+      (
+        uiText(context, 'Описание работ'),
+        descriptionController.text.trim().length >= 3,
+      ),
+      (
+        uiText(context, 'Исполнитель'),
+        assignBrigade ? brigadeId != null : executorId != null,
+      ),
+    ];
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: lightBlue,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(Icons.assignment_outlined, color: brand),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                uiText(context, 'Новый наряд'),
-                style: const TextStyle(
-                  fontSize: 25,
-                  fontWeight: FontWeight.w800,
-                  color: ink,
+        for (var index = 0; index < stages.length; index++)
+          Expanded(
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 2,
+                        color: index == 0 ? Colors.transparent : border,
+                      ),
+                    ),
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: stages[index].$2 ? brand : lightBlue,
+                      ),
+                      alignment: Alignment.center,
+                      child: stages[index].$2
+                          ? const Icon(
+                              Icons.check_rounded,
+                              size: 17,
+                              color: Colors.white,
+                            )
+                          : Text(
+                              '${index + 1}',
+                              style: const TextStyle(
+                                color: brand,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        height: 2,
+                        color: index == stages.length - 1
+                            ? Colors.transparent
+                            : border,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                uiText(
-                  context,
-                  'Выдача: ${dateLabel(now)} · ${timeLabel(now)}',
+                const SizedBox(height: 8),
+                Text(
+                  stages[index].$1,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 11, color: muted),
                 ),
-                style: const TextStyle(color: muted, fontSize: 13),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -947,40 +1389,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SegmentedButton<WorkOrderType>(
-            segments: [
-              ButtonSegment(
-                value: WorkOrderType.emergency,
-                label: Text(uiText(context, 'Аварийный')),
-                icon: const Icon(Icons.warning_amber_rounded),
-              ),
-              ButtonSegment(
-                value: WorkOrderType.planned,
-                label: Text(uiText(context, 'Плановый')),
-                icon: const Icon(Icons.event_available),
-              ),
-            ],
-            selected: {type},
-            onSelectionChanged: (value) {
-              final selected = value.first;
-
-              setState(() {
-                type = selected;
-
-                if (selected == WorkOrderType.emergency) {
-                  priority = WorkOrderPriority.emergency;
-                } else if (priority == WorkOrderPriority.emergency) {
-                  priority = WorkOrderPriority.planned;
-                }
-              });
-              descriptionFocus.requestFocus();
-            },
-          ),
-          const SizedBox(height: 20),
           TextFormField(
             key: const ValueKey('order-description'),
             focusNode: descriptionFocus,
             controller: descriptionController,
+            readOnly: creating,
             minLines: 3,
             maxLines: 6,
             decoration: InputDecoration(
@@ -1008,21 +1421,27 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               ].where((part) => part.isNotEmpty).join(' ');
             },
           ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: loadingRecommendations
-                  ? null
-                  : requestWorkRecommendation,
-              icon: loadingRecommendations
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.auto_awesome_outlined),
-              label: Text(uiText(context, 'Получить AI-рекомендацию')),
-            ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final value in WorkOrderPriority.values)
+                ChoiceChip(
+                  key: ValueKey('priority-${value.apiValue}'),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  selectedColor: lightBlue,
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: priority == value ? brand : border),
+                  label: Text(uiText(context, value.label)),
+                  selected: priority == value,
+                  onSelected: creating
+                      ? null
+                      : (_) => setState(() => priority = value),
+                ),
+            ],
           ),
         ],
       ),
@@ -1036,35 +1455,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _selectionCard(
-            key: const ValueKey('select-equipment'),
-            title: uiText(context, 'Оборудование'),
-            placeholder: uiText(context, 'Выберите оборудование'),
-            value: equipment
-                .where((item) => item.id == equipmentId)
-                .firstOrNull,
-            label: (item) => uiText(context, item.name),
-            details: (item) => [
-              areas
-                  .where((area) => area.id == item.areaId)
-                  .map((area) => uiText(context, area.name))
-                  .firstOrNull,
-              item.inventoryNumber,
-            ].whereType<String>().join(' · '),
-            icon: Icons.precision_manufacturing_outlined,
-            onTap: creating || loadingEquipment ? null : _selectEquipment,
-          ),
-          if (loadingEquipment) ...[
-            const SizedBox(height: 8),
-            const LinearProgressIndicator(),
-          ],
-
-          const SizedBox(height: 16),
-
-          if (loadingRecommendations) const LinearProgressIndicator(),
-
-          if (loadingRecommendations) const SizedBox(height: 16),
-
           SegmentedButton<bool>(
             segments: [
               ButtonSegment(
@@ -1079,7 +1469,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             selected: {assignBrigade},
             onSelectionChanged: creating
                 ? null
-                : (value) => setState(() => assignBrigade = value.first),
+                : (value) {
+                    setState(() {
+                      assignBrigade = value.first;
+                      manualExecutor = false;
+                      executorId = null;
+                    });
+                    updateRecommendedExecutors();
+                  },
           ),
           const SizedBox(height: 16),
           if (assignBrigade)
@@ -1095,7 +1492,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               items: [for (final brigade in brigades) _brigadeOption(brigade)],
               onChanged: creating
                   ? null
-                  : (id) => setState(() => brigadeId = id),
+                  : (id) {
+                      setState(() {
+                        brigadeId = id;
+                        manualExecutor = false;
+                        executorId = null;
+                      });
+                      updateRecommendedExecutors();
+                    },
               validator: (id) {
                 if (id == null) return strings(context).selectBrigade;
                 final brigade = brigades
@@ -1304,7 +1708,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   Future<void> _selectEquipment() async {
     try {
-      final items = await widget.api.references.getEquipment();
+      final items = equipment;
       if (!mounted) return;
       final selected = await _pickOption<EquipmentReference>(
         title: uiText(context, 'Оборудование'),
@@ -1322,11 +1726,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         leading: (_) => const Icon(Icons.precision_manufacturing_outlined),
       );
       if (!mounted || selected == null || selected.id == equipmentId) return;
-      if (selected.areaId == areaId) {
-        await changeEquipment(selected.id);
-      } else {
-        await changeArea(selected.areaId, selectedEquipmentId: selected.id);
-      }
+      await changeEquipment(selected.id);
+      if (mounted) focusDescription();
     } catch (error) {
       if (mounted) showMessage(context, backendError(context, error));
     }
@@ -1353,7 +1754,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             'Кезекте: ${item.queue}',
           ),
       ].join(' · '),
-      enabled: (item) => item.isOnShift,
+      enabled: (_) => true,
       selected: (item) => item.id == executorId,
       leading: (item) => Icon(
         Icons.circle,
@@ -1361,7 +1762,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         color: employeeStatusColor(item.employeeStatus),
       ),
     );
-    if (mounted && selected != null) setState(() => executorId = selected.id);
+    if (mounted && selected != null) {
+      setState(() {
+        executorId = selected.id;
+        manualExecutor = true;
+        assignBrigade = false;
+      });
+    }
   }
 
   Widget _buildDeadline() {
@@ -1371,42 +1778,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DropdownButtonFormField<WorkOrderPriority>(
-            key: ValueKey('priority-$priority'),
-            initialValue: priority,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: uiText(context, 'Приоритет'),
-            ),
-            items: [
-              for (final value in WorkOrderPriority.values)
-                DropdownMenuItem(
-                  value: value,
-                  child: Text(uiText(context, value.label)),
-                ),
-            ],
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-
-              setState(() {
-                priority = value;
-
-                if (value == WorkOrderPriority.emergency) {
-                  type = WorkOrderType.emergency;
-                }
-
-                if (value == WorkOrderPriority.planned &&
-                    type == WorkOrderType.emergency) {
-                  type = WorkOrderType.planned;
-                }
-              });
-            },
-          ),
-
-          const SizedBox(height: 16),
-
           SegmentedButton<bool>(
             segments: [
               ButtonSegment(
@@ -1422,6 +1793,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             onSelectionChanged: (value) {
               setState(() {
                 useNormative = value.first;
+                manualWork = true;
+                if (!useNormative) {
+                  normativeId = null;
+                  customDeadline = true;
+                }
               });
             },
           ),
@@ -1452,12 +1828,19 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     ),
                   ),
               ],
-              onChanged: loadingNormatives
+              onChanged: creating || loadingNormatives
                   ? null
                   : (value) {
                       setState(() {
                         normativeId = value;
+                        faultCodeId = normatives
+                            .where((n) => n.id == value)
+                            .firstOrNull
+                            ?.faultCodeId;
+                        manualWork = true;
+                        customDeadline = false;
                       });
+                      updateRecommendedExecutors();
                     },
               validator: (value) {
                 if (!useNormative) {
@@ -1471,7 +1854,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             ),
           ] else
             OutlinedButton.icon(
-              onPressed: selectDeadline,
+              onPressed: creating ? null : selectDeadline,
               icon: const Icon(Icons.calendar_month_outlined),
               label: Text(
                 uiText(
@@ -1501,17 +1884,27 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   child: Text('${fault.code} · ${fault.name}'),
                 ),
             ],
-            onChanged: (value) {
-              setState(() {
-                faultCodeId = value;
-              });
-            },
+            onChanged: creating
+                ? null
+                : (value) {
+                    setState(() {
+                      faultCodeId = value;
+                      manualWork = true;
+                      normativeId = normatives
+                          .where((n) => n.faultCodeId == value)
+                          .firstOrNull
+                          ?.id;
+                      useNormative = normativeId != null && !customDeadline;
+                    });
+                    updateRecommendedExecutors();
+                  },
           ),
 
           const SizedBox(height: 16),
 
           TextFormField(
             controller: commentController,
+            readOnly: creating,
             minLines: 2,
             maxLines: 4,
             decoration: InputDecoration(
@@ -1519,68 +1912,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildRecommendation() {
-    final recommendation = workRecommendation;
-
-    if (recommendation == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 26),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5F3FF),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFDDD6FE)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.auto_awesome, color: Color(0xFF7C3AED)),
-                SizedBox(width: 10),
-                Text(
-                  uiText(context, 'AI-рекомендация'),
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                ),
-              ],
-            ),
-
-            if (recommendation.explanation != null) ...[
-              const SizedBox(height: 12),
-              Text(recommendation.explanation!),
-            ],
-
-            if (recommendation.estimatedHoursLabel != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                uiText(
-                  context,
-                  'Оценка времени: ${recommendation.estimatedHoursLabel}',
-                ),
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ],
-
-            const SizedBox(height: 14),
-
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton.icon(
-                onPressed: applyWorkRecommendation,
-                icon: const Icon(Icons.check),
-                label: Text(uiText(context, 'Применить')),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1601,32 +1932,37 @@ class _OrderFormSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 21, color: brand),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                uiText(context, title),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: ink,
-                ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 20, color: brand),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      uiText(context, title),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: ink,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              child,
+            ],
+          ),
         ),
-        const SizedBox(height: 20),
-        child,
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 26),
-          child: Divider(height: 1, color: border),
-        ),
-      ],
+      ),
     );
   }
 }

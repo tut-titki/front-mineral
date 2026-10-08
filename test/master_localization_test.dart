@@ -136,7 +136,7 @@ void main() {
       }
       locale.value = const Locale('ru');
       await tester.pumpAndSettle();
-      expect(find.text('Выдать наряд'), findsOneWidget);
+      expect(find.byKey(const ValueKey('issue-order')), findsOneWidget);
       locale.value = const Locale('kk');
       await tester.pumpAndSettle();
       checkNoRussianLabels(tester);
