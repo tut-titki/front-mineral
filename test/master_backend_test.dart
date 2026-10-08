@@ -297,42 +297,38 @@ void main() {
     var dashboardGets = 0;
     final api = testApi(
       handle: (request) async {
-        if (request.url.path == '/api/analytics/dashboard') {
+        if (request.url.path == '/api/work-orders/board') {
           dashboardGets++;
           return failed
               ? jsonResponse({'message': 'Analytics unavailable'}, status: 503)
-              : jsonResponse({
-                  'active': 17,
-                  'overdue': 2,
-                  'equipmentInDowntime': 1,
-                  'averageReactionMinutes': 3,
-                  'averageCompletionMinutes': 45,
-                  'topEquipment': [],
-                  'topExecutors': [],
-                });
+              : jsonResponse(
+                  boardJson()
+                    ..['counters'] = {
+                      'issued': 14,
+                      'completed': 9,
+                      'overdue': 2,
+                      'equipmentInDowntime': 1,
+                    },
+                );
         }
         return null;
       },
     );
     addTearDown(api.dispose);
-    await tester.pumpWidget(
-      host(
-        DashboardScreen(
-          api: api,
-          onOrder: (_) {},
-          onCreate: () {},
-          onTeam: () {},
-        ),
-      ),
-    );
+    await tester.pumpWidget(host(DashboardScreen(api: api, onOrder: (_) {})));
     await tester.pumpAndSettle();
     expect(find.text('Analytics unavailable'), findsOneWidget);
-    expect(find.text('17'), findsNothing);
+    expect(find.text('2'), findsNothing);
     failed = false;
     await tester.tap(find.widgetWithText(FilledButton, 'Повторить'));
     await tester.pumpAndSettle();
-    expect(find.text('17'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('17'), findsNothing);
+    expect(find.text('Активные наряды'), findsNothing);
+    expect(find.text('Средняя реакция, мин.'), findsNothing);
+    expect(find.text('Среднее выполнение, мин.'), findsNothing);
     api.realtime.invalidate();
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
     expect(dashboardGets, 3);
     expect(tester.takeException(), isNull);
@@ -442,8 +438,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationDestination), findsNWidgets(6));
-    for (var index = 0; index < 6; index++) {
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
+    expect(find.text('ИИ'), findsNothing);
+    expect(find.text('Команда'), findsNothing);
+    expect(find.text('Вся команда →'), findsNothing);
+    for (var index = 0; index < 5; index++) {
       await tester.tap(find.byType(NavigationDestination).at(index));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);

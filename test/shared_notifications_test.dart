@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mineral/features/auth/data/auth_session.dart' as auth;
 import 'package:mineral/features/notifications/data/notifications_api.dart';
@@ -198,7 +199,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(reads, 1);
     expect(opens, 0);
-    expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+    expect(find.byIcon(LucideIcons.bell), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -1,4 +1,5 @@
 import '../../../shared/widgets/backend_section.dart';
+import '../../../shared/widgets/backend_refresh_view.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,7 @@ import 'package:mineral/features/orders/data/uploads_api.dart';
 import 'package:mineral/features/orders/data/work_orders_api.dart';
 import 'package:mineral/features/orders/models/work_order_api_models.dart';
 import 'package:mineral/features/orders/widgets/photo_attachments.dart';
+import '../widgets/voice_description_button.dart';
 
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:mineral/shared/models/models.dart';
@@ -44,6 +46,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   List<ExecutorReference> executors = [];
   List<NormativeReference> normatives = [];
   List<FaultCodeReference> faultCodes = [];
+  List<BrigadeReference> brigades = [];
+  bool assignBrigade = false;
+  int? brigadeId;
 
   int? areaId;
   int? equipmentId;
@@ -74,6 +79,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   bool loadingNormatives = false;
   bool loadingRecommendations = false;
   bool creating = false;
+  bool voiceBusy = false;
 
   // MARK: Recommendations
 
@@ -103,6 +109,54 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   // MARK: Initial data
 
+  Future<void> refreshReferences() async {
+    if (creating || voiceBusy || loadingEquipment || loadingNormatives) return;
+    final selectedArea = areaId;
+    final selectedEquipment = equipmentId;
+    try {
+      final refs = widget.api.references;
+      final results = await Future.wait<Object>([
+        refs.getAreas(refresh: true),
+        refs.getExecutors(),
+        refs.getFaultCodes(refresh: true),
+        refs.getBrigades(refresh: true),
+        refs.getEquipment(areaId: selectedArea, refresh: true),
+        refs.getNormatives(equipmentId: selectedEquipment, refresh: true),
+      ]);
+      if (!mounted ||
+          areaId != selectedArea ||
+          equipmentId != selectedEquipment) {
+        return;
+      }
+      setState(() {
+        areas = results[0] as List<AreaReference>;
+        executors = results[1] as List<ExecutorReference>;
+        faultCodes = results[2] as List<FaultCodeReference>;
+        brigades = results[3] as List<BrigadeReference>;
+        equipment = results[4] as List<EquipmentReference>;
+        normatives = results[5] as List<NormativeReference>;
+        if (!areas.any((item) => item.id == areaId)) {
+          areaId = null;
+          equipment = [];
+        }
+        if (!equipment.any((item) => item.id == equipmentId)) {
+          equipmentId = null;
+          normatives = [];
+        }
+        if (!normatives.any((item) => item.id == normativeId)) {
+          normativeId = null;
+        }
+        if (!executors.any((item) => item.id == executorId)) executorId = null;
+        if (!brigades.any((item) => item.id == brigadeId)) brigadeId = null;
+        if (!faultCodes.any((item) => item.id == faultCodeId)) {
+          faultCodeId = null;
+        }
+      });
+    } catch (error) {
+      if (mounted) showMessage(context, backendError(context, error));
+    }
+  }
+
   Future<void> loadInitialData() async {
     setState(() {
       loadingReferences = true;
@@ -114,6 +168,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         widget.api.references.getAreas(),
         widget.api.references.getExecutors(),
         widget.api.references.getFaultCodes(),
+        widget.api.references.getBrigades(),
       ]);
 
       if (!mounted) return;
@@ -123,6 +178,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       executors = results[1] as List<ExecutorReference>;
 
       faultCodes = results[2] as List<FaultCodeReference>;
+      brigades = results[3] as List<BrigadeReference>;
 
       if (areas.isNotEmpty) {
         areaId = areas.first.id;
@@ -242,6 +298,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         widget.api.references.getNormatives(equipmentId: newEquipmentId),
         widget.api.recommendations.getRecommendedExecutors(
           equipmentId: newEquipmentId,
+          description: descriptionController.text,
+          faultCodeId: faultCodeId,
         ),
       ]);
 
@@ -315,10 +373,19 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         equipmentId: selectedEquipmentId,
       );
 
-      if (!mounted) return;
+      if (!mounted || equipmentId != selectedEquipmentId) return;
+      setState(() => workRecommendation = result);
+      final executorsSuggestion = await widget.api.recommendations
+          .getRecommendedExecutors(
+            equipmentId: selectedEquipmentId,
+            description: description,
+            faultCodeId: result.faultCodeId,
+          );
+      if (!mounted || equipmentId != selectedEquipmentId) return;
 
       setState(() {
         workRecommendation = result;
+        recommendedExecutors = executorsSuggestion;
         loadingRecommendations = false;
       });
     } on ApiException catch (error) {
@@ -476,7 +543,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   // MARK: Create order
 
   Future<void> submit() async {
-    if (creating || pickingPhotos || loadingReferences) {
+    if (creating || pickingPhotos || loadingReferences || voiceBusy) {
       return;
     }
 
@@ -498,8 +565,16 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       return;
     }
 
-    if (selectedExecutorId == null) {
+    if (!assignBrigade && selectedExecutorId == null) {
       showMessage(context, 'Выберите исполнителя.');
+      return;
+    }
+
+    if (assignBrigade && brigadeId == null) {
+      showMessage(
+        context,
+        backendText(context, 'Выберите бригаду', 'Бригаданы таңдаңыз'),
+      );
       return;
     }
 
@@ -543,7 +618,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           description: descriptionController.text.trim(),
           areaId: selectedAreaId,
           equipmentId: selectedEquipmentId,
-          assigneeId: selectedExecutorId,
+          assigneeId: assignBrigade ? null : selectedExecutorId,
+          brigadeId: assignBrigade ? brigadeId : null,
           priority: priority,
           normativeId: useNormative ? normativeId : null,
           deadline: useNormative ? null : deadline.toUtc(),
@@ -606,6 +682,45 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     };
   }
 
+  DropdownMenuItem<int> _brigadeOption(BrigadeReference brigade) {
+    final status = brigade.assignmentStatus(executors);
+    final label = switch (status) {
+      EmployeeStatus.available => uiText(context, 'Свободна'),
+      EmployeeStatus.busy || EmployeeStatus.queued => uiText(context, 'Занята'),
+      EmployeeStatus.offShift ||
+      EmployeeStatus.unknown => uiText(context, status.label),
+    };
+    return DropdownMenuItem<int>(
+      value: brigade.id,
+      enabled: status != EmployeeStatus.offShift,
+      child: Row(
+        children: [
+          Icon(Icons.circle, size: 10, color: status.color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  uiText(context, brigade.name),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  label,
+                  style: TextStyle(color: status.color, fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String employeeStatusLabel(EmployeeStatus status) {
     return switch (status) {
       EmployeeStatus.available => 'Свободен',
@@ -618,11 +733,36 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(title: Text(uiText(context, 'Создание наряда'))),
-      bottomNavigationBar: _buildBottomBar(),
-      body: _buildBody(),
+    final theme = Theme.of(context);
+    return Theme(
+      data: theme.copyWith(
+        colorScheme: theme.colorScheme.copyWith(
+          primary: brand,
+          onPrimary: Colors.white,
+          secondary: brand,
+          onSecondary: Colors.white,
+          secondaryContainer: lightBlue,
+          onSecondaryContainer: brand,
+        ),
+        segmentedButtonTheme: SegmentedButtonThemeData(
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.resolveWith(
+              (states) =>
+                  states.contains(WidgetState.selected) ? brand : Colors.white,
+            ),
+            foregroundColor: WidgetStateProperty.resolveWith(
+              (states) =>
+                  states.contains(WidgetState.selected) ? Colors.white : ink,
+            ),
+          ),
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(title: Text(uiText(context, 'Создание наряда'))),
+        bottomNavigationBar: _buildBottomBar(),
+        body: _buildBody(),
+      ),
     );
   }
 
@@ -643,7 +783,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: creating || loadingReferences || pickingPhotos
+                  onPressed:
+                      creating ||
+                          loadingReferences ||
+                          pickingPhotos ||
+                          voiceBusy
                       ? null
                       : submit,
                   icon: creating
@@ -671,7 +815,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     }
 
     if (pageError != null) {
-      return Center(
+      return BackendRefreshView(
+        onRefresh: loadInitialData,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -683,7 +828,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: loadInitialData,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.replay),
                 label: Text(uiText(context, 'Повторить')),
               ),
             ],
@@ -692,7 +837,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       );
     }
 
-    return SingleChildScrollView(
+    return BackendRefreshView(
+      onRefresh: refreshReferences,
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       child: Center(
         child: ConstrainedBox(
@@ -821,16 +967,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             maxLines: 6,
             decoration: InputDecoration(
               labelText: uiText(context, 'Проблема и необходимые работы'),
-              suffixIcon: IconButton(
-                tooltip: uiText(context, 'Голосовой ввод'),
-                onPressed: () {
-                  showMessage(
-                    context,
-                    'Голосовой ввод подключим следующим этапом.',
-                  );
-                },
-                icon: const Icon(Icons.mic_none),
-              ),
             ),
             validator: (value) {
               final text = value?.trim() ?? '';
@@ -843,6 +979,17 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             },
           ),
           const SizedBox(height: 12),
+          VoiceDescriptionButton(
+            api: widget.api,
+            enabled: !creating,
+            onBusyChanged: (busy) => setState(() => voiceBusy = busy),
+            onText: (text) {
+              descriptionController.text = [
+                descriptionController.text.trim(),
+                text.trim(),
+              ].where((part) => part.isNotEmpty).join(' ');
+            },
+          ),
           Align(
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
@@ -934,70 +1081,148 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
           if (loadingRecommendations) const SizedBox(height: 16),
 
-          DropdownButtonFormField<int>(
-            key: ValueKey('executor-$equipmentId-$executorId'),
-            initialValue: executorId,
-            isExpanded: true,
-            isDense: false,
-            itemHeight: 72,
-            decoration: InputDecoration(
-              labelText: uiText(context, 'Исполнитель'),
-            ),
-            items: [
-              for (final executor in executors)
-                DropdownMenuItem(
-                  value: executor.id,
-                  enabled: executor.isOnShift,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.circle,
-                        size: 10,
-                        color: employeeStatusColor(executor.employeeStatus),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              executor.fullName,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              [
-                                if (executor.specialty != null)
-                                  uiText(context, executor.specialty!),
-                                uiText(
-                                  context,
-                                  employeeStatusLabel(executor.employeeStatus),
-                                ),
-                              ].join(' · '),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: muted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+          SegmentedButton<bool>(
+            segments: [
+              ButtonSegment(
+                value: false,
+                label: Text(uiText(context, 'Исполнитель')),
+              ),
+              ButtonSegment(
+                value: true,
+                label: Text(backendText(context, 'Бригада', 'Бригада')),
+              ),
             ],
-            onChanged: creating
+            selected: {assignBrigade},
+            onSelectionChanged: creating
                 ? null
-                : (value) {
-                    setState(() {
-                      executorId = value;
-                    });
-                  },
-            validator: (value) =>
-                value == null ? uiText(context, 'Выберите исполнителя') : null,
+                : (value) => setState(() => assignBrigade = value.first),
           ),
+          const SizedBox(height: 16),
+          if (assignBrigade)
+            DropdownButtonFormField<int>(
+              key: ValueKey('brigade-$brigadeId'),
+              initialValue: brigadeId,
+              isExpanded: true,
+              isDense: false,
+              itemHeight: 64,
+              decoration: InputDecoration(
+                labelText: backendText(context, 'Бригада', 'Бригада'),
+              ),
+              items: [for (final brigade in brigades) _brigadeOption(brigade)],
+              onChanged: creating
+                  ? null
+                  : (id) => setState(() => brigadeId = id),
+              validator: (id) {
+                if (id == null) return strings(context).selectBrigade;
+                final brigade = brigades
+                    .where((item) => item.id == id)
+                    .firstOrNull;
+                if (brigade == null) return strings(context).selectBrigade;
+                if (brigade.assignmentStatus(executors) ==
+                    EmployeeStatus.offShift) {
+                  return strings(context).brigadeOffShift;
+                }
+                return null;
+              },
+            ),
+          if (!assignBrigade)
+            DropdownButtonFormField<int>(
+              key: ValueKey('executor-$equipmentId-$executorId'),
+              initialValue: executorId,
+              isExpanded: true,
+              isDense: false,
+              itemHeight: 90,
+              decoration: InputDecoration(
+                labelText: uiText(context, 'Исполнитель'),
+              ),
+              items: [
+                for (final executor in executors)
+                  DropdownMenuItem(
+                    value: executor.id,
+                    enabled: executor.isOnShift,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          size: 10,
+                          color: employeeStatusColor(executor.employeeStatus),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                executor.fullName,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                [
+                                  if (executor.specialty != null)
+                                    uiText(context, executor.specialty!),
+                                  uiText(context, executor.statusLabel),
+                                  if (executor.currentOrder != null)
+                                    '№${executor.currentOrder!.number}',
+                                  if (executor.queue > 0)
+                                    backendText(
+                                      context,
+                                      'В очереди: ${executor.queue}',
+                                      'Кезекте: ${executor.queue}',
+                                    ),
+                                ].join(' · '),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+              onChanged: creating
+                  ? null
+                  : (value) {
+                      setState(() {
+                        executorId = value;
+                      });
+                    },
+              validator: (value) => value == null
+                  ? uiText(context, 'Выберите исполнителя')
+                  : null,
+            ),
 
-          if (recommendedExecutors.isNotEmpty) ...[
+          if (!assignBrigade && executorId != null) ...[
+            const SizedBox(height: 10),
+            for (final executor in executors.where((e) => e.id == executorId))
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (executor.currentOrder != null)
+                    Chip(
+                      avatar: const Icon(Icons.assignment_outlined, size: 16),
+                      label: Text('№${executor.currentOrder!.number}'),
+                    ),
+                  Chip(
+                    avatar: const Icon(Icons.queue_outlined, size: 16),
+                    label: Text(
+                      backendText(
+                        context,
+                        'В очереди: ${executor.queue}',
+                        'Кезекте: ${executor.queue}',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+          if (!assignBrigade && recommendedExecutors.isNotEmpty) ...[
             const SizedBox(height: 14),
             _ExecutorRecommendation(
               recommendations: recommendedExecutors,
@@ -1289,7 +1514,7 @@ class _ExecutorRecommendation extends StatelessWidget {
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
                   dense: true,
-                  leading: Radio<int>(value: item.id),
+                  leading: Radio<int>(value: item.id, activeColor: brand),
                   title: Text(item.fullName),
                   subtitle: Text(
                     [

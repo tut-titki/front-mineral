@@ -164,7 +164,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      for (var index = 0; index < 6; index++) {
+      for (var index = 0; index < 5; index++) {
         final navigation = width < 1000
             ? find.byType(NavigationDestination).at(index)
             : find.byType(ListTile).at(index);

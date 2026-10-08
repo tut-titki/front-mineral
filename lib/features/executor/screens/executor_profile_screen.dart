@@ -1,6 +1,7 @@
 import '../models/executor_rating_period.dart';
 import 'package:mineral/core/utils/enterprise_time.dart';
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/app_refresh_indicator.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mineral/features/auth/screens/change_password_screen.dart';
 import 'package:mineral/features/auth/widgets/auth_scope.dart';
@@ -208,7 +209,7 @@ class _ExecutorProfileScreenState extends State<ExecutorProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final employee = store.employee(employeeId);
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: _refreshRating,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),

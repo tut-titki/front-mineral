@@ -5,6 +5,7 @@ import 'package:mineral/l10n/app_localizations.dart';
 import 'package:mineral/l10n/backend_ui_labels.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:mineral/core/api/backend_document.dart';
+import 'package:mineral/core/api/api_client.dart' as api;
 import 'package:mineral/shared/widgets/backend_section.dart';
 import 'helpers/localization_assertions.dart';
 
@@ -16,6 +17,55 @@ Widget host(Widget child) => MaterialApp(
 );
 
 void main() {
+  for (final language in ['ru', 'kk']) {
+    testWidgets('API errors use $language and preserve unknown server text', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: Locale(language),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: BackendError(
+                message: backendError(
+                  context,
+                  const api.ApiException(
+                    statusCode: 400,
+                    message: 'Сервер вернул неверный формат данных',
+                  ),
+                ),
+                onRetry: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(
+        find.text(
+          language == 'kk'
+              ? 'Сервер деректерді қате пішімде қайтарды'
+              : 'Сервер вернул неверный формат данных',
+        ),
+        findsOneWidget,
+      );
+      final context = tester.element(find.byType(Scaffold));
+      expect(
+        backendError(
+          context,
+          const api.ApiException(statusCode: 400, message: 'Ответ сервера XYZ'),
+        ),
+        'Ответ сервера XYZ',
+      );
+      expect(
+        uiText(context, 'Это не ваш наряд'),
+        strings(context).notYourOrderMessage,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('all static legacy UI labels have Kazakh translations', (
     tester,
   ) async {

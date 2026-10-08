@@ -6,6 +6,7 @@ import 'package:mineral/shared/data/demo_store.dart';
 import 'package:mineral/shared/models/models.dart';
 import 'package:mineral/features/reports/models/report_snapshot.dart';
 import 'package:mineral/features/reports/screens/reports_screen.dart';
+import 'package:mineral/features/master/screens/master_shell.dart';
 
 void main() {
   final now = DateTime(2026, 10, 5, 12);
@@ -58,21 +59,22 @@ void main() {
     testWidgets('backend period selection and export menu in $language', (
       tester,
     ) async {
-      final now = DateTime.now();
+      final queries = <Map<String, String>>[];
       final api = testApi(
-        handle: (request) async => request.url.path == '/api/work-orders'
-            ? jsonResponse([
-                orderJson(id: 1, createdAt: now),
-                orderJson(
-                  id: 2,
-                  createdAt: now.subtract(const Duration(days: 2)),
-                ),
-                orderJson(
-                  id: 3,
-                  createdAt: now.subtract(const Duration(days: 15)),
-                ),
-              ])
-            : null,
+        handle: (request) async {
+          if (request.url.path != '/api/reports/shift') return null;
+          final query = request.url.queryParameters;
+          queries.add(query);
+          return jsonResponse({
+            'issued': query['period'] == 'week'
+                ? 2
+                : query['from']!.startsWith('1999')
+                ? 3
+                : 1,
+            'completed': 0,
+            'overdue': 0,
+          });
+        },
       );
       addTearDown(api.dispose);
       await tester.pumpWidget(
@@ -80,11 +82,11 @@ void main() {
           locale: Locale(language),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: SingleChildScrollView(child: ReportsScreen(api: api)),
-          ),
+          home: MasterShell(api: api),
         ),
       );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(NavigationDestination).at(2));
       await tester.pumpAndSettle();
       final context = tester.element(find.byType(ReportsScreen));
       final s = AppLocalizations.of(context);
@@ -98,12 +100,28 @@ void main() {
         matching: find.text(value),
       );
       expect(count('1'), findsOneWidget);
+      expect(queries.last['from'], endsWith('T19:00:00.000Z'));
+      expect(queries.last['to'], endsWith('T18:59:59.999999Z'));
+      await tester.tap(find.text(language == 'ru' ? 'Фильтры' : 'Сүзгілер'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text(s.weekPeriod));
+      await tester.ensureVisible(
+        find.text(language == 'ru' ? 'Применить' : 'Қолдану'),
+      );
+      await tester.tap(find.text(language == 'ru' ? 'Применить' : 'Қолдану'));
       await tester.pumpAndSettle();
       expect(count('2'), findsOneWidget);
+      expect(queries.last, {'period': 'week'});
+      await tester.tap(find.text(language == 'ru' ? 'Фильтры' : 'Сүзгілер'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text(s.allTimePeriod));
+      await tester.ensureVisible(
+        find.text(language == 'ru' ? 'Применить' : 'Қолдану'),
+      );
+      await tester.tap(find.text(language == 'ru' ? 'Применить' : 'Қолдану'));
       await tester.pumpAndSettle();
       expect(count('3'), findsOneWidget);
+      expect(queries.last['from'], startsWith('1999-12-31'));
       await tester.tap(find.byTooltip(s.exportReport));
       await tester.pumpAndSettle();
       expect(find.text(s.exportPdf), findsOneWidget);

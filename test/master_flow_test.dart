@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mineral/main.dart';
 import 'package:mineral/core/theme/app_theme.dart';
+import 'helpers/backend_api_fixture.dart';
 
 Future<void> openLogin(WidgetTester tester) async {
   addTearDown(() async => tester.pumpWidget(const SizedBox.shrink()));
@@ -9,8 +10,9 @@ Future<void> openLogin(WidgetTester tester) async {
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
-  await tester.pumpWidget(const MainApp(demoMode: true));
-  await tester.pump(const Duration(milliseconds: 2500));
+  final api = testApi();
+  await tester.pumpWidget(MainApp(demoMode: true, apiServices: api));
+  await tester.pump(const Duration(seconds: 5));
   await tester.pumpAndSettle();
 }
 

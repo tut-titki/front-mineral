@@ -336,6 +336,19 @@ class AuthSession extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshUser() async {
+    final token = _token;
+    if (token == null) return;
+    final profile = AuthUser.fromJson(await request('GET', '/api/auth/me'));
+    if (_token != token) return;
+    if (profile.mobileRoute == null) {
+      await expire();
+      return;
+    }
+    user = profile;
+    notifyListeners();
+  }
+
   Future<void> changePassword(
     String currentPassword,
     String newPassword,

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/app_notifications_button.dart';
+import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:mineral/core/api/api_services.dart';
 
@@ -6,6 +10,7 @@ import 'package:mineral/features/auth/widgets/auth_scope.dart';
 
 import 'package:mineral/features/master/screens/dashboard_screen.dart';
 import 'package:mineral/features/master/screens/master_profile_screen.dart';
+import 'package:mineral/features/assistant/screens/master_chat_screen.dart';
 
 import 'package:mineral/features/orders/models/work_order_api_models.dart';
 import 'package:mineral/features/orders/screens/order_detail_screen.dart';
@@ -15,6 +20,7 @@ import 'package:mineral/l10n/ui_localization.dart';
 
 import 'package:mineral/shared/models/models.dart';
 import 'package:mineral/shared/widgets/ui.dart';
+import 'package:mineral/shared/widgets/backend_refresh_view.dart';
 
 // MARK: - Master Shell
 
@@ -31,6 +37,42 @@ class _MasterShellState extends State<MasterShell> {
   int page = 0;
 
   bool _loggingOut = false;
+  final _reportsKey = GlobalKey<ReportsScreenState>();
+  final _reportExporting = ValueNotifier<bool>(false);
+
+  @override
+  void dispose() {
+    _reportExporting.dispose();
+    super.dispose();
+  }
+
+  Widget _exportAction(BuildContext context) => ValueListenableBuilder<bool>(
+    valueListenable: _reportExporting,
+    builder: (context, busy, _) => busy
+        ? const Padding(
+            padding: EdgeInsets.all(14),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          )
+        : PopupMenuButton<String>(
+            tooltip: strings(context).exportReport,
+            icon: const Icon(LucideIcons.download, color: brand),
+            onSelected: (format) => _reportsKey.currentState?.export(format),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'pdf',
+                child: Text(strings(context).exportPdf),
+              ),
+              PopupMenuItem(
+                value: 'excel',
+                child: Text(strings(context).exportExcel),
+              ),
+            ],
+          ),
+  );
 
   // MARK: - Logout
 
@@ -66,21 +108,13 @@ class _MasterShellState extends State<MasterShell> {
 
   // MARK: - Navigation
 
-  static const labels = [
-    'Обзор смены',
-    'Наряды',
-    'Команда',
-    'ИИ-контроль',
-    'Отчёты',
-    'Профиль',
-  ];
+  static const labels = ['Обзор смены', 'Наряды', 'Отчёты', 'Чат', 'Профиль'];
 
   static const icons = [
     Icons.grid_view_rounded,
     Icons.assignment_outlined,
-    Icons.groups_outlined,
-    Icons.auto_awesome,
     Icons.bar_chart_rounded,
+    Icons.chat_bubble_outline,
     Icons.person_outline,
   ];
 
@@ -144,16 +178,7 @@ class _MasterShellState extends State<MasterShell> {
         final desktop = MediaQuery.sizeOf(context).width >= 1000;
 
         final content = switch (page) {
-          0 => DashboardScreen(
-            api: widget.api,
-            onOrder: openOrder,
-            onCreate: createOrder,
-            onTeam: () {
-              setState(() {
-                page = 2;
-              });
-            },
-          ),
+          0 => DashboardScreen(api: widget.api, onOrder: openOrder),
 
           1 => OrdersScreen(
             api: widget.api,
@@ -161,11 +186,15 @@ class _MasterShellState extends State<MasterShell> {
             onCreate: createOrder,
           ),
 
-          2 => TeamScreen(api: widget.api),
+          2 => ReportsScreen(
+            key: _reportsKey,
+            api: widget.api,
+            onExportingChanged: (busy) {
+              if (mounted) _reportExporting.value = busy;
+            },
+          ),
 
-          3 => AiScreen(api: widget.api, onOrder: openOrder),
-
-          4 => ReportsScreen(api: widget.api),
+          3 => MasterChatScreen(api: widget.api),
 
           _ => MasterProfileScreen(
             api: widget.api,
@@ -175,28 +204,77 @@ class _MasterShellState extends State<MasterShell> {
         };
 
         return Scaffold(
+          backgroundColor: page == 4 ? const Color(0xFFF5F7FB) : null,
+          floatingActionButton: page == 0
+              ? FloatingActionButton.extended(
+                  key: const ValueKey('master-create-order-fab'),
+                  heroTag: 'master-create-order',
+                  onPressed: createOrder,
+                  backgroundColor: const Color(0xFF01408B),
+                  foregroundColor: Colors.white,
+                  icon: const Icon(LucideIcons.plus, size: 20),
+                  label: Text(uiText(context, 'Создать наряд')),
+                )
+              : null,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           // MARK: Mobile app bar
           appBar: desktop
               ? null
               : AppBar(
-                  title: page == 5
-                      ? Text(uiText(context, 'Профиль'))
-                      : Image.asset(
-                          'assets/logo_blue.png',
-                          width: 110,
-                          height: 48,
-                          fit: BoxFit.contain,
-                          semanticLabel: uiText(
-                            context,
-                            'Костанайские минералы',
+                  centerTitle: false,
+                  backgroundColor: page == 4 ? AppColors.primary : Colors.white,
+                  foregroundColor: page == 4
+                      ? Colors.white
+                      : const Color(0xFF172B4D),
+                  flexibleSpace: page == 4
+                      ? const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: AppColors.profileHeaderGradient,
+                          ),
+                        )
+                      : null,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  surfaceTintColor: Colors.transparent,
+                  titleSpacing: 24,
+                  systemOverlayStyle: page == 4
+                      ? SystemUiOverlayStyle.light
+                      : SystemUiOverlayStyle.dark,
+                  shape: page == 4
+                      ? null
+                      : const Border(bottom: BorderSide(color: border)),
+                  title: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        uiText(context, labels[page]),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: page == 4
+                              ? Colors.white
+                              : const Color(0xFF172B4D),
+                        ),
+                      ),
+                      if (page == 0) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          uiText(context, 'Текущие показатели и наряды смены'),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            height: 1.3,
+                            color: muted,
                           ),
                         ),
+                      ],
+                    ],
+                  ),
                   actions: [
-                    IconButton(
-                      tooltip: uiText(context, 'Уведомления'),
-                      onPressed: openNotifications,
-                      icon: const Icon(Icons.notifications_outlined),
-                    ),
+                    if (page == 2) _exportAction(context),
+                    AppNotificationsButton(onPressed: openNotifications),
                   ],
                 ),
 
@@ -222,19 +300,14 @@ class _MasterShellState extends State<MasterShell> {
                       label: uiText(context, 'Наряды'),
                     ),
                     NavigationDestination(
-                      icon: const Icon(Icons.groups_outlined),
-                      selectedIcon: const Icon(Icons.groups),
-                      label: uiText(context, 'Команда'),
-                    ),
-                    NavigationDestination(
-                      icon: const Icon(Icons.auto_awesome_outlined),
-                      selectedIcon: const Icon(Icons.auto_awesome),
-                      label: uiText(context, 'ИИ'),
-                    ),
-                    NavigationDestination(
                       icon: const Icon(Icons.bar_chart_rounded),
                       selectedIcon: const Icon(Icons.bar_chart_rounded),
                       label: uiText(context, 'Отчёты'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      selectedIcon: const Icon(Icons.chat_bubble),
+                      label: uiText(context, 'Чат'),
                     ),
                     NavigationDestination(
                       icon: const Icon(Icons.person_outline),
@@ -317,7 +390,7 @@ class _MasterShellState extends State<MasterShell> {
                         const Spacer(),
 
                         ListTile(
-                          onTap: () => setState(() => page = 5),
+                          onTap: () => setState(() => page = 4),
                           leading: CircleAvatar(
                             backgroundColor: background,
                             child: Text(
@@ -357,41 +430,65 @@ class _MasterShellState extends State<MasterShell> {
                     // MARK: Desktop header
                     if (desktop)
                       Container(
-                        color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: page == 4 ? null : Colors.white,
+                          gradient: page == 4
+                              ? AppColors.profileHeaderGradient
+                              : null,
+                        ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 28,
                           vertical: 14,
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.factory_outlined, color: muted),
-
-                            const SizedBox(width: 10),
-
-                            Text(
-                              uiText(context, 'Минеральный комплекс'),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    uiText(context, labels[page]),
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      color: page == 4 ? Colors.white : null,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    uiText(
+                                      context,
+                                      page == 0
+                                          ? 'Текущие показатели и наряды смены'
+                                          : 'Мастер смены',
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: page == 4
+                                          ? const Color(0xFFC8DDF5)
+                                          : muted,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
 
-                            const SizedBox(width: 18),
-
-                            Text(uiText(context, 'Мастер смены')),
-
-                            const Spacer(),
-
                             Text(
                               uiText(context, dateLabel(DateTime.now())),
-                              style: const TextStyle(color: muted),
+                              style: TextStyle(
+                                color: page == 4
+                                    ? const Color(0xFFC8DDF5)
+                                    : muted,
+                              ),
                             ),
 
                             const SizedBox(width: 14),
 
-                            IconButton(
-                              tooltip: uiText(context, 'Уведомления'),
+                            if (page == 2) _exportAction(context),
+
+                            AppNotificationsButton(
                               onPressed: openNotifications,
-                              icon: const Icon(Icons.notifications_outlined),
+                              color: page == 4 ? Colors.white : null,
                             ),
                           ],
                         ),
@@ -399,16 +496,27 @@ class _MasterShellState extends State<MasterShell> {
 
                     // MARK: Page
                     Expanded(
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.all(desktop ? 28 : 18),
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 1400),
-                            child: content,
-                          ),
-                        ),
-                      ),
+                      child: page == 1 || page == 3
+                          ? content
+                          : BackendRefreshView(
+                              padding: page == 4
+                                  ? EdgeInsets.zero
+                                  : EdgeInsets.fromLTRB(
+                                      desktop ? 28 : 18,
+                                      desktop ? 28 : 18,
+                                      desktop ? 28 : 18,
+                                      page == 0 ? 96 : (desktop ? 28 : 18),
+                                    ),
+                              child: Align(
+                                alignment: Alignment.topCenter,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 1400,
+                                  ),
+                                  child: content,
+                                ),
+                              ),
+                            ),
                     ),
                   ],
                 ),

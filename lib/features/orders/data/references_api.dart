@@ -439,6 +439,38 @@ class BrigadeReference {
 
   final List<BrigadeMemberReference> members;
 
+  /// Assignment availability is derived from the current executor snapshot.
+  EmployeeStatus assignmentStatus(Iterable<ExecutorReference> executors) {
+    final memberIds = members.map((member) => member.id).toSet();
+    final onShift = executors
+        .where(
+          (executor) =>
+              (executor.brigadeId == id ||
+                  executor.brigade?.id == id ||
+                  memberIds.contains(executor.id)) &&
+              executor.canBeAssigned,
+        )
+        .toList();
+    if (onShift.isEmpty) return EmployeeStatus.offShift;
+    if (onShift.any(
+      (executor) =>
+          executor.employeeStatus == EmployeeStatus.busy ||
+          executor.employeeStatus == EmployeeStatus.queued ||
+          executor.currentOrder != null ||
+          executor.queue > 0 ||
+          executor.activeOrders > 0 ||
+          executor.assignedOrders > 0,
+    )) {
+      return EmployeeStatus.busy;
+    }
+    if (onShift.any(
+      (executor) => executor.employeeStatus == EmployeeStatus.unknown,
+    )) {
+      return EmployeeStatus.unknown;
+    }
+    return EmployeeStatus.available;
+  }
+
   factory BrigadeReference.fromJson(Map<String, dynamic> json) {
     return BrigadeReference(
       id: _asInt(json['id']),
@@ -469,12 +501,18 @@ class ReferencesApi {
   final ReferenceCache cache;
   Future<void> refreshAll() => cache.refreshAll();
 
-  Future<List<AreaReference>> getAreas() async =>
-      (await cache.get('areas')).map(AreaReference.fromJson).toList();
-  Future<List<EquipmentReference>> getEquipment({int? areaId}) async =>
+  Future<List<AreaReference>> getAreas({bool refresh = false}) async =>
       (await cache.get(
-        'equipment${areaId == null ? '' : '?areaId=$areaId'}',
-      )).map(EquipmentReference.fromJson).toList();
+        'areas',
+        refresh: refresh,
+      )).map(AreaReference.fromJson).toList();
+  Future<List<EquipmentReference>> getEquipment({
+    int? areaId,
+    bool refresh = false,
+  }) async => (await cache.get(
+    'equipment${areaId == null ? '' : '?areaId=$areaId'}',
+    refresh: refresh,
+  )).map(EquipmentReference.fromJson).toList();
   Future<List<ExecutorReference>> getExecutors({
     String? specialty,
     int? brigadeId,
@@ -493,17 +531,26 @@ class ReferencesApi {
     )).map(ExecutorReference.fromJson).toList();
   }
 
-  Future<List<NormativeReference>> getNormatives({int? equipmentId}) async =>
-      (await cache.get(
-        'normatives${equipmentId == null ? '' : '?equipmentId=$equipmentId'}',
-      )).map(NormativeReference.fromJson).toList();
-  Future<List<FaultCodeReference>> getFaultCodes() async => (await cache.get(
+  Future<List<NormativeReference>> getNormatives({
+    int? equipmentId,
+    bool refresh = false,
+  }) async => (await cache.get(
+    'normatives${equipmentId == null ? '' : '?equipmentId=$equipmentId'}',
+    refresh: refresh,
+  )).map(NormativeReference.fromJson).toList();
+  Future<List<FaultCodeReference>> getFaultCodes({
+    bool refresh = false,
+  }) async => (await cache.get(
     'fault-codes',
+    refresh: refresh,
   )).map(FaultCodeReference.fromJson).toList();
   Future<List<MaterialReference>> getMaterials() async =>
       (await cache.get('materials')).map(MaterialReference.fromJson).toList();
-  Future<List<BrigadeReference>> getBrigades() async =>
-      (await cache.get('brigades')).map(BrigadeReference.fromJson).toList();
+  Future<List<BrigadeReference>> getBrigades({bool refresh = false}) async =>
+      (await cache.get(
+        'brigades',
+        refresh: refresh,
+      )).map(BrigadeReference.fromJson).toList();
 }
 
 // MARK: - JSON helpers

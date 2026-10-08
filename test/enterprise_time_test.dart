@@ -8,6 +8,7 @@ void main() {
     expect(timeLabel(instant), '02:32');
     expect(dateLabel(instant), '08.10.2026');
     expect(instant.hour, 21);
+    expect(enterpriseDateTimeLabel(instant), '02:32 08,10,2026');
   });
   test('equivalent offsets and device-local values have identical labels', () {
     final utc = DateTime.parse('2026-10-07T05:32:00Z');
@@ -15,6 +16,11 @@ void main() {
     expect(timeLabel(utc), '10:32');
     expect(timeLabel(offset), timeLabel(utc));
     expect(timeLabel(utc.toLocal()), timeLabel(utc));
+    expect(enterpriseDateTimeLabel(offset), '10:32 07,10,2026');
+    expect(
+      enterpriseDateTimeLabel(utc.toLocal()),
+      enterpriseDateTimeLabel(utc),
+    );
     expect(
       enterpriseTime(
         utc,

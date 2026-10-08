@@ -1,6 +1,7 @@
 import '../features/references/data/reference_cache.dart';
 import '../features/references/data/reference_storage.dart';
 import 'dart:async';
+import '../features/orders/screens/order_detail_screen.dart';
 import 'package:mineral/core/services/push_notification_service.dart';
 import 'package:mineral/features/executor/screens/executor_order_loader.dart';
 import 'package:mineral/features/executor/models/executor_order_dto.dart';
@@ -29,6 +30,7 @@ import 'package:mineral/features/splash/screens/splash_screen.dart';
 
 import 'package:mineral/l10n/app_locale.dart';
 import 'package:mineral/l10n/app_localizations.dart';
+import 'package:mineral/l10n/ui_localization.dart';
 
 import 'package:mineral/shared/data/demo_store.dart';
 import 'package:mineral/shared/models/models.dart';
@@ -39,11 +41,13 @@ class MainApp extends StatefulWidget {
     this.demoMode = false,
     this.session,
     this.referenceStorage,
+    this.apiServices,
   });
 
   final bool demoMode;
   final AuthSession? session;
   final ReferenceStorage? referenceStorage;
+  final ApiServices? apiServices;
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -58,14 +62,16 @@ class _MainAppState extends State<MainApp> {
 
   late final AuthSession _session = widget.session ?? AuthSession();
 
-  late final ApiServices api = ApiServices(
-    baseUrl: _session.baseUrl,
-    referenceCache: ReferenceCache(
-      scope: _session.baseUrl,
-      fetch: _session.requestList,
-      storage: widget.referenceStorage,
-    ),
-  );
+  late final ApiServices api =
+      widget.apiServices ??
+      ApiServices(
+        baseUrl: _session.baseUrl,
+        referenceCache: ReferenceCache(
+          scope: _session.baseUrl,
+          fetch: _session.requestList,
+          storage: widget.referenceStorage,
+        ),
+      );
 
   late final store = DemoStore(
     onOrderChanged: notificationSound.play,
@@ -77,6 +83,7 @@ class _MainAppState extends State<MainApp> {
   int? _executorUserId;
   PushNotificationService? _push;
   int? _pendingPushOrderId;
+  int? _pendingSuggestedExecutorId;
   bool _openingPush = false;
   bool _startupActive = true;
   Future<AuthUser?>? _startupSession;
@@ -92,8 +99,9 @@ class _MainAppState extends State<MainApp> {
     return user;
   }
 
-  void _pushOrderTapped(int id) {
+  void _pushOrderTapped(int id, {int? suggestedExecutorId}) {
     _pendingPushOrderId = id;
+    _pendingSuggestedExecutorId = suggestedExecutorId;
     unawaited(_openPushOrder());
   }
 
@@ -101,19 +109,42 @@ class _MainAppState extends State<MainApp> {
     if (_startupActive || _openingPush || !mounted || !_session.authenticated) {
       return;
     }
-    if (_session.user?.role != 'EXECUTOR') {
+    if (!{'EXECUTOR', 'MASTER'}.contains(_session.user?.role)) {
       _pendingPushOrderId = null;
+      _pendingSuggestedExecutorId = null;
       return;
     }
     final id = _pendingPushOrderId;
     if (id == null) return;
     _openingPush = true;
     _pendingPushOrderId = null;
+    final suggestedId = _pendingSuggestedExecutorId;
+    _pendingSuggestedExecutorId = null;
     final userId = _session.user!.id;
     try {
       // Login/session restoration must finish its own navigation first.
       await Future<void>.delayed(const Duration(milliseconds: 300));
       if (!mounted || _session.user?.id != userId) return;
+      if (_session.user?.role == 'MASTER') {
+        final navigator = _navigatorKey.currentState;
+        if (navigator == null) {
+          _pendingPushOrderId = id;
+          _pendingSuggestedExecutorId = suggestedId;
+          return;
+        }
+        unawaited(
+          navigator.push(
+            MaterialPageRoute<void>(
+              builder: (_) => OrderDetailScreen(
+                api: api,
+                orderId: id,
+                suggestedExecutorId: suggestedId,
+              ),
+            ),
+          ),
+        );
+        return;
+      }
       final repository = _apiExecutorStore();
       final dto = await repository.api.loadOrder(id);
       if (dto.assigneeId != userId) {
@@ -144,7 +175,7 @@ class _MainAppState extends State<MainApp> {
             SnackBar(
               content: Text(
                 error is ApiException
-                    ? error.message
+                    ? uiText(context, error.message)
                     : AppLocalizations.of(context).pushOrderOpenFailed,
               ),
             ),
@@ -243,6 +274,8 @@ class _MainAppState extends State<MainApp> {
       _push = PushNotificationService(
         session: _session,
         onOrderTap: _pushOrderTapped,
+        onOrderSuggestion: (orderId, executorId) =>
+            _pushOrderTapped(orderId, suggestedExecutorId: executorId),
       );
       unawaited(_push!.initialize());
     }

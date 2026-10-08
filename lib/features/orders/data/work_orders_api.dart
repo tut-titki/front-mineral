@@ -18,7 +18,8 @@ class CreateWorkOrderInput {
     required this.description,
     required this.areaId,
     required this.equipmentId,
-    required this.assigneeId,
+    this.assigneeId,
+    this.brigadeId,
     required this.priority,
     this.normativeId,
     this.deadline,
@@ -31,7 +32,8 @@ class CreateWorkOrderInput {
 
   final int areaId;
   final int equipmentId;
-  final int assigneeId;
+  final int? assigneeId;
+  final int? brigadeId;
 
   final WorkOrderPriority priority;
 
@@ -48,7 +50,8 @@ class CreateWorkOrderInput {
       'description': description.trim(),
       'areaId': areaId,
       'equipmentId': equipmentId,
-      'assigneeId': assigneeId,
+      if (assigneeId != null) 'assigneeId': assigneeId,
+      if (brigadeId != null) 'brigadeId': brigadeId,
       'priority': priority.apiValue,
       if (normativeId != null) 'normativeId': normativeId,
       if (deadline != null) 'deadline': deadline!.toUtc().toIso8601String(),
@@ -59,6 +62,12 @@ class CreateWorkOrderInput {
   }
 
   void validate() {
+    if (assigneeId == null && brigadeId == null) {
+      throw const ApiException(
+        statusCode: 400,
+        message: 'Выберите исполнителя или бригаду',
+      );
+    }
     if (description.trim().length < 3) {
       throw const ApiException(
         statusCode: 400,
@@ -211,7 +220,7 @@ class WorkOrderActionInput {
         'completionText': completionText!.trim(),
       if (faultCodeId != null) 'faultCodeId': faultCodeId,
       if (afterPhotoUrls != null) 'afterPhotoUrls': afterPhotoUrls,
-      if (materialUsages != null) 'materialUsages': materialUsages,
+      if (materialUsages != null) 'materials': materialUsages,
     };
   }
 }
@@ -229,6 +238,10 @@ class WorkOrdersApi {
     List<WorkOrderStatus>? statuses,
     int? areaId,
     int? assigneeId,
+    int? equipmentId,
+    int? brigadeId,
+    WorkOrderPriority? priority,
+    bool overdue = false,
     int limit = 200,
     int offset = 0,
     bool compact = true,
@@ -247,6 +260,10 @@ class WorkOrdersApi {
           'status': statuses.map((status) => status.apiValue).toList(),
         'areaId': ?areaId,
         'assigneeId': ?assigneeId,
+        'equipmentId': ?equipmentId,
+        'brigadeId': ?brigadeId,
+        if (priority != null) 'priority': priority.apiValue,
+        if (overdue) 'overdue': 1,
         'limit': limit,
         'offset': offset,
         'compact': compact ? 1 : 0,
@@ -277,12 +294,24 @@ class WorkOrdersApi {
   Future<List<WorkOrderApiModel>> getAllWorkOrders({
     List<WorkOrderStatus>? statuses,
     bool compact = true,
+    int? areaId,
+    int? equipmentId,
+    int? assigneeId,
+    int? brigadeId,
+    WorkOrderPriority? priority,
+    bool overdue = false,
   }) async {
     final orders = <WorkOrderApiModel>[];
     var offset = 0;
     while (true) {
       final page = await getWorkOrders(
         statuses: statuses,
+        areaId: areaId,
+        equipmentId: equipmentId,
+        assigneeId: assigneeId,
+        brigadeId: brigadeId,
+        priority: priority,
+        overdue: overdue,
         limit: 500,
         offset: offset,
         compact: compact,
@@ -297,6 +326,30 @@ class WorkOrdersApi {
     final response = await _client.get('/api/work-orders/$id');
 
     return WorkOrderApiModel.fromJson(_asJsonMap(response.data));
+  }
+
+  Future<WorkOrderBoard> getBoard({Map<String, dynamic>? filters}) async =>
+      WorkOrderBoard.fromJson(
+        _asJsonMap(
+          (await _client.get(
+            '/api/work-orders/board',
+            queryParameters: filters,
+          )).data,
+        ),
+      );
+
+  Future<WorkOrderApiModel> addComment(
+    int id, {
+    required String comment,
+    required String clientActionId,
+  }) async {
+    final response = await _client.post(
+      '/api/work-orders/$id/comment',
+      body: {'comment': comment.trim(), 'clientActionId': clientActionId},
+    );
+    return WorkOrderApiModel.fromJson(
+      _asJsonMap(_asJsonMap(response.data)['order']),
+    );
   }
 
   // MARK: Create
@@ -359,7 +412,8 @@ class WorkOrdersApi {
       body: input.toJson(),
     );
 
-    return WorkOrderApiModel.fromJson(_asJsonMap(response.data));
+    final result = _asJsonMap(response.data);
+    return WorkOrderApiModel.fromJson(_asJsonMap(result['order'] ?? result));
   }
 
   // MARK: Master actions

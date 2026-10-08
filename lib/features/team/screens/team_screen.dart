@@ -3,6 +3,7 @@ import '../../../core/api/api_services.dart';
 import '../../orders/data/references_api.dart';
 import '../../../l10n/ui_localization.dart';
 import '../../../shared/widgets/backend_section.dart';
+import '../../../shared/widgets/backend_refresh_view.dart';
 import '../../../shared/widgets/ui.dart';
 
 class BackendEmployeeCard extends StatelessWidget {
@@ -70,7 +71,7 @@ class _TeamScreenState extends State<TeamScreen> {
   Future<_TeamData> _load() async {
     final results = await Future.wait<Object>([
       widget.api.references.getExecutors(),
-      widget.api.references.getBrigades(),
+      widget.api.references.getBrigades(refresh: true),
     ]);
     return _TeamData(
       results[0] as List<ExecutorReference>,
@@ -203,14 +204,14 @@ class BackendBrigadeMembersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(uiText(context, title))),
-    body: SingleChildScrollView(
+    body: BackendRefreshView(
       padding: const EdgeInsets.all(24),
       child: BackendSection<_TeamData>(
         changes: api.realtime.changes,
         load: () async {
           final values = await Future.wait<Object>([
             api.references.getExecutors(),
-            api.references.getBrigades(),
+            api.references.getBrigades(refresh: true),
           ]);
           return _TeamData(
             values[0] as List<ExecutorReference>,

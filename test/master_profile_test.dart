@@ -59,12 +59,32 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(
           width < 1000
-              ? find.byType(NavigationDestination).at(5)
-              : find.byType(ListTile).at(5),
+              ? find.byType(NavigationDestination).at(4)
+              : find.byType(ListTile).at(4),
         );
         await tester.pumpAndSettle();
 
         final profile = find.byType(MasterProfileScreen);
+        if (width < 1000) {
+          final appBar = tester.widget<AppBar>(find.byType(AppBar));
+          expect(appBar.backgroundColor, AppColors.primary);
+          expect(appBar.foregroundColor, Colors.white);
+          expect(
+            (tester
+                        .widget<DecoratedBox>(
+                          find
+                              .descendant(
+                                of: find.byType(AppBar),
+                                matching: find.byType(DecoratedBox),
+                              )
+                              .first,
+                        )
+                        .decoration
+                    as BoxDecoration)
+                .gradient,
+            AppColors.profileHeaderGradient,
+          );
+        }
         final s = AppLocalizations.of(tester.element(profile));
         expect(
           find.descendant(of: profile, matching: find.text('Александр Иванов')),

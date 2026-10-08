@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/app_refresh_indicator.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mineral/core/utils/enterprise_time.dart';
 import 'package:mineral/l10n/ui_localization.dart';
@@ -14,6 +15,7 @@ class ExecutorHistoryScreen extends StatefulWidget {
     required this.onOpen,
     required this.loadTime,
     this.error,
+    this.isLoading = false,
   });
   final List<WorkOrder> orders;
   final DateTime now;
@@ -21,6 +23,7 @@ class ExecutorHistoryScreen extends StatefulWidget {
   final ValueChanged<WorkOrder> onOpen;
   final Future<WorkOrder> Function(WorkOrder) loadTime;
   final String? error;
+  final bool isLoading;
   @override
   State<ExecutorHistoryScreen> createState() => _ExecutorHistoryScreenState();
 }
@@ -86,8 +89,9 @@ class _ExecutorHistoryScreenState extends State<ExecutorHistoryScreen> {
           date.day == today.day;
     }
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: widget.onRefresh,
+      isLoading: widget.isLoading,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.zero,

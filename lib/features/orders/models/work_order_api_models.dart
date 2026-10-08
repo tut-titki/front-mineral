@@ -383,6 +383,7 @@ class WorkOrderAiAssessment {
     this.masterScore,
     this.masterComment,
     this.reviewedById,
+    this.needsMasterReview = false,
   });
 
   final AiAssessmentVerdict verdict;
@@ -400,6 +401,7 @@ class WorkOrderAiAssessment {
   final double? masterScore;
   final String? masterComment;
   final int? reviewedById;
+  final bool needsMasterReview;
 
   factory WorkOrderAiAssessment.fromJson(Map<String, dynamic> json) {
     return WorkOrderAiAssessment(
@@ -414,6 +416,7 @@ class WorkOrderAiAssessment {
       masterScore: _asNullableDouble(json['masterScore']),
       masterComment: _asNullableString(json['masterComment']),
       reviewedById: _asNullableInt(json['reviewedById']),
+      needsMasterReview: json['needsMasterReview'] == true,
     );
   }
 
@@ -439,6 +442,7 @@ enum WorkOrderEventAction {
   cancel,
   edit,
   reassign,
+  comment,
   unknown;
 
   factory WorkOrderEventAction.fromApi(String? value) {
@@ -457,6 +461,7 @@ enum WorkOrderEventAction {
       'CANCEL' => WorkOrderEventAction.cancel,
       'EDIT' => WorkOrderEventAction.edit,
       'REASSIGN' => WorkOrderEventAction.reassign,
+      'COMMENT' => WorkOrderEventAction.comment,
       _ => WorkOrderEventAction.unknown,
     };
   }
@@ -476,6 +481,7 @@ enum WorkOrderEventAction {
     WorkOrderEventAction.cancel => 'Наряд отменён',
     WorkOrderEventAction.edit => 'Наряд изменён',
     WorkOrderEventAction.reassign => 'Исполнитель изменён',
+    WorkOrderEventAction.comment => 'Добавлен комментарий',
     WorkOrderEventAction.unknown => 'Изменение наряда',
   };
 }
@@ -565,6 +571,11 @@ class WorkOrderApiModel {
     this.photos = const [],
     this.materialUsages = const [],
     this.events = const [],
+    this.brigadeId,
+    this.brigadeName,
+    this.timing,
+    this.downtime,
+    this.serverOverdue,
   });
 
   final int id;
@@ -612,6 +623,11 @@ class WorkOrderApiModel {
   final List<WorkOrderPhoto> photos;
   final List<WorkOrderMaterialUsage> materialUsages;
   final List<WorkOrderEvent> events;
+  final int? brigadeId;
+  final String? brigadeName;
+  final WorkOrderTiming? timing;
+  final Map<String, dynamic>? downtime;
+  final bool? serverOverdue;
 
   factory WorkOrderApiModel.fromJson(Map<String, dynamic> json) {
     return WorkOrderApiModel(
@@ -654,6 +670,15 @@ class WorkOrderApiModel {
         WorkOrderMaterialUsage.fromJson,
       ),
       events: _mapList(json['events'], WorkOrderEvent.fromJson),
+      brigadeId: _asNullableInt(json['brigadeId']),
+      brigadeName: json['brigade'] is Map
+          ? _asNullableString(json['brigade']['name'])
+          : null,
+      timing: _mapOrNull(json['timing'], WorkOrderTiming.fromJson),
+      downtime: json['downtime'] is Map ? _asMap(json['downtime']) : null,
+      serverOverdue: json['isOverdue'] is bool
+          ? json['isOverdue'] as bool
+          : null,
     );
   }
 
@@ -664,6 +689,7 @@ class WorkOrderApiModel {
       type == WorkOrderType.emergency;
 
   bool get isOverdue {
+    if (serverOverdue != null) return serverOverdue!;
     if (status == WorkOrderStatus.closed ||
         status == WorkOrderStatus.cancelled ||
         status == WorkOrderStatus.rejected) {
@@ -696,6 +722,48 @@ class WorkOrderApiModel {
   List<WorkOrderPhoto> get afterPhotos => photos
       .where((photo) => photo.type == WorkOrderPhotoType.after)
       .toList(growable: false);
+}
+
+class WorkOrderTiming {
+  const WorkOrderTiming({
+    this.normativeHours,
+    this.actualHours,
+    this.vsNormativePercent,
+    this.deadlineMet,
+    this.overdueMinutes,
+  });
+  final double? normativeHours, actualHours, vsNormativePercent;
+  final bool? deadlineMet;
+  final int? overdueMinutes;
+  factory WorkOrderTiming.fromJson(Map<String, dynamic> json) =>
+      WorkOrderTiming(
+        normativeHours: _asNullableDouble(json['normativeHours']),
+        actualHours: _asNullableDouble(json['actualHours']),
+        vsNormativePercent: _asNullableDouble(json['vsNormativePercent']),
+        deadlineMet: json['deadlineMet'] as bool?,
+        overdueMinutes: _asNullableInt(json['overdueMinutes']),
+      );
+}
+
+class WorkOrderBoard {
+  const WorkOrderBoard({
+    required this.counters,
+    required this.columns,
+    this.since,
+  });
+  final DateTime? since;
+  final Map<String, int> counters;
+  final Map<String, List<WorkOrderApiModel>> columns;
+  factory WorkOrderBoard.fromJson(Map<String, dynamic> json) => WorkOrderBoard(
+    since: _asNullableDate(json['since']),
+    counters: _asMap(
+      json['counters'],
+    ).map((key, value) => MapEntry(key, _asInt(value))),
+    columns: _asMap(json['columns']).map(
+      (key, value) =>
+          MapEntry(key, _mapList(value, WorkOrderApiModel.fromJson)),
+    ),
+  );
 }
 
 // MARK: - JSON helpers

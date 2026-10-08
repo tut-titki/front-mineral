@@ -17,11 +17,16 @@ Future<void> firebasePushBackgroundHandler(RemoteMessage message) async {
 }
 
 class PushNotificationService {
-  PushNotificationService({required this.session, required this.onOrderTap}) {
+  PushNotificationService({
+    required this.session,
+    required this.onOrderTap,
+    this.onOrderSuggestion,
+  }) {
     appLocale.addListener(_localeChanged);
   }
   final AuthSession session;
   final void Function(int) onOrderTap;
+  final void Function(int orderId, int executorId)? onOrderSuggestion;
   final _local = FlutterLocalNotificationsPlugin();
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   FirebaseMessaging? _messaging;
@@ -188,8 +193,14 @@ class PushNotificationService {
 
   void _tap(Map<String, dynamic> data) {
     if (_disposed) return;
-    final id = PushPayload(data).workOrderId;
-    if (id != null) onOrderTap(id);
+    final payload = PushPayload(data);
+    final id = payload.workOrderId;
+    if (id == null) return;
+    if (payload.suggestedExecutorId != null && onOrderSuggestion != null) {
+      onOrderSuggestion!(id, payload.suggestedExecutorId!);
+    } else {
+      onOrderTap(id);
+    }
   }
 
   Future<void> _show(RemoteMessage message) async {
