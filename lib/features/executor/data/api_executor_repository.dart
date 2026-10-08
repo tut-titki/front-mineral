@@ -278,7 +278,9 @@ class ApiExecutorRepository extends ChangeNotifier
     int employeeId, {
     ExecutorRatingPeriod period = const ExecutorRatingPeriod(),
   }) {
-    _checkUser(employeeId);
+    if (employeeId != _user.id || api.session.user?.id != employeeId) {
+      return null;
+    }
     return _ratings[period.key];
   }
 
