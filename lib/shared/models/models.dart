@@ -70,10 +70,11 @@ class OrderEvent {
 }
 
 class OrderPhoto {
-  const OrderPhoto({required this.name, required this.bytes});
+  const OrderPhoto({required this.name, required this.bytes, this.takenAt});
 
   final String name;
   final Uint8List bytes;
+  final DateTime? takenAt;
 }
 
 class WorkOrder {

@@ -600,8 +600,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       // нет автоматического retry.
       final uploadFiles = photos
           .map(
-            (photo) =>
-                UploadFileInput(bytes: photo.bytes, fileName: photo.name),
+            (photo) => UploadFileInput(
+              bytes: photo.bytes,
+              fileName: photo.name,
+              takenAt: photo.takenAt,
+            ),
           )
           .toList(growable: false);
 

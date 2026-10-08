@@ -268,6 +268,8 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
+    api.client.onUnauthorized = _apiUnauthorized;
+    api.realtime.onUnauthorized = _apiUnauthorized;
     if (widget.demoMode) store.addScreenshotOrders();
     _session.addListener(_sessionChanged);
     if (!widget.demoMode) {
@@ -307,6 +309,15 @@ class _MainAppState extends State<MainApp> {
     unawaited(notificationSound.dispose());
 
     super.dispose();
+  }
+
+  void _apiUnauthorized(String token) {
+    if (!mounted || _session.accessToken != token) return;
+    unawaited(
+      _session.expire().catchError((Object error) {
+        debugPrint('Session expiration failed: $error');
+      }),
+    );
   }
 
   // MARK: - Build

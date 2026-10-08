@@ -6,6 +6,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 class MasterRealtimeService {
   MasterRealtimeService(this.baseUrl);
   final String baseUrl;
+  void Function(String token)? onUnauthorized;
   final _changes = StreamController<void>.broadcast();
   final connected = ValueNotifier<bool>(false);
   Stream<void> get changes => _changes.stream;
@@ -39,8 +40,11 @@ class MasterRealtimeService {
     socket.onDisconnect((_) {
       if (!_disposed && _socket == socket) connected.value = false;
     });
-    socket.onConnectError((_) {
-      if (!_disposed && _socket == socket) connected.value = false;
+    socket.onConnectError((error) {
+      if (_disposed || _socket != socket) return;
+      connected.value = false;
+      final message = error is Map ? error['message'] : error.toString();
+      if (message == 'unauthorized') onUnauthorized?.call(token);
     });
     for (final event in ['work-order:changed', 'notification:new']) {
       socket.on(event, (_) {

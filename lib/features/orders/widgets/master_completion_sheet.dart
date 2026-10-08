@@ -139,6 +139,7 @@ class _MasterCompletionSheetState extends State<MasterCompletionSheet> {
         final uploaded = await widget.api.uploads.uploadPhoto(
           bytes: photo.bytes,
           fileName: photo.name,
+          takenAt: photo.takenAt,
         );
         _uploaded[photo] = uploaded.url;
       }

@@ -16,7 +16,11 @@ class AssistantReply {
     }
     return AssistantReply(
       answer: json['answer'] as String,
-      intent: json['intent'] is String ? json['intent'] as String : null,
+      intent: json['intent'] is Map
+          ? (json['intent'] as Map)['intent'] as String?
+          : json['intent'] is String
+          ? json['intent'] as String
+          : null,
       data: json['data'],
     );
   }

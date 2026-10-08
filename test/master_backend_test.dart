@@ -214,7 +214,14 @@ void main() {
       for (final status in WorkOrderStatus.values) {
         expect(
           status.canCancel,
-          ['ISSUED', 'ACCEPTED', 'QUEUED', 'PAUSED'].contains(status.apiValue),
+          [
+            'ISSUED',
+            'ACCEPTED',
+            'QUEUED',
+            'IN_PROGRESS',
+            'PAUSED',
+            'REWORK',
+          ].contains(status.apiValue),
         );
         expect(
           status.canReassign,

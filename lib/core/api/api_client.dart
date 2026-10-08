@@ -58,6 +58,7 @@ class ApiClient {
 
   final String _baseUrl;
   final http.Client _httpClient;
+  void Function(String token)? onUnauthorized;
 
   String? _accessToken;
 
@@ -91,13 +92,14 @@ class ApiClient {
     bool authenticated = true,
   }) async {
     final uri = _buildUri(path, queryParameters: queryParameters);
+    final requestToken = authenticated ? _accessToken : null;
 
     final response = await _httpClient.get(
       uri,
       headers: _buildHeaders(headers: headers, authenticated: authenticated),
     );
 
-    return _handleResponse(response);
+    return _handleResponse(response, requestToken: requestToken);
   }
 
   // MARK: POST
@@ -105,11 +107,13 @@ class ApiClient {
   Future<ApiResponse<dynamic>> sendMultipart(
     http.MultipartRequest request,
   ) async {
+    final requestToken = _accessToken;
     request.headers.addAll(
       _buildHeaders(authenticated: true)..remove('Content-Type'),
     );
     return _handleResponse(
       await http.Response.fromStream(await _httpClient.send(request)),
+      requestToken: requestToken,
     );
   }
 
@@ -117,12 +121,13 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? queryParameters,
   }) async {
+    final requestToken = _accessToken;
     final response = await _httpClient.get(
       _buildUri(path, queryParameters: queryParameters),
       headers: _buildHeaders(authenticated: true),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      _handleResponse(response);
+      _handleResponse(response, requestToken: requestToken);
     }
     return response.bodyBytes;
   }
@@ -133,16 +138,23 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
     bool authenticated = true,
+    Duration timeout = const Duration(seconds: 30),
   }) async {
     final uri = _buildUri(path, queryParameters: queryParameters);
+    final requestToken = authenticated ? _accessToken : null;
 
-    final response = await _httpClient.post(
-      uri,
-      headers: _buildHeaders(headers: headers, authenticated: authenticated),
-      body: body == null ? null : jsonEncode(body),
-    );
+    final response = await _httpClient
+        .post(
+          uri,
+          headers: _buildHeaders(
+            headers: headers,
+            authenticated: authenticated,
+          ),
+          body: body == null ? null : jsonEncode(body),
+        )
+        .timeout(timeout);
 
-    return _handleResponse(response);
+    return _handleResponse(response, requestToken: requestToken);
   }
 
   // MARK: PATCH
@@ -155,6 +167,7 @@ class ApiClient {
     bool authenticated = true,
   }) async {
     final uri = _buildUri(path, queryParameters: queryParameters);
+    final requestToken = authenticated ? _accessToken : null;
 
     final response = await _httpClient.patch(
       uri,
@@ -162,7 +175,7 @@ class ApiClient {
       body: body == null ? null : jsonEncode(body),
     );
 
-    return _handleResponse(response);
+    return _handleResponse(response, requestToken: requestToken);
   }
 
   // MARK: DELETE
@@ -175,6 +188,7 @@ class ApiClient {
     bool authenticated = true,
   }) async {
     final uri = _buildUri(path, queryParameters: queryParameters);
+    final requestToken = authenticated ? _accessToken : null;
 
     final response = await _httpClient.delete(
       uri,
@@ -182,7 +196,7 @@ class ApiClient {
       body: body == null ? null : jsonEncode(body),
     );
 
-    return _handleResponse(response);
+    return _handleResponse(response, requestToken: requestToken);
   }
 
   // MARK: URI
@@ -249,7 +263,15 @@ class ApiClient {
 
   // MARK: Response
 
-  ApiResponse<dynamic> _handleResponse(http.Response response) {
+  ApiResponse<dynamic> _handleResponse(
+    http.Response response, {
+    String? requestToken,
+  }) {
+    if (response.statusCode == 401 &&
+        requestToken != null &&
+        requestToken == _accessToken) {
+      onUnauthorized?.call(requestToken);
+    }
     final decoded = _decodeBody(response);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {

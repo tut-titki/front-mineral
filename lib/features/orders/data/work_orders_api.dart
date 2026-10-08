@@ -410,6 +410,9 @@ class WorkOrdersApi {
     final response = await _client.post(
       '/api/work-orders/$workOrderId/action',
       body: input.toJson(),
+      timeout: input.action == WorkOrderAction.complete
+          ? const Duration(seconds: 250)
+          : const Duration(seconds: 30),
     );
 
     final result = _asJsonMap(response.data);

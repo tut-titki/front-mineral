@@ -1,5 +1,7 @@
 # MASTER: backend integration
 
+Current contract audit and remaining gaps: [master_contract_audit.md](master_contract_audit.md).
+
 ## Dependencies
 
 `MainApp` keeps the existing `AuthSession` and synchronizes its token with
@@ -58,23 +60,15 @@ The latter is compatible with this project's Dart 3.11 SDK.
 
 ## Contract boundaries
 
-The supplied contract defines dashboard scalar fields but not the item schemas
-of topEquipment/topExecutors, forecasts or anomalies. It also omits detailed
-report response schemas and assistant history schemas. These responses are kept
-as JSON documents and rendered safely without assumed mandatory fields. A
-malformed documented response shows an error instead of sample data.
-
-The report endpoints and exports have no documented date-range parameters.
-The existing period controls therefore filter actual backend work orders by
-createdAt, including the entire final day. Their metrics and master-score ranking
-are calculated from those orders. The separate server summaries and exports are
-explicitly labeled as using the server's period. Full, noncompact orders are
-requested for those local calculations. A specialized report layout and unified
-server-side date filtering require the missing schemas and query contract.
+The current supplied contract documents report schemas and shared filters:
+period, from/to, areaId, equipmentId, executorId and brigadeId. The report views
+and exports send the same filters; ratings use server-provided scores,
+components and explanations. Dynamic nested responses are rendered through
+JSON documents. See the current audit for missing optional views and features.
 
 ## Validation
 
-Final validation: `flutter analyze` reports no issues; all 75 tests pass.
+Initial migration validation: `flutter analyze` reported no issues; all 75 tests passed.
 `dart format` was applied to the changed files and `git diff --check` passes.
 `flutter build web --no-pub` cannot run because this existing project has no web
 platform configuration. No platforms were generated as part of this migration.

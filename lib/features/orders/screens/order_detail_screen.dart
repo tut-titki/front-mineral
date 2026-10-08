@@ -140,6 +140,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (!mounted) return;
 
       _showMessage(e.message);
+      if (e.statusCode == 409) {
+        await _load();
+        widget.api.realtime.invalidate();
+      }
     } catch (e) {
       if (!mounted) return;
 
@@ -451,7 +455,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final controller = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    final result = await showDialog<String>(
+    final route = DialogRoute<String>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
@@ -502,6 +506,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       },
     );
 
+    final result = await Navigator.of(context, rootNavigator: true).push(route);
+    // The dialog field remains mounted until the reverse transition completes.
+    await route.completed;
     controller.dispose();
 
     return result;

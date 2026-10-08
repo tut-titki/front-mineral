@@ -78,6 +78,12 @@ class PhotoPickerService {
   Future<OrderPhoto> _read(XFile file) async {
     final bytes = await file.readAsBytes();
     validatePhotoSize(bytes.length);
-    return OrderPhoto(name: file.name, bytes: bytes);
+    DateTime? takenAt;
+    try {
+      takenAt = await file.lastModified();
+    } catch (_) {
+      // Without trustworthy metadata, let the server use the image EXIF.
+    }
+    return OrderPhoto(name: file.name, bytes: bytes, takenAt: takenAt);
   }
 }

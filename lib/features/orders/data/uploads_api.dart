@@ -29,10 +29,15 @@ class UploadedFile {
 // MARK: - Upload input
 
 class UploadFileInput {
-  const UploadFileInput({required this.bytes, required this.fileName});
+  const UploadFileInput({
+    required this.bytes,
+    required this.fileName,
+    this.takenAt,
+  });
 
   final Uint8List bytes;
   final String fileName;
+  final DateTime? takenAt;
 }
 
 // MARK: - Uploads API
@@ -54,6 +59,7 @@ class UploadsApi {
   Future<UploadedFile> uploadPhoto({
     required Uint8List bytes,
     required String fileName,
+    DateTime? takenAt,
   }) async {
     if (bytes.isEmpty) {
       throw ArgumentError('Файл изображения пустой.');
@@ -80,6 +86,9 @@ class UploadsApi {
     final uri = Uri.parse('${_normalizedBaseUrl()}/api/uploads');
 
     final request = http.MultipartRequest('POST', uri);
+    if (takenAt != null) {
+      request.fields['takenAt'] = takenAt.toUtc().toIso8601String();
+    }
 
     request.headers['Accept'] = 'application/json';
 
@@ -149,6 +158,7 @@ class UploadsApi {
       final uploaded = await uploadPhoto(
         bytes: file.bytes,
         fileName: file.fileName,
+        takenAt: file.takenAt,
       );
 
       result.add(uploaded);

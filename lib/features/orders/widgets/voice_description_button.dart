@@ -52,14 +52,25 @@ Future<String> transcribeVoice(ApiServices api, Uint8List audio) async {
           ),
         );
   final response = await api.client.sendMultipart(request);
-  final text = (response.data as Map)['text'];
-  if (text is! String || text.trim().isEmpty) {
+  final data = response.data;
+  if (data is! Map || data['text'] is! String) {
+    debugPrint(
+      'Voice transcription response: HTTP ${response.statusCode}, '
+      'format ${data.runtimeType}, text field missing or invalid',
+    );
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: 'Сервер распознавания вернул неверный формат ответа',
+    );
+  }
+  final text = data['text'] as String;
+  if (text.trim().isEmpty) {
     throw const ApiException(
       statusCode: 422,
       message: 'Речь не распознана. Повторите запись или введите текст.',
     );
   }
-  return text;
+  return text.trim();
 }
 
 class VoiceDescriptionButton extends StatefulWidget {
@@ -81,6 +92,9 @@ class VoiceDescriptionButton extends StatefulWidget {
 class _VoiceDescriptionButtonState extends State<VoiceDescriptionButton> {
   AudioRecorder? recorder;
   StreamSubscription<Uint8List>? subscription;
+  StreamSubscription<RecordState>? stateSubscription;
+  Completer<void>? streamDone;
+  bool recordingFailed = false;
   Timer? timer;
   BytesBuilder audio = BytesBuilder(copy: false);
   bool recording = false, busy = false;
@@ -88,6 +102,7 @@ class _VoiceDescriptionButtonState extends State<VoiceDescriptionButton> {
   void dispose() {
     timer?.cancel();
     subscription?.cancel();
+    stateSubscription?.cancel();
     recorder?.dispose();
     super.dispose();
   }
@@ -96,6 +111,7 @@ class _VoiceDescriptionButtonState extends State<VoiceDescriptionButton> {
     if (busy) return;
     widget.onBusyChanged?.call(true);
     setState(() => busy = true);
+    var transcribing = false;
     try {
       if (!recording) {
         recorder ??= AudioRecorder();
@@ -113,6 +129,18 @@ class _VoiceDescriptionButtonState extends State<VoiceDescriptionButton> {
           return;
         }
         audio = BytesBuilder(copy: false);
+        recordingFailed = false;
+        streamDone = Completer<void>();
+        await stateSubscription?.cancel();
+        stateSubscription = recorder!.onStateChanged().listen(
+          (_) {},
+          onError: (Object error, StackTrace stack) {
+            debugPrint('Voice recording failed: $error');
+            debugPrintStack(stackTrace: stack);
+            recordingFailed = true;
+            unawaited(cancelRecording(error));
+          },
+        );
         final stream = await recorder!.startStream(
           const RecordConfig(
             encoder: AudioEncoder.pcm16bits,
@@ -127,37 +155,62 @@ class _VoiceDescriptionButtonState extends State<VoiceDescriptionButton> {
         subscription = stream.listen(
           audio.add,
           onError: (Object error) {
+            recordingFailed = true;
             unawaited(cancelRecording(error));
           },
+          onDone: () {
+            if (!streamDone!.isCompleted) streamDone!.complete();
+          },
         );
+        if (recordingFailed) return;
         setState(() => recording = true);
         // Keep the request below the documented 25 MB limit.
         timer = Timer(const Duration(minutes: 5), () => unawaited(toggle()));
       } else {
         timer?.cancel();
         await recorder!.stop();
+        await streamDone?.future;
         await subscription?.cancel();
         subscription = null;
         if (!mounted) return;
         setState(() => recording = false);
-        final text = await transcribeVoice(
-          widget.api,
-          voiceWav(audio.takeBytes()),
-        );
+        if (recordingFailed) return;
+        final pcm = audio.takeBytes();
+        if (pcm.isEmpty) {
+          showMessage(
+            context,
+            backendText(
+              context,
+              'Микрофон не записал звук. Повторите запись.',
+              'Микрофон дыбысты жазбады. Қайта жазыңыз.',
+            ),
+          );
+          return;
+        }
+        transcribing = true;
+        final text = await transcribeVoice(widget.api, voiceWav(pcm));
         if (mounted) widget.onText(text);
       }
-    } catch (error) {
-      await recorder?.cancel();
+    } catch (error, stack) {
+      debugPrint(
+        'Voice ${transcribing ? 'transcription' : 'recording'} failed: $error',
+      );
+      debugPrintStack(stackTrace: stack);
+      await discardRecording();
       if (mounted) {
         setState(() => recording = false);
         showMessage(
           context,
           error is ApiException
-              ? '${backendError(context, error)} ${backendText(context, 'Можно повторить запись или ввести текст.', 'Қайта жазуға немесе мәтін енгізуге болады.')}'
+              ? '${backendError(context, error)} ${transcribing ? '(HTTP ${error.statusCode}) ' : ''}${backendText(context, 'Можно повторить запись или ввести текст.', 'Қайта жазуға немесе мәтін енгізуге болады.')}'
               : backendText(
                   context,
-                  'Не удалось записать голос. Можно ввести текст.',
-                  'Дауыс жазылмады. Мәтін енгізуге болады.',
+                  transcribing
+                      ? 'Не удалось отправить голос на распознавание. Проверьте соединение и повторите.'
+                      : 'Не удалось включить микрофон. Проверьте разрешение и повторите запись.',
+                  transcribing
+                      ? 'Дауыс тануға жіберілмеді. Қосылымды тексеріп, қайталаңыз.'
+                      : 'Микрофон қосылмады. Рұқсатты тексеріп, қайта жазыңыз.',
                 ),
         );
       }
@@ -169,10 +222,20 @@ class _VoiceDescriptionButtonState extends State<VoiceDescriptionButton> {
     }
   }
 
-  Future<void> cancelRecording(Object error) async {
+  Future<void> discardRecording() async {
     timer?.cancel();
-    await recorder?.cancel();
+    try {
+      await recorder?.cancel();
+    } catch (error) {
+      debugPrint('Voice recorder cleanup failed: $error');
+    }
     await subscription?.cancel();
+    subscription = null;
+  }
+
+  Future<void> cancelRecording(Object error) async {
+    recordingFailed = true;
+    await discardRecording();
     if (mounted) {
       widget.onBusyChanged?.call(false);
       setState(() {

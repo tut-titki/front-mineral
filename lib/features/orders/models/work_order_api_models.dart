@@ -79,11 +79,7 @@ enum WorkOrderStatus {
       this != WorkOrderStatus.closed &&
       this != WorkOrderStatus.cancelled;
 
-  bool get canCancel =>
-      this == WorkOrderStatus.issued ||
-      this == WorkOrderStatus.accepted ||
-      this == WorkOrderStatus.queued ||
-      this == WorkOrderStatus.paused;
+  bool get canCancel => isActive;
 }
 
 // MARK: - Priority
