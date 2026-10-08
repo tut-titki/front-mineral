@@ -91,6 +91,18 @@ void main() {
       s.offlineActionSaved,
     );
     expect(uiText(context, 'Пользовательский текст'), 'Пользовательский текст');
+    expect(
+      uiText(context, 'С-02 · Загрязнение масла'),
+      'С-02 · ${s.oilContaminationFault}',
+    );
+    expect(
+      uiText(context, 'Масло индустриальное И-40А · л: 18.2'),
+      '${s.industrialOilMaterial} · ${s.literUnit}: 18.2',
+    );
+    expect(
+      uiText(context, 'Фильтр масляный · шт: 1.1'),
+      '${s.oilFilterMaterial} · ${s.pieceUnit}: 1.1',
+    );
   });
 
   testWidgets('report fields, enums and known catalog labels localize', (

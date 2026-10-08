@@ -1786,4 +1786,13 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get ratingPeriodCustom => 'Күндерді таңдау';
+
+  @override
+  String get oilContaminationFault => 'Майдың ластануы';
+
+  @override
+  String get industrialOilMaterial => 'Өнеркәсіптік май И-40А';
+
+  @override
+  String get oilFilterMaterial => 'Май сүзгісі';
 }

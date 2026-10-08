@@ -13,6 +13,12 @@ AppLocalizations strings(BuildContext context) =>
 String uiText(BuildContext context, String source) {
   final s = strings(context);
   switch (source) {
+    case 'Загрязнение масла':
+      return s.oilContaminationFault;
+    case 'Масло индустриальное И-40А':
+      return s.industrialOilMaterial;
+    case 'Фильтр масляный':
+      return s.oilFilterMaterial;
     case "Настройки":
       return s.profileSettings;
     case "Завершено":

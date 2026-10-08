@@ -783,5 +783,8 @@
   "ratingPeriodDay": "Тәулік бойынша",
   "ratingPeriodWeek": "Апта бойынша",
   "ratingPeriodMonth": "30 күн бойынша",
-  "ratingPeriodCustom": "Күндерді таңдау"
+  "ratingPeriodCustom": "Күндерді таңдау",
+  "oilContaminationFault": "Майдың ластануы",
+  "industrialOilMaterial": "Өнеркәсіптік май И-40А",
+  "oilFilterMaterial": "Май сүзгісі"
 }

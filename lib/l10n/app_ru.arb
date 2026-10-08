@@ -912,5 +912,8 @@
   "ratingPeriodDay": "За сутки",
   "ratingPeriodWeek": "За неделю",
   "ratingPeriodMonth": "За 30 дней",
-  "ratingPeriodCustom": "Выбрать даты"
+  "ratingPeriodCustom": "Выбрать даты",
+  "oilContaminationFault": "Загрязнение масла",
+  "industrialOilMaterial": "Масло индустриальное И-40А",
+  "oilFilterMaterial": "Фильтр масляный"
 }

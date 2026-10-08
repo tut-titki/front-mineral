@@ -3325,6 +3325,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Выбрать даты'**
   String get ratingPeriodCustom;
+
+  /// No description provided for @oilContaminationFault.
+  ///
+  /// In ru, this message translates to:
+  /// **'Загрязнение масла'**
+  String get oilContaminationFault;
+
+  /// No description provided for @industrialOilMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Масло индустриальное И-40А'**
+  String get industrialOilMaterial;
+
+  /// No description provided for @oilFilterMaterial.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фильтр масляный'**
+  String get oilFilterMaterial;
 }
 
 class _AppLocalizationsDelegate

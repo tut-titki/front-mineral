@@ -1777,4 +1777,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ratingPeriodCustom => 'Выбрать даты';
+
+  @override
+  String get oilContaminationFault => 'Загрязнение масла';
+
+  @override
+  String get industrialOilMaterial => 'Масло индустриальное И-40А';
+
+  @override
+  String get oilFilterMaterial => 'Фильтр масляный';
 }
