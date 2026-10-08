@@ -7,8 +7,14 @@ import 'package:mineral/features/executor/screens/executor_order_loader.dart';
 import 'package:mineral/features/executor/models/executor_order_dto.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../features/auth/data/pin_lock_controller.dart';
+import '../features/auth/data/pin_repository.dart';
+import '../features/auth/data/pin_storage.dart';
+import '../features/auth/widgets/pin_lock_gate.dart';
 
 import 'package:mineral/core/api/api_services.dart';
+import 'package:mineral/core/api/api_scope.dart';
 import 'package:mineral/core/services/notification_sound.dart';
 import 'package:mineral/core/services/photo_picker_service.dart';
 import 'package:mineral/core/theme/app_theme.dart';
@@ -42,12 +48,14 @@ class MainApp extends StatefulWidget {
     this.session,
     this.referenceStorage,
     this.apiServices,
+    this.pinRepository,
   });
 
   final bool demoMode;
   final AuthSession? session;
   final ReferenceStorage? referenceStorage;
   final ApiServices? apiServices;
+  final PinRepository? pinRepository;
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -61,6 +69,23 @@ class _MainAppState extends State<MainApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
 
   late final AuthSession _session = widget.session ?? AuthSession();
+  late final PinRepository? _pinRepository =
+      !widget.demoMode &&
+          (widget.pinRepository != null ||
+              (!kIsWeb &&
+                  {
+                    TargetPlatform.android,
+                    TargetPlatform.iOS,
+                  }.contains(defaultTargetPlatform)))
+      ? widget.pinRepository ??
+            PinRepository(
+              storage: SqlitePinStorage(),
+              keyStorage: SecurePinKeyStorage(),
+            )
+      : null;
+  late final PinLockController? _pinLock = _pinRepository == null
+      ? null
+      : PinLockController(session: _session, repository: _pinRepository);
 
   late final ApiServices api =
       widget.apiServices ??
@@ -106,7 +131,11 @@ class _MainAppState extends State<MainApp> {
   }
 
   Future<void> _openPushOrder() async {
-    if (_startupActive || _openingPush || !mounted || !_session.authenticated) {
+    if (_startupActive ||
+        _openingPush ||
+        !mounted ||
+        !_session.authenticated ||
+        (_pinLock?.blocking ?? false)) {
       return;
     }
     if (!{'EXECUTOR', 'MASTER'}.contains(_session.user?.role)) {
@@ -125,6 +154,13 @@ class _MainAppState extends State<MainApp> {
       // Login/session restoration must finish its own navigation first.
       await Future<void>.delayed(const Duration(milliseconds: 300));
       if (!mounted || _session.user?.id != userId) return;
+      if (_pinLock?.blocking ?? false) {
+        if (_pendingPushOrderId == null) {
+          _pendingPushOrderId = id;
+          _pendingSuggestedExecutorId = suggestedId;
+        }
+        return;
+      }
       if (_session.user?.role == 'MASTER') {
         final navigator = _navigatorKey.currentState;
         if (navigator == null) {
@@ -151,6 +187,10 @@ class _MainAppState extends State<MainApp> {
         throw const ApiException(403, 'Это не ваш наряд');
       }
       if (!mounted || _session.user?.id != userId) return;
+      if (_pinLock?.blocking ?? false) {
+        _pendingPushOrderId ??= id;
+        return;
+      }
       final navigator = _navigatorKey.currentState;
       if (navigator == null) {
         _pendingPushOrderId = id;
@@ -184,7 +224,10 @@ class _MainAppState extends State<MainApp> {
       }
     } finally {
       _openingPush = false;
-      if (_pendingPushOrderId != null && mounted && _session.authenticated) {
+      if (_pendingPushOrderId != null &&
+          mounted &&
+          _session.authenticated &&
+          !(_pinLock?.blocking ?? false)) {
         unawaited(_openPushOrder());
       }
     }
@@ -268,6 +311,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
+    _pinLock?.addListener(_pinChanged);
     api.client.onUnauthorized = _apiUnauthorized;
     api.realtime.onUnauthorized = _apiUnauthorized;
     if (widget.demoMode) store.addScreenshotOrders();
@@ -293,6 +337,11 @@ class _MainAppState extends State<MainApp> {
 
   @override
   void dispose() {
+    _pinLock?.removeListener(_pinChanged);
+    _pinLock?.dispose();
+    if (widget.pinRepository == null && _pinRepository != null) {
+      unawaited(_pinRepository.close().catchError((Object _) {}));
+    }
     _session.removeListener(_sessionChanged);
     _push?.dispose();
 
@@ -320,6 +369,12 @@ class _MainAppState extends State<MainApp> {
     );
   }
 
+  void _pinChanged() {
+    if ((_pinLock?.canAccess ?? true) && _pendingPushOrderId != null) {
+      unawaited(_openPushOrder());
+    }
+  }
+
   // MARK: - Build
 
   @override
@@ -342,6 +397,12 @@ class _MainAppState extends State<MainApp> {
               AppLocalizations.of(context).companyName,
 
           theme: buildAppTheme(),
+          builder: (context, child) => _pinLock == null
+              ? child ?? const SizedBox.shrink()
+              : PinLockGate(
+                  controller: _pinLock,
+                  child: child ?? const SizedBox.shrink(),
+                ),
 
           // MARK: Routes
           routes: {
@@ -398,7 +459,10 @@ class _MainAppState extends State<MainApp> {
           return app;
         }
 
-        return AuthScope(session: _session, child: app);
+        return AuthScope(
+          session: _session,
+          child: ApiScope(api: api, child: app),
+        );
       },
     );
   }

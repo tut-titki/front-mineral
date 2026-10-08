@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,46 +7,7 @@ import 'package:mineral/features/orders/widgets/voice_description_button.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 import 'package:record/record.dart';
 import 'helpers/backend_api_fixture.dart';
-
-class TestRecorderPlatform extends RecordPlatform {
-  final states = StreamController<RecordState>.broadcast();
-  final audio = StreamController<Uint8List>();
-  RecordConfig? config;
-  bool permission = true;
-  Object? startError;
-
-  @override
-  Future<void> create(String recorderId) async {}
-  @override
-  Future<bool> hasPermission(String recorderId, {bool request = true}) async =>
-      permission;
-  @override
-  Stream<RecordState> onStateChanged(String recorderId) => states.stream;
-  @override
-  Future<Stream<Uint8List>> startStream(
-    String recorderId,
-    RecordConfig value,
-  ) async {
-    if (startError != null) throw startError!;
-    config = value;
-    return audio.stream;
-  }
-
-  @override
-  Future<String?> stop(String recorderId) async {
-    // The final audio chunk must reach the request even when stop is called.
-    audio.add(Uint8List.fromList([0, 0, 255, 127]));
-    await audio.close();
-    return null;
-  }
-
-  @override
-  Future<void> cancel(String recorderId) async {}
-  @override
-  Future<void> dispose(String recorderId) async {}
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
+import 'helpers/recording_fixture.dart';
 
 void main() {
   Future<void> tapVoice(WidgetTester tester, String label) async {

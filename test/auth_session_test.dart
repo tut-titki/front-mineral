@@ -12,6 +12,7 @@ import 'package:mineral/l10n/app_locale.dart';
 import 'package:mineral/features/auth/widgets/auth_scope.dart';
 import 'package:mineral/features/auth/screens/login_screen.dart';
 import 'package:mineral/l10n/app_localizations.dart';
+import 'support/pin_test_helpers.dart';
 
 const profile = {
   'id': 5,
@@ -271,7 +272,11 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
-        MainApp(session: session, referenceStorage: MemoryReferenceStorage()),
+        MainApp(
+          session: session,
+          referenceStorage: MemoryReferenceStorage(),
+          pinRepository: testPinRepository(),
+        ),
       );
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump();
@@ -286,6 +291,9 @@ void main() {
       expect(find.text('Мои наряды'), findsNothing);
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
+      expect(find.text('Создайте ПИН-код'), findsOneWidget);
+      await enterPin(tester, '1234');
+      await enterPin(tester, '1234');
       expect(find.text('Мои наряды'), findsOneWidget);
       expect(
         startupRequests.where((r) => r.url.path == '/api/auth/me'),

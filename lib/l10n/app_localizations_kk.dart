@@ -1798,4 +1798,58 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get appSlogan => 'Наряд берілді — ЖИ бақылауында';
+
+  @override
+  String get pinCreateTitle => 'ПИН-код жасаңыз';
+
+  @override
+  String get pinConfirmTitle => 'ПИН-кодты қайталаңыз';
+
+  @override
+  String get pinEnterTitle => 'ПИН-кодты енгізіңіз';
+
+  @override
+  String get pinCreateHint => 'Қолданбаға кіру үшін 4 цифр ойлап табыңыз';
+
+  @override
+  String get pinUnlockHint => 'Қолданбаны ашу үшін 4 цифрды енгізіңіз';
+
+  @override
+  String get pinMismatch => 'ПИН-кодтар сәйкес келмейді. Кодты қайта жасаңыз';
+
+  @override
+  String get pinIncorrect => 'ПИН-код қате';
+
+  @override
+  String get pinStorageError =>
+      'ПИН-код қоймасын ашу мүмкін болмады. Қайталап көріңіз немесе құпиясөзбен кіріңіз';
+
+  @override
+  String get pinForgot => 'ПИН-кодты ұмыттыңыз ба?';
+
+  @override
+  String get pinUseAnotherAccount => 'Басқа аккаунтқа кіру';
+
+  @override
+  String get pinResetHint => 'Жаңа ПИН-код жасау үшін құпиясөзбен кіру қажет';
+
+  @override
+  String get pinDeleteDigit => 'Цифрды өшіру';
+
+  @override
+  String pinTryAgainSeconds(String seconds) {
+    return 'Әрекеттер тым көп. $seconds секундтан кейін қайталаңыз.';
+  }
+
+  @override
+  String pinDigitsEntered(String count) {
+    return '4 цифрдың $count цифры енгізілді';
+  }
+
+  @override
+  String get voiceWorkInput => 'Орындалған жұмыстарды дауыспен енгізу';
+
+  @override
+  String get executionWorkTooLong =>
+      'Орындалған жұмыстар 500 таңбадан аспауы керек';
 }

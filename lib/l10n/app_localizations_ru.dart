@@ -1789,4 +1789,59 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get appSlogan => 'Наряд выдан — ИИ на контроле';
+
+  @override
+  String get pinCreateTitle => 'Создайте ПИН-код';
+
+  @override
+  String get pinConfirmTitle => 'Повторите ПИН-код';
+
+  @override
+  String get pinEnterTitle => 'Введите ПИН-код';
+
+  @override
+  String get pinCreateHint => 'Придумайте 4 цифры для входа в приложение';
+
+  @override
+  String get pinUnlockHint => 'Введите 4 цифры, чтобы открыть приложение';
+
+  @override
+  String get pinMismatch => 'ПИН-коды не совпадают. Создайте код заново';
+
+  @override
+  String get pinIncorrect => 'Неверный ПИН-код';
+
+  @override
+  String get pinStorageError =>
+      'Не удалось открыть хранилище ПИН-кода. Повторите попытку или войдите с паролем';
+
+  @override
+  String get pinForgot => 'Забыли ПИН-код?';
+
+  @override
+  String get pinUseAnotherAccount => 'Войти в другой аккаунт';
+
+  @override
+  String get pinResetHint =>
+      'Для создания нового ПИН-кода потребуется вход с паролем';
+
+  @override
+  String get pinDeleteDigit => 'Удалить цифру';
+
+  @override
+  String pinTryAgainSeconds(String seconds) {
+    return 'Слишком много попыток. Повторите через $seconds сек.';
+  }
+
+  @override
+  String pinDigitsEntered(String count) {
+    return 'Введено $count из 4 цифр';
+  }
+
+  @override
+  String get voiceWorkInput => 'Продиктовать выполненные работы';
+
+  @override
+  String get executionWorkTooLong =>
+      'Выполненные работы — не больше 500 символов';
 }

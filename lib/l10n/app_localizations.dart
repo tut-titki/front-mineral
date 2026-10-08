@@ -3349,6 +3349,102 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Наряд выдан — ИИ на контроле'**
   String get appSlogan;
+
+  /// No description provided for @pinCreateTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Создайте ПИН-код'**
+  String get pinCreateTitle;
+
+  /// No description provided for @pinConfirmTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Повторите ПИН-код'**
+  String get pinConfirmTitle;
+
+  /// No description provided for @pinEnterTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите ПИН-код'**
+  String get pinEnterTitle;
+
+  /// No description provided for @pinCreateHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Придумайте 4 цифры для входа в приложение'**
+  String get pinCreateHint;
+
+  /// No description provided for @pinUnlockHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите 4 цифры, чтобы открыть приложение'**
+  String get pinUnlockHint;
+
+  /// No description provided for @pinMismatch.
+  ///
+  /// In ru, this message translates to:
+  /// **'ПИН-коды не совпадают. Создайте код заново'**
+  String get pinMismatch;
+
+  /// No description provided for @pinIncorrect.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный ПИН-код'**
+  String get pinIncorrect;
+
+  /// No description provided for @pinStorageError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть хранилище ПИН-кода. Повторите попытку или войдите с паролем'**
+  String get pinStorageError;
+
+  /// No description provided for @pinForgot.
+  ///
+  /// In ru, this message translates to:
+  /// **'Забыли ПИН-код?'**
+  String get pinForgot;
+
+  /// No description provided for @pinUseAnotherAccount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти в другой аккаунт'**
+  String get pinUseAnotherAccount;
+
+  /// No description provided for @pinResetHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для создания нового ПИН-кода потребуется вход с паролем'**
+  String get pinResetHint;
+
+  /// No description provided for @pinDeleteDigit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить цифру'**
+  String get pinDeleteDigit;
+
+  /// No description provided for @pinTryAgainSeconds.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много попыток. Повторите через {seconds} сек.'**
+  String pinTryAgainSeconds(String seconds);
+
+  /// No description provided for @pinDigitsEntered.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введено {count} из 4 цифр'**
+  String pinDigitsEntered(String count);
+
+  /// No description provided for @voiceWorkInput.
+  ///
+  /// In ru, this message translates to:
+  /// **'Продиктовать выполненные работы'**
+  String get voiceWorkInput;
+
+  /// No description provided for @executionWorkTooLong.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выполненные работы — не больше 500 символов'**
+  String get executionWorkTooLong;
 }
 
 class _AppLocalizationsDelegate

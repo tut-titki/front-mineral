@@ -1,4 +1,5 @@
 import 'package:mineral/core/services/photo_upload_rules.dart';
+import 'package:mineral/core/api/api_scope.dart';
 import 'package:mineral/features/auth/data/auth_session.dart';
 import 'package:mineral/l10n/ui_localization.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'dart:async';
 import '../widgets/executor_material_tile.dart';
 import 'package:mineral/core/services/photo_picker_service.dart';
 import 'package:mineral/features/orders/widgets/photo_attachments.dart';
+import 'package:mineral/features/orders/widgets/voice_description_button.dart';
 import 'package:mineral/features/executor/data/executor_repository.dart';
 import 'package:mineral/shared/models/models.dart';
 
@@ -37,6 +39,7 @@ class _CompletionScreenState extends State<CompletionScreen> {
   String? _material;
   String? _photoError;
   bool _busy = false;
+  bool _voiceBusy = false;
   bool _sending = false;
   bool _submitted = false;
   String _previousMaterials = '';
@@ -216,7 +219,7 @@ class _CompletionScreenState extends State<CompletionScreen> {
   }
 
   Future<void> _pick(bool camera) async {
-    if (_busy || _photos.length >= 5) return;
+    if (_busy || _voiceBusy || _photos.length >= 5) return;
     setState(() => _busy = true);
     try {
       if (!await _persist() || !mounted) return;
@@ -259,6 +262,7 @@ class _CompletionScreenState extends State<CompletionScreen> {
   );
 
   Future<void> _submit() async {
+    if (_voiceBusy) return;
     final valid = _form.currentState!.validate();
     setState(
       () => _photoError = !widget.order.planned && _photos.isEmpty
@@ -694,6 +698,7 @@ class _CompletionScreenState extends State<CompletionScreen> {
             ),
             onPressed:
                 _busy ||
+                    _voiceBusy ||
                     _sending ||
                     _restoring ||
                     _draftLoadError ||
@@ -832,6 +837,7 @@ class _CompletionScreenState extends State<CompletionScreen> {
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
+                          key: const ValueKey('completion-work'),
                           style: const TextStyle(fontSize: 14),
                           controller: _work,
                           minLines: 2,
@@ -843,10 +849,48 @@ class _CompletionScreenState extends State<CompletionScreen> {
                               'Опишите выполненные работы',
                             ),
                           ),
-                          validator: (v) => (v ?? '').trim().isEmpty
-                              ? uiText(context, 'Опишите выполненные работы')
-                              : null,
+                          validator: (value) {
+                            if ((value ?? '').trim().isEmpty) {
+                              return uiText(
+                                context,
+                                'Опишите выполненные работы',
+                              );
+                            }
+                            return value!.length > 500
+                                ? strings(context).executionWorkTooLong
+                                : null;
+                          },
                         ),
+                        if (ApiScope.maybeOf(context) case final api?) ...[
+                          const SizedBox(height: 8),
+                          VoiceDescriptionButton(
+                            key: const ValueKey('completion-voice'),
+                            api: api,
+                            idleLabel: strings(context).voiceWorkInput,
+                            enabled:
+                                !_busy &&
+                                !_sending &&
+                                !_restoring &&
+                                !_draftLoadError &&
+                                widget.order.accessErrorStatus == null &&
+                                widget.order.status == OrderStatus.working,
+                            onBusyChanged: (busy) {
+                              if (mounted) setState(() => _voiceBusy = busy);
+                            },
+                            onText: (text) {
+                              final work = [
+                                _work.text.trim(),
+                                text.trim(),
+                              ].where((part) => part.isNotEmpty).join(' ');
+                              _work.value = TextEditingValue(
+                                text: work,
+                                selection: TextSelection.collapsed(
+                                  offset: work.length,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         _label(
                           Icons.build_outlined,
@@ -995,7 +1039,9 @@ class _CompletionScreenState extends State<CompletionScreen> {
                         if (_photos.length < 5) ...[
                           if (PhotoPickerService.instance.supportsCamera) ...[
                             OutlinedButton.icon(
-                              onPressed: _busy ? null : () => _pick(true),
+                              onPressed: _busy || _voiceBusy
+                                  ? null
+                                  : () => _pick(true),
                               style: _photoButtonStyle(
                                 context,
                                 highlighted: true,
@@ -1011,7 +1057,9 @@ class _CompletionScreenState extends State<CompletionScreen> {
                             const SizedBox(height: 12),
                           ],
                           OutlinedButton.icon(
-                            onPressed: _busy ? null : () => _pick(false),
+                            onPressed: _busy || _voiceBusy
+                                ? null
+                                : () => _pick(false),
                             style: _photoButtonStyle(context),
                             icon: const Icon(
                               Icons.photo_library_outlined,

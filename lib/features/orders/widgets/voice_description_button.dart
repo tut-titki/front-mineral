@@ -8,6 +8,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/api/api_services.dart';
 import '../../../shared/widgets/backend_section.dart';
 import '../../../shared/widgets/ui.dart';
+import '../data/voice_transcription_response.dart';
 
 Uint8List voiceWav(Uint8List pcm) {
   final result = Uint8List(44 + pcm.length);
@@ -43,6 +44,9 @@ Future<String> transcribeVoice(ApiServices api, Uint8List audio) async {
           'POST',
           Uri.parse('${api.baseUrl}/api/ai/transcribe'),
         )
+        // POST 303 redirects switch to GET and lose the recorded audio.
+        // The documented API must return a transcript at this exact endpoint.
+        ..followRedirects = false
         ..files.add(
           http.MultipartFile.fromBytes(
             'audio',
@@ -51,26 +55,23 @@ Future<String> transcribeVoice(ApiServices api, Uint8List audio) async {
             contentType: MediaType('audio', 'wav'),
           ),
         );
-  final response = await api.client.sendMultipart(request);
-  final data = response.data;
-  if (data is! Map || data['text'] is! String) {
-    debugPrint(
-      'Voice transcription response: HTTP ${response.statusCode}, '
-      'format ${data.runtimeType}, text field missing or invalid',
-    );
-    throw ApiException(
-      statusCode: response.statusCode,
-      message: 'Сервер распознавания вернул неверный формат ответа',
-    );
+  try {
+    final response = await api.client.sendMultipart(request);
+    return readVoiceTranscript(response, requestUri: request.url);
+  } on ApiException catch (error) {
+    if ({301, 302, 303, 307, 308}.contains(error.statusCode)) {
+      debugPrint(
+        'Voice transcription redirect: POST '
+        '${request.url.origin}${request.url.path}, HTTP ${error.statusCode}',
+      );
+      throw ApiException(
+        statusCode: error.statusCode,
+        message:
+            'Сервер перенаправил запрос распознавания. Проверьте адрес API',
+      );
+    }
+    rethrow;
   }
-  final text = data['text'] as String;
-  if (text.trim().isEmpty) {
-    throw const ApiException(
-      statusCode: 422,
-      message: 'Речь не распознана. Повторите запись или введите текст.',
-    );
-  }
-  return text.trim();
 }
 
 class VoiceDescriptionButton extends StatefulWidget {
@@ -80,11 +81,13 @@ class VoiceDescriptionButton extends StatefulWidget {
     required this.onText,
     this.enabled = true,
     this.onBusyChanged,
+    this.idleLabel,
   });
   final ApiServices api;
   final ValueChanged<String> onText;
   final bool enabled;
   final ValueChanged<bool>? onBusyChanged;
+  final String? idleLabel;
   @override
   State<VoiceDescriptionButton> createState() => _VoiceDescriptionButtonState();
 }
@@ -266,19 +269,21 @@ class _VoiceDescriptionButtonState extends State<VoiceDescriptionButton> {
             )
           : Icon(recording ? Icons.stop : Icons.mic_none),
       label: Text(
-        backendText(
-          context,
-          busy
-              ? 'Обработка голоса…'
-              : recording
-              ? 'Остановить и распознать'
-              : 'Голосовое описание',
-          busy
-              ? 'Дауыс өңделуде…'
-              : recording
-              ? 'Тоқтату және тану'
-              : 'Дауыспен сипаттау',
-        ),
+        !busy && !recording && widget.idleLabel != null
+            ? widget.idleLabel!
+            : backendText(
+                context,
+                busy
+                    ? 'Обработка голоса…'
+                    : recording
+                    ? 'Остановить и распознать'
+                    : 'Голосовое описание',
+                busy
+                    ? 'Дауыс өңделуде…'
+                    : recording
+                    ? 'Тоқтату және тану'
+                    : 'Дауыспен сипаттау',
+              ),
       ),
     ),
   );

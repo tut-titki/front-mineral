@@ -13,6 +13,7 @@ import 'package:mineral/features/references/data/reference_storage_stub.dart';
 import 'package:mineral/features/orders/screens/order_detail_screen.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 import 'helpers/backend_api_fixture.dart';
+import 'support/pin_test_helpers.dart';
 
 void main() {
   testWidgets(
@@ -86,11 +87,15 @@ void main() {
         session: session,
         apiServices: api,
         referenceStorage: MemoryReferenceStorage(),
+        pinRepository: testPinRepository(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
+    expect(find.text('Создайте ПИН-код'), findsOneWidget);
+    await enterPin(tester, '1234');
+    await enterPin(tester, '1234');
     expect(session.authenticated, isTrue);
     await expectLater(
       api.client.get('/api/expired'),
