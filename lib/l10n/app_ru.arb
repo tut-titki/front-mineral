@@ -915,5 +915,6 @@
   "ratingPeriodCustom": "Выбрать даты",
   "oilContaminationFault": "Загрязнение масла",
   "industrialOilMaterial": "Масло индустриальное И-40А",
-  "oilFilterMaterial": "Фильтр масляный"
+  "oilFilterMaterial": "Фильтр масляный",
+  "appSlogan": "Наряд выдан — ИИ на контроле"
 }

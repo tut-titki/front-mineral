@@ -32,6 +32,8 @@ class ApiExecutorRepository extends ChangeNotifier
   final ExecutionDraftStorage draftStorage;
   final PendingActionStorage actionStorage;
   Future<void>? _syncFuture;
+  bool _hasLoaded = false;
+  bool get hasLoaded => _hasLoaded;
   Timer? _queueTimer;
   final AuthUser _user;
   ExecutorRealtime? _realtime;
@@ -334,9 +336,16 @@ class ApiExecutorRepository extends ChangeNotifier
     _notify();
     try {
       // Commit both lists together: a failed history request cannot erase current data.
-      final active = await _pages(
-        'ISSUED,QUEUED,ACCEPTED,IN_PROGRESS,PAUSED,REWORK',
-      );
+      final results = await Future.wait<Object>([
+        _pages('ISSUED,QUEUED,ACCEPTED,IN_PROGRESS,PAUSED,REWORK'),
+        _pages('COMPLETED,AI_REVIEW,CLOSED,CANCELLED,REJECTED'),
+        api.references('fault-codes'),
+        api.references('materials'),
+      ]);
+      final active = results[0] as List<ExecutorOrderDto>;
+      final history = results[1] as List<ExecutorOrderDto>;
+      final faults = results[2] as List<Map<String, dynamic>>;
+      final materials = results[3] as List<Map<String, dynamic>>;
       // Compact responses omit events; restore FIFO from server QUEUE events.
       final queued = active
           .where(
@@ -363,11 +372,6 @@ class ApiExecutorRepository extends ChangeNotifier
           )
           .whereType<ExecutorOrderDto>()
           .toList();
-      final history = await _pages(
-        'COMPLETED,AI_REVIEW,CLOSED,CANCELLED,REJECTED',
-      );
-      final faults = await api.references('fault-codes');
-      final materials = await api.references('materials');
       _checkUser(employeeId);
       if (revision != _revision) return;
       for (final dto in [...restoredActive, ...history]) {
@@ -388,6 +392,7 @@ class ApiExecutorRepository extends ChangeNotifier
         if (dto.assigneeId != employeeId) continue;
         _store(dto, existing: old[dto.id]);
       }
+      _hasLoaded = true;
     } catch (e) {
       _error = e is ApiException && e.message.isNotEmpty
           ? e.message

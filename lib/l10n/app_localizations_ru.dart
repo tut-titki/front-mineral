@@ -1786,4 +1786,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get oilFilterMaterial => 'Фильтр масляный';
+
+  @override
+  String get appSlogan => 'Наряд выдан — ИИ на контроле';
 }

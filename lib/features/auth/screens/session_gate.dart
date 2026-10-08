@@ -5,8 +5,9 @@ import 'package:mineral/l10n/app_locale.dart';
 import 'package:mineral/l10n/app_localizations.dart';
 
 class SessionGate extends StatefulWidget {
-  const SessionGate({super.key, required this.session});
+  const SessionGate({super.key, required this.session, this.restoration});
   final AuthSession session;
+  final Future<AuthUser?>? restoration;
   @override
   State<SessionGate> createState() => _SessionGateState();
 }
@@ -17,7 +18,7 @@ class _SessionGateState extends State<SessionGate> {
   @override
   void initState() {
     super.initState();
-    _restore = widget.session.restore();
+    _restore = widget.restoration ?? widget.session.restore();
   }
 
   @override

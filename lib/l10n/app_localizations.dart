@@ -3343,6 +3343,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Фильтр масляный'**
   String get oilFilterMaterial;
+
+  /// No description provided for @appSlogan.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наряд выдан — ИИ на контроле'**
+  String get appSlogan;
 }
 
 class _AppLocalizationsDelegate

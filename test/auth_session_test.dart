@@ -251,9 +251,11 @@ void main() {
       addTearDown(() => appLocale.value = null);
       final storage = MemoryTokenStorage();
       await storage.write('existing-token');
+      final startupRequests = <http.Request>[];
       final session = AuthSession(
         storage: storage,
         client: MockClient((request) async {
+          startupRequests.add(request);
           if (request.url.path == '/api/auth/me') {
             return response({...profile, 'id': 42, 'language': 'ru'}, 200);
           }
@@ -271,9 +273,28 @@ void main() {
       await tester.pumpWidget(
         MainApp(session: session, referenceStorage: MemoryReferenceStorage()),
       );
-      await tester.pump(const Duration(milliseconds: 2500));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+      expect(
+        startupRequests.where((r) => r.url.path == '/api/auth/me'),
+        hasLength(1),
+      );
+      expect(
+        startupRequests.where((r) => r.url.path == '/api/work-orders'),
+        hasLength(2),
+      );
+      expect(find.text('Мои наряды'), findsNothing);
+      await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
       expect(find.text('Мои наряды'), findsOneWidget);
+      expect(
+        startupRequests.where((r) => r.url.path == '/api/auth/me'),
+        hasLength(1),
+      );
+      expect(
+        startupRequests.where((r) => r.url.path == '/api/work-orders'),
+        hasLength(2),
+      );
       expect(find.text('Исполнитель 2'), findsOneWidget);
       expect(find.text('Демонстрационные данные'), findsNothing);
       await expectLater(

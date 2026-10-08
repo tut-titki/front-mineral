@@ -20,6 +20,7 @@ import 'package:mineral/features/auth/widgets/auth_scope.dart';
 import 'package:mineral/features/executor/data/execution_draft_storage.dart';
 import 'package:mineral/features/executor/data/api_executor_repository.dart';
 import 'package:mineral/features/executor/data/executor_api.dart';
+import 'package:mineral/features/executor/data/executor_repository.dart';
 import 'package:mineral/features/executor/screens/executor_screen.dart';
 
 import 'package:mineral/features/master/screens/master_shell.dart';
@@ -77,6 +78,19 @@ class _MainAppState extends State<MainApp> {
   PushNotificationService? _push;
   int? _pendingPushOrderId;
   bool _openingPush = false;
+  bool _startupActive = true;
+  Future<AuthUser?>? _startupSession;
+
+  Future<AuthUser?> _prepareStartup() async {
+    final user = await _session.restore();
+    if (!mounted || user == null) return user;
+    appLocale.value = Locale(user.language == 'kk' ? 'kk' : 'ru');
+    if (user.role == 'EXECUTOR') {
+      final repository = _apiExecutorStore();
+      unawaited(repository.refreshExecutor(user.id).catchError((Object _) {}));
+    }
+    return user;
+  }
 
   void _pushOrderTapped(int id) {
     _pendingPushOrderId = id;
@@ -84,7 +98,9 @@ class _MainAppState extends State<MainApp> {
   }
 
   Future<void> _openPushOrder() async {
-    if (_openingPush || !mounted || !_session.authenticated) return;
+    if (_startupActive || _openingPush || !mounted || !_session.authenticated) {
+      return;
+    }
     if (_session.user?.role != 'EXECUTOR') {
       _pendingPushOrderId = null;
       return;
@@ -232,6 +248,12 @@ class _MainAppState extends State<MainApp> {
     }
     PhotoPickerService.instance.recoverLostPhotos();
     _sessionChanged();
+    if (!widget.demoMode) {
+      _startupSession = _prepareStartup();
+      // Keep startup failures for SessionGate without an unhandled error while
+      // the splash animation is still visible.
+      unawaited(_startupSession!.then<void>((_) {}, onError: (Object _) {}));
+    }
   }
 
   @override
@@ -300,8 +322,15 @@ class _MainAppState extends State<MainApp> {
                 return const LoginScreen();
               }
 
+              final ExecutorRepository repository = widget.demoMode
+                  ? store
+                  : _apiExecutorStore();
               return ExecutorScreen(
-                store: widget.demoMode ? store : _apiExecutorStore(),
+                store: repository,
+                refreshOnOpen:
+                    widget.demoMode ||
+                    (!(repository as ApiExecutorRepository).hasLoaded &&
+                        !repository.isLoading),
                 employeeId: widget.demoMode
                     ? (ModalRoute.of(context)?.settings.arguments as int? ?? 1)
                     : _session.user!.id,
@@ -311,9 +340,13 @@ class _MainAppState extends State<MainApp> {
 
           // MARK: Initial screen
           home: SplashScreen(
+            onFinished: () {
+              _startupActive = false;
+              if (_pendingPushOrderId != null) unawaited(_openPushOrder());
+            },
             nextScreen: widget.demoMode
                 ? const LoginScreen()
-                : SessionGate(session: _session),
+                : SessionGate(session: _session, restoration: _startupSession),
           ),
         );
 

@@ -17,11 +17,13 @@ import 'package:mineral/shared/models/models.dart';
 class ExecutorScreen extends StatefulWidget {
   final ExecutorRepository store;
   final int employeeId;
+  final bool refreshOnOpen;
 
   const ExecutorScreen({
     super.key,
     required this.store,
     required this.employeeId,
+    this.refreshOnOpen = true,
   });
 
   @override
@@ -54,7 +56,7 @@ class _ExecutorScreenState extends State<ExecutorScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_refresh());
+      if (mounted && widget.refreshOnOpen) unawaited(_refresh());
     });
     _greetingTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
